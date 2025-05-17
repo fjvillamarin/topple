@@ -4,62 +4,149 @@ package compiler
 // start writing tests immediately and grow the grammar feature-by-feature.
 
 type Parser struct {
-	toks   []Token
-	cur    int
-	Errors []error
+	Tokens  []Token
+	Current int
+	Errors  []error
 }
 
 // NewParser returns a new parser instance.
-func NewParser(tokens []Token) *Parser { return &Parser{toks: tokens} }
+func NewParser(tokens []Token) *Parser {
+	return &Parser{
+		Tokens:  tokens,
+		Current: 0,
+		Errors:  []error{},
+	}
+}
 
-// Parse runs to EOF and produces a *Module* AST.
+// Parse parses the tokens and returns a list of statements.
+// It will attempt to recover from errors and return all encountered errors.
 func (p *Parser) Parse() (*Module, []error) {
-	mod := &Module{}
+	stmts := []Stmt{}
 
 	for !p.isAtEnd() {
-		if stmt := p.simpleStmt(); stmt != nil {
-			mod.Body = append(mod.Body, stmt)
-		} else { // panic-mode recovery: skip one token
-			p.Errors = append(p.Errors, NewParseError(p.peek(), "invalid syntax"))
+		// Skip over any blank lines between statements. A blank line is just a
+		// NEWLINE token that is not part of any real statement. By consuming
+		// these eagerly we avoid producing ExprStmt nodes whose Value is nil
+		// when the source line is empty.
+		for p.check(Newline) {
 			p.advance()
 		}
+
+		// If we have reached EOF after skipping newlines, break out of the
+		// loop early so we don't attempt to parse a statement starting at EOF.
+		if p.isAtEnd() {
+			break
+		}
+
+		stmt, err := p.statement()
+		if err != nil {
+			p.Errors = append(p.Errors, err)
+			return nil, p.Errors
+		}
+		stmts = append(stmts, stmt)
 	}
-	return mod, p.Errors
+
+	return &Module{Body: stmts}, p.Errors
 }
 
-// ── phase-0 grammar: simple_stmt ::= expr NEWLINE | NEWLINE ──────────
-func (p *Parser) simpleStmt() Stmt {
-	// blank line?
-	if p.match(Newline) {
-		return nil
-	}
+// ----------------------------------------------------------------------------
+// Statements
+// ----------------------------------------------------------------------------
 
-	expr := p.atom()
-	if expr == nil {
-		return nil
-	}
-
-	p.expect(Newline) // consume required terminator; tolerate optional SEMI later
-	return &ExprStmt{Value: expr, Tok: p.prev()}
+// statement parses a single statement.
+func (p *Parser) statement() (Stmt, error) {
+	return p.expressionStatement()
 }
 
-// ── atoms: NAME | NUMBER | STRING ────────────────────────────────────
-func (p *Parser) atom() Expr {
-	switch {
-	case p.match(Identifier):
-		return &Name{Tok: p.prev()}
-	case p.match(Number, String):
-		return &Constant{Tok: p.prev(), Value: p.prev().Literal}
-	default:
-		p.Errors = append(p.Errors, NewParseError(p.peek(), "expected expression"))
-		return nil
+// expressionStatement parses an expression statement.
+func (p *Parser) expressionStatement() (Stmt, error) {
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
 	}
+
+	// Consume semicolon if it's there (optional)
+	if p.check(Semicolon) {
+		p.advance()
+	}
+
+	// If we're at the end of the file, we're done
+	if p.isAtEnd() {
+		return NewExprStmt(expr, expr.Start(), expr.End()), nil
+	}
+
+	// Consume the newline
+	_, err = p.consume(Newline, "expected newline after expression")
+	if err != nil {
+		return nil, err
+	}
+
+	return NewExprStmt(expr, expr.Start(), expr.End()), nil
 }
 
-// ── tiny token-level helpers (similar to your Lox version) ───────────
-func (p *Parser) match(kinds ...TokenType) bool {
-	for _, k := range kinds {
-		if p.check(k) {
+// ----------------------------------------------------------------------------
+// Expressions
+// ----------------------------------------------------------------------------
+
+// expression parses an expression.
+func (p *Parser) expression() (Expr, error) {
+	atom, err := p.atom()
+	if err != nil {
+		return nil, err
+	}
+
+	return atom, nil
+}
+
+// atom parses an atom.
+func (p *Parser) atom() (Expr, error) {
+	if p.match(False) {
+		return NewConstant(p.previous(), false, p.previous().Start(), p.previous().End()), nil
+	}
+
+	if p.match(True) {
+		return NewConstant(p.previous(), true, p.previous().Start(), p.previous().End()), nil
+	}
+
+	if p.match(None) {
+		return NewConstant(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
+	}
+
+	if p.match(Number, String) {
+		return NewConstant(p.previous(), p.previous().Literal, p.previous().Start(), p.previous().End()), nil
+	}
+
+	if p.match(Ellipsis) {
+		return NewConstant(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
+	}
+
+	if p.match(Identifier) {
+		return NewName(p.previous(), p.previous().Start(), p.previous().End()), nil
+	}
+
+	return nil, p.error(p.peek(), "unexpected token")
+}
+
+// ----------------------------------------------------------------------------
+// Helper functions
+// ----------------------------------------------------------------------------
+
+func (p *Parser) consume(t TokenType, message string) (Token, error) {
+	if p.check(t) {
+		return p.advance(), nil
+	}
+
+	return Token{}, p.error(p.peek(), message)
+}
+
+func (p *Parser) error(token Token, message string) error {
+	return &ParseError{Token: token, Message: message}
+}
+
+// match checks if the current token is one of the given types.
+func (p *Parser) match(types ...TokenType) bool {
+	for _, t := range types {
+		if p.check(t) {
 			p.advance()
 			return true
 		}
@@ -67,18 +154,28 @@ func (p *Parser) match(kinds ...TokenType) bool {
 	return false
 }
 
-func (p *Parser) expect(kind TokenType) {
-	if !p.match(kind) {
-		p.Errors = append(p.Errors, NewParseError(p.peek(), "expected '"+kind.String()+"'"))
+func (p *Parser) check(t TokenType) bool {
+	if p.isAtEnd() {
+		return false
 	}
+	return p.peek().Type == t
 }
 
-func (p *Parser) check(k TokenType) bool { return !p.isAtEnd() && p.peek().Type == k }
-func (p *Parser) advance() {
+func (p *Parser) advance() Token {
 	if !p.isAtEnd() {
-		p.cur++
+		p.Current++
 	}
+	return p.previous()
 }
-func (p *Parser) isAtEnd() bool { return p.peek().Type == EOF }
-func (p *Parser) peek() Token   { return p.toks[p.cur] }
-func (p *Parser) prev() Token   { return p.toks[p.cur-1] }
+
+func (p *Parser) isAtEnd() bool {
+	return p.peek().Type == EOF
+}
+
+func (p *Parser) peek() Token {
+	return p.Tokens[p.Current]
+}
+
+func (p *Parser) previous() Token {
+	return p.Tokens[p.Current-1]
+}

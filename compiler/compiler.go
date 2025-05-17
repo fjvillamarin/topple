@@ -40,7 +40,7 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, erro
 
 // Parse scans a source file and returns a parsed AST.
 // It returns both the AST and a slice of any errors encountered during scanning and parsing.
-func Parse(src []byte) (Node, []error) {
+func Parse(src []byte) (*Module, []error) {
 	scanner := NewScanner(src)
 	tokens := scanner.ScanTokens()
 

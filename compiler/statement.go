@@ -14,6 +14,16 @@ type Module struct {
 	Body []Stmt
 }
 
+func NewModule(body []Stmt, startPos Position, endPos Position) *Module {
+	return &Module{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Body: body,
+	}
+}
+
 func (m *Module) isStmt() {}
 
 // Accept calls the VisitModule method on the visitor
@@ -29,7 +39,16 @@ func (m *Module) String() string {
 type ExprStmt struct {
 	BaseNode
 	Value Expr
-	Tok   Token
+}
+
+func NewExprStmt(value Expr, startPos Position, endPos Position) *ExprStmt {
+	return &ExprStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Value: value,
+	}
 }
 
 func (e *ExprStmt) isStmt() {}

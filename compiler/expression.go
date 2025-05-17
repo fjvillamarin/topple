@@ -13,13 +13,23 @@ type ExprVisitor interface {
 // Name represents an identifier expression.
 type Name struct {
 	BaseNode
-	Tok Token
+	Token Token
+}
+
+func NewName(token Token, startPos Position, endPos Position) *Name {
+	return &Name{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Token: token,
+	}
 }
 
 func (n *Name) isExpr() {}
 
 func (n *Name) String() string {
-	return n.Tok.Lexeme
+	return n.Token.Lexeme
 }
 
 // Accept calls the VisitName method on the visitor
@@ -30,8 +40,19 @@ func (n *Name) Accept(visitor Visitor) {
 // Constant represents a literal value (number, string, etc.).
 type Constant struct {
 	BaseNode
-	Tok   Token
-	Value interface{}
+	Token Token
+	Value any
+}
+
+func NewConstant(token Token, value any, startPos Position, endPos Position) *Constant {
+	return &Constant{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Token: token,
+		Value: value,
+	}
 }
 
 func (c *Constant) isExpr() {}

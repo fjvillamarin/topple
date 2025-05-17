@@ -77,9 +77,9 @@ func (s *Scanner) ScanTokens() []Token {
 	}
 
 	s.tokens = append(s.tokens, Token{
-		Type:  EOF,
-		Start: Position{Line: s.line, Column: s.col},
-		End:   Position{Line: s.line, Column: s.col},
+		Type:     EOF,
+		StartPos: Position{Line: s.line, Column: s.col},
+		EndPos:   Position{Line: s.line, Column: s.col},
 	})
 	return s.tokens
 }
@@ -136,19 +136,19 @@ func (s *Scanner) addToken(tt TokenType) {
 	s.tokens = append(s.tokens, Token{
 		Type: tt,
 		// lexeme is *bytes* slice – OK even for UTF-8, we store raw input:
-		Lexeme: string(s.src[s.start:s.cur]),
-		Start:  Position{Line: s.lexLine, Column: s.lexCol},
-		End:    Position{Line: s.line, Column: s.col},
+		Lexeme:   string(s.src[s.start:s.cur]),
+		StartPos: Position{Line: s.lexLine, Column: s.lexCol},
+		EndPos:   Position{Line: s.line, Column: s.col},
 	})
 }
 
 func (s *Scanner) addTokenLit(tt TokenType, lit any) {
 	s.tokens = append(s.tokens, Token{
-		Type:    tt,
-		Lexeme:  string(s.src[s.start:s.cur]),
-		Literal: lit,
-		Start:   Position{Line: s.lexLine, Column: s.lexCol},
-		End:     Position{Line: s.line, Column: s.col},
+		Type:     tt,
+		Lexeme:   string(s.src[s.start:s.cur]),
+		Literal:  lit,
+		StartPos: Position{Line: s.lexLine, Column: s.lexCol},
+		EndPos:   Position{Line: s.line, Column: s.col},
 	})
 }
 

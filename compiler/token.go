@@ -252,11 +252,19 @@ func (p Position) String() string {
 // Token carries full positional information so the analyzer can
 // implement precise diagnostics.
 type Token struct {
-	Type    TokenType
-	Lexeme  string
-	Literal any // decoded string/number value, or nil
-	Start   Position
-	End     Position
+	Type     TokenType
+	Lexeme   string
+	Literal  any // decoded string/number value, or nil
+	StartPos Position
+	EndPos   Position
+}
+
+func (t Token) Start() Position {
+	return t.StartPos
+}
+
+func (t Token) End() Position {
+	return t.EndPos
 }
 
 func (t Token) String() string {

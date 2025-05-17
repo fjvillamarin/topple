@@ -19,11 +19,6 @@ func NewASTPrinter(indentStr string) *ASTPrinter {
 	}
 }
 
-// formatSpan formats the position span for a node
-func formatSpan(node Node) string {
-	return fmt.Sprintf("%s-%s", node.Start(), node.End())
-}
-
 // indent returns the current indentation string
 func (p *ASTPrinter) indent() string {
 	return strings.Repeat(p.indentStr, p.indentLevel)
@@ -31,7 +26,7 @@ func (p *ASTPrinter) indent() string {
 
 // printNodeStart prints the common start of a node representation
 func (p *ASTPrinter) printNodeStart(nodeType string, node Node) {
-	p.result.WriteString(fmt.Sprintf("%s%s [%s]", p.indent(), nodeType, formatSpan(node)))
+	p.result.WriteString(fmt.Sprintf("%s%s [%s]", p.indent(), nodeType, node.Span()))
 }
 
 // Visit implements the visitor pattern entry point
@@ -89,7 +84,7 @@ func (p *ASTPrinter) VisitName(node *Name) Visitor {
 // VisitConstant handles Constant nodes
 func (p *ASTPrinter) VisitConstant(node *Constant) Visitor {
 	var typeStr string
-	switch node.Tok.Type {
+	switch node.Token.Type {
 	case String:
 		typeStr = "String"
 	case Number:
