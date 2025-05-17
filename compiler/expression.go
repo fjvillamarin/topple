@@ -11,6 +11,8 @@ type ExprVisitor interface {
 	VisitAttribute(a *Attribute) Visitor
 	VisitCall(c *Call) Visitor
 	VisitSubscript(s *Subscript) Visitor
+	VisitBinary(b *Binary) Visitor
+	VisitUnary(u *Unary) Visitor
 }
 
 // Name represents an identifier expression.
@@ -154,4 +156,64 @@ func (s *Subscript) String() string {
 // Accept calls the VisitSubscript method on the visitor
 func (s *Subscript) Accept(visitor Visitor) {
 	visitor.VisitSubscript(s)
+}
+
+// Binary represents a binary operation expression (left op right)
+type Binary struct {
+	BaseNode
+	Left     Expr
+	Operator Token
+	Right    Expr
+}
+
+func NewBinary(left Expr, operator Token, right Expr, startPos Position, endPos Position) *Binary {
+	return &Binary{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Left:     left,
+		Operator: operator,
+		Right:    right,
+	}
+}
+
+func (b *Binary) isExpr() {}
+
+func (b *Binary) String() string {
+	return fmt.Sprintf("%v %s %v", b.Left, b.Operator.Lexeme, b.Right)
+}
+
+// Accept calls the VisitBinary method on the visitor
+func (b *Binary) Accept(visitor Visitor) {
+	visitor.VisitBinary(b)
+}
+
+// Unary represents a unary operation expression (-expr)
+type Unary struct {
+	BaseNode
+	Operator Token
+	Right    Expr
+}
+
+func NewUnary(operator Token, right Expr, startPos Position, endPos Position) *Unary {
+	return &Unary{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Operator: operator,
+		Right:    right,
+	}
+}
+
+func (u *Unary) isExpr() {}
+
+func (u *Unary) String() string {
+	return fmt.Sprintf("%s %v", u.Operator.Lexeme, u.Right)
+}
+
+// Accept calls the VisitUnary method on the visitor
+func (u *Unary) Accept(visitor Visitor) {
+	visitor.VisitUnary(u)
 }

@@ -90,12 +90,267 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 
 // expression parses an expression.
 func (p *Parser) expression() (Expr, error) {
-	atom, err := p.primary()
+	return p.disjunction()
+}
+
+// disjunction parses a disjunction expression.
+func (p *Parser) disjunction() (Expr, error) {
+	expr, err := p.conjunction()
 	if err != nil {
 		return nil, err
 	}
 
-	return atom, nil
+	for p.match(Or) {
+		operator := p.previous()
+		right, err := p.conjunction()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// conjunction parses a conjunction expression.
+func (p *Parser) conjunction() (Expr, error) {
+	expr, err := p.inversion()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(And) {
+		operator := p.previous()
+		right, err := p.inversion()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// inversion parses an inversion expression.
+func (p *Parser) inversion() (Expr, error) {
+	if p.match(Not) {
+		operator := p.previous()
+		right, err := p.inversion()
+		if err != nil {
+			return nil, err
+		}
+		return NewUnary(operator, right, operator.Start(), right.End()), nil
+	}
+
+	return p.comparison()
+}
+
+// comparison parses a comparison expression.
+func (p *Parser) comparison() (Expr, error) {
+	left, err := p.bitwiseOr()
+	if err != nil {
+		return nil, err
+	}
+
+	// First check for any comparison operator to start a comparison chain
+	if isComparisonOperator(p.peek().Type) {
+		// We're going to build a chain of comparisons
+		operands := []Expr{left}
+		operators := []Token{}
+
+		// Keep consuming comparison operators and their right operands
+		for isComparisonOperator(p.peek().Type) {
+			// Regular comparison operator - now includes IsNot and NotIn
+			p.advance()
+			operators = append(operators, p.previous())
+
+			// Parse the right operand
+			right, err := p.bitwiseOr()
+			if err != nil {
+				return nil, err
+			}
+			operands = append(operands, right)
+		}
+
+		// Handle a single comparison (most common case)
+		if len(operands) == 2 {
+			return NewBinary(operands[0], operators[0], operands[1], operands[0].Start(), operands[1].End()), nil
+		}
+
+		// Handle chained comparisons (a < b < c becomes (a < b) and (b < c))
+		var result Expr
+		for i := 0; i < len(operators); i++ {
+			comparison := NewBinary(operands[i], operators[i], operands[i+1],
+				operands[i].Start(), operands[i+1].End())
+
+			if i == 0 {
+				result = comparison
+			} else {
+				// Create an AND expression linking the comparisons
+				andToken := Token{Type: And, Lexeme: "and"}
+				result = NewBinary(result, andToken, comparison,
+					result.Start(), comparison.End())
+			}
+		}
+		return result, nil
+	}
+
+	return left, nil
+}
+
+// Helper function to check if a token type is a comparison operator
+func isComparisonOperator(tokenType TokenType) bool {
+	return tokenType == EqualEqual || tokenType == BangEqual ||
+		tokenType == Less || tokenType == LessEqual ||
+		tokenType == Greater || tokenType == GreaterEqual ||
+		tokenType == In || tokenType == Is || tokenType == IsNot || tokenType == NotIn
+}
+
+// bitwise_or parses a bitwise OR expression.
+func (p *Parser) bitwiseOr() (Expr, error) {
+	expr, err := p.bitwiseXor()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Pipe) {
+		operator := p.previous()
+		right, err := p.bitwiseXor()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// bitwiseXor parses a bitwise XOR expression.
+func (p *Parser) bitwiseXor() (Expr, error) {
+	expr, err := p.bitwiseAnd()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Caret) {
+		operator := p.previous()
+		right, err := p.bitwiseAnd()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// bitwiseAnd parses a bitwise AND expression.
+func (p *Parser) bitwiseAnd() (Expr, error) {
+	expr, err := p.shiftExpr()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Ampersand) {
+		operator := p.previous()
+		right, err := p.shiftExpr()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// shiftExpr parses a shift expression.
+func (p *Parser) shiftExpr() (Expr, error) {
+	expr, err := p.sum()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(LessLess, GreaterGreater) {
+		operator := p.previous()
+		right, err := p.sum()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// sum parses a sum expression.
+func (p *Parser) sum() (Expr, error) {
+	expr, err := p.term()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Plus, Minus) {
+		operator := p.previous()
+		right, err := p.term()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// term parses a term expression.
+func (p *Parser) term() (Expr, error) {
+	expr, err := p.factor()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(Star, Slash, SlashSlash, Percent, At) {
+		operator := p.previous()
+		right, err := p.factor()
+		if err != nil {
+			return nil, err
+		}
+		expr = NewBinary(expr, operator, right, expr.Start(), right.End())
+	}
+
+	return expr, nil
+}
+
+// factor parses a factor expression.
+func (p *Parser) factor() (Expr, error) {
+	if p.match(Plus, Minus, Tilde) {
+		operator := p.previous()
+		right, err := p.factor()
+		if err != nil {
+			return nil, err
+		}
+		return NewUnary(operator, right, operator.Start(), right.End()), nil
+	}
+
+	return p.power()
+}
+
+// power parses a power expression.
+func (p *Parser) power() (Expr, error) {
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(StarStar) {
+		operator := p.previous()
+		right, err := p.factor()
+		if err != nil {
+			return nil, err
+		}
+		return NewBinary(expr, operator, right, expr.Start(), right.End()), nil
+	}
+
+	return expr, nil
 }
 
 // primary parses a primary expression.

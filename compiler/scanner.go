@@ -81,7 +81,59 @@ func (s *Scanner) ScanTokens() []Token {
 		StartPos: Position{Line: s.line, Column: s.col},
 		EndPos:   Position{Line: s.line, Column: s.col},
 	})
+
+	// Post-process tokens to detect composite tokens
+	s.processCompositeTokens()
+
 	return s.tokens
+}
+
+// Process tokens to detect and generate composite tokens like "is not" and "not in"
+func (s *Scanner) processCompositeTokens() {
+	if len(s.tokens) < 2 {
+		return
+	}
+
+	processed := make([]Token, 0, len(s.tokens))
+	i := 0
+
+	for i < len(s.tokens) {
+		// Check for "is not" sequence
+		if i+1 < len(s.tokens) &&
+			s.tokens[i].Type == Is && s.tokens[i+1].Type == Not {
+			// Create a composite "is not" token
+			isNotToken := Token{
+				Type:     IsNot,
+				Lexeme:   "is not",
+				StartPos: s.tokens[i].StartPos,
+				EndPos:   s.tokens[i+1].EndPos,
+			}
+			processed = append(processed, isNotToken)
+			i += 2 // Skip both tokens
+			continue
+		}
+
+		// Check for "not in" sequence
+		if i+1 < len(s.tokens) &&
+			s.tokens[i].Type == Not && s.tokens[i+1].Type == In {
+			// Create a composite "not in" token
+			notInToken := Token{
+				Type:     NotIn,
+				Lexeme:   "not in",
+				StartPos: s.tokens[i].StartPos,
+				EndPos:   s.tokens[i+1].EndPos,
+			}
+			processed = append(processed, notInToken)
+			i += 2 // Skip both tokens
+			continue
+		}
+
+		// Regular token, just add it
+		processed = append(processed, s.tokens[i])
+		i++
+	}
+
+	s.tokens = processed
 }
 
 // ── low-level helpers ────────────────────────────────────────────────

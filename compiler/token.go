@@ -64,6 +64,8 @@ const (
 	LessEqual           // <=
 	Greater             // >
 	GreaterEqual        // >=
+	IsNot               // is not
+	NotIn               // not in
 
 	// ── literals & special symbols ──────────────────────────────
 	Identifier
@@ -173,6 +175,8 @@ var tokenTypeNames = [...]string{
 	"LessEqual",
 	"Greater",
 	"GreaterEqual",
+	"IsNot",
+	"NotIn",
 
 	"Identifier",
 	"String",

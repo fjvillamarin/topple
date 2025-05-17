@@ -181,6 +181,58 @@ func (p *ASTPrinter) VisitSubscript(node *Subscript) Visitor {
 	return p
 }
 
+// VisitBinary handles Binary nodes
+func (p *ASTPrinter) VisitBinary(node *Binary) Visitor {
+	p.printNodeStart("Binary", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the left expression
+	if node.Left != nil {
+		p.result.WriteString(fmt.Sprintf("%sleft:\n", p.indent()))
+		p.indentLevel++
+		node.Left.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the operator
+	p.result.WriteString(fmt.Sprintf("%soperator: %s\n", p.indent(), node.Operator.Lexeme))
+
+	// Visit the right expression
+	if node.Right != nil {
+		p.result.WriteString(fmt.Sprintf("%sright:\n", p.indent()))
+		p.indentLevel++
+		node.Right.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitUnary handles Unary nodes
+func (p *ASTPrinter) VisitUnary(node *Unary) Visitor {
+	p.printNodeStart("Unary", node)
+	p.result.WriteString(" (\n")
+
+	// Visit the operator
+	p.result.WriteString(fmt.Sprintf("%soperator: %s\n", p.indent(), node.Operator.Lexeme))
+
+	p.indentLevel++
+	// Visit the right expression
+	if node.Right != nil {
+		p.result.WriteString(fmt.Sprintf("%sright:\n", p.indent()))
+		p.indentLevel++
+		node.Right.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
 // Print visits the AST starting from the given node and returns the string representation.
 func (p *ASTPrinter) Print(node Node) string {
 	p.result.Reset()
