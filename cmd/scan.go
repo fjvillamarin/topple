@@ -99,9 +99,8 @@ func scanFile(fs filesystem.FileSystem, path, outputDir string, writeTokens bool
 	output.WriteString(fmt.Sprintf("=== %s ===\n\n", filename))
 
 	for i, tok := range tokens {
-		output.WriteString(fmt.Sprintf("%d: %s %d %q %v @ L%d:%d-L%d:%d\n",
-			i, tok.Type, int(tok.Type), tok.Lexeme, tok.Literal,
-			tok.Line, tok.Column, tok.EndLine, tok.EndColumn))
+		output.WriteString(fmt.Sprintf("%d: %s %d %q %v @ %s\n",
+			i, tok.Type, int(tok.Type), tok.Lexeme, tok.Literal, tok.Span()))
 	}
 
 	if len(scanner.Errors) > 0 {
@@ -111,9 +110,11 @@ func scanFile(fs filesystem.FileSystem, path, outputDir string, writeTokens bool
 		}
 	}
 
-	// Print to console
-	fmt.Println()
-	fmt.Print(output.String())
+	if !writeTokens {
+		// Print to console if not writing to file
+		fmt.Println()
+		fmt.Print(output.String())
+	}
 
 	// Write to file if requested
 	if writeTokens {

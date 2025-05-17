@@ -239,20 +239,32 @@ func (tt TokenType) String() string {
 	return tokenTypeNames[tt]
 }
 
+// Position is a helper type for representing a position in a file.
+type Position struct {
+	Line   int
+	Column int
+}
+
+func (p Position) String() string {
+	return fmt.Sprintf("L%d:%d", p.Line, p.Column)
+}
+
 // Token carries full positional information so the analyzer can
 // implement precise diagnostics.
 type Token struct {
-	Type      TokenType
-	Lexeme    string
-	Literal   any // decoded string/number value, or nil
-	Line      int // starting line (1-based)
-	Column    int // starting column (1-based, UTF-8 code-points)
-	EndLine   int // ending line (inclusive)
-	EndColumn int // ending column (exclusive)
+	Type    TokenType
+	Lexeme  string
+	Literal any // decoded string/number value, or nil
+	Start   Position
+	End     Position
 }
 
 func (t Token) String() string {
 	return fmt.Sprintf("%s %q %v", t.Type, t.Lexeme, t.Literal)
+}
+
+func (t Token) Span() string {
+	return fmt.Sprintf("%s-%s", t.Start, t.End)
 }
 
 // Keywords maps the textual form of each keyword to its TokenType.

@@ -37,3 +37,23 @@ func NewCompiler(logger *slog.Logger) *StandardCompiler {
 func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, error) {
 	return nil, nil
 }
+
+// Parse scans a source file and returns a parsed AST.
+// It returns both the AST and a slice of any errors encountered during scanning and parsing.
+func Parse(src []byte) (Node, []error) {
+	scanner := NewScanner(src)
+	tokens := scanner.ScanTokens()
+
+	if len(scanner.Errors) > 0 {
+		return nil, scanner.Errors
+	}
+
+	parser := NewParser(tokens)
+	program, errors := parser.Parse()
+
+	if len(errors) > 0 {
+		return nil, errors
+	}
+
+	return program, nil
+}

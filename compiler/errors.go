@@ -46,7 +46,7 @@ type RuntimeError struct {
 
 // Error returns a string representation of the RuntimeError.
 func (e *RuntimeError) Error() string {
-	return fmt.Sprintf("Runtime error: %s at position %d:%d", e.Message, e.Token.Line, e.Token.Column)
+	return fmt.Sprintf("Runtime error: %s at position %s", e.Message, e.Token.Span())
 }
 
 // NewRuntimeError creates a new RuntimeError.
