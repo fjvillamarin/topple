@@ -1,0 +1,74 @@
+view LazyLoadingSection(url: str, trigger: str = "revealed"):
+    <div 
+        class="lazy-section" 
+        hx-get="{url}" 
+        hx-trigger="{trigger}" 
+        hx-swap="innerHTML"
+        hx-indicator=".loading">
+        
+        <div class="loading">
+            <p>Loading content...</p>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+view BlogPost(post_id: int):
+    <div class="blog-post">
+        <h1>My Amazing Blog Post</h1>
+        <div class="post-content">
+            <p>This is the main content of the blog post...</p>
+            <p>More paragraphs here...</p>
+        </div>
+        
+        <h3>Related Posts</h3>
+        <LazyLoadingSection url="/api/related-posts/{post_id}" />
+        
+        <h3>Comments</h3>
+        <LazyLoadingSection 
+            url="/api/comments/{post_id}" 
+            trigger="revealed delay:500ms" 
+        />
+    </div>
+
+# HTMX endpoints for async loading
+@app.get("/api/related-posts/{post_id}")
+view RelatedPosts(post_id: int, db: Database = Depends(get_db)):
+    related = db.get_related_posts(post_id)
+    
+    <div class="related-posts">
+        if not related:
+            <p>No related posts found.</p>
+        else:
+            <div class="post-grid">
+                for post in related:
+                    <div class="post-card">
+                        <h4>{post.title}</h4>
+                        <p>{post.summary}</p>
+                        <a href="/blog/{post.id}">Read More</a>
+                    </div>
+            </div>
+    </div>
+
+@app.get("/api/comments/{post_id}")
+view Comments(post_id: int, db: Database = Depends(get_db)):
+    comments = db.get_comments(post_id)
+    
+    <div class="comments-section">
+        if not comments:
+            <p>No comments yet. Be the first to comment!</p>
+        else:
+            <div class="comments-list">
+                for comment in comments:
+                    <div class="comment">
+                        <h4>{comment.name}</h4>
+                        <p>{comment.text}</p>
+                        <span class="date">{comment.date.strftime('%B %d, %Y')}</span>
+                    </div>
+        
+        <div class="comment-form">
+            <h4>Add a Comment</h4>
+            <form hx-post="/api/comments/{post_id}" hx-target=".comments-list" hx-swap="beforeend">
+                <!-- Form fields here -->
+            </form>
+        </div>
+    </div>

@@ -1,0 +1,59 @@
+view CommentForm(post_id: int):
+    <div class="comment-form">
+        <h3>Add a Comment</h3>
+        
+        <form hx-post="/comments/{post_id}" 
+              hx-target="#comments-list" 
+              hx-swap="beforeend"
+              hx-indicator=".spinner">
+              
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" required />
+            </div>
+            
+            <div class="form-group">
+                <label>Comment</label>
+                <textarea name="text" required></textarea>
+            </div>
+            
+            <button type="submit">Submit Comment</button>
+            <div class="spinner" style="display:none;">Submitting...</div>
+        </form>
+    </div>
+
+view CommentsList(post_id: int, comments: list):
+    <div class="comments-section">
+        <h3>Comments ({len(comments)})</h3>
+        
+        <div id="comments-list">
+            for comment in comments:
+                <div class="comment">
+                    <h4>{comment.name}</h4>
+                    <p>{comment.text}</p>
+                    <span class="date">{comment.date.strftime('%B %d, %Y')}</span>
+                </div>
+        </div>
+        
+        <CommentForm post_id={post_id} />
+    </div>
+
+# HTMX endpoint for adding a comment
+@app.post("/comments/{post_id}")
+view AddComment(
+    post_id: int,
+    name: str = Form(...),
+    text: str = Form(...),
+    db: Database = Depends(get_db)
+):
+    # Save comment to database
+    now = datetime.now()
+    comment = Comment(post_id=post_id, name=name, text=text, date=now)
+    db.add_comment(comment)
+    
+    # Return only the new comment HTML to be added to the list
+    <div class="comment">
+        <h4>{comment.name}</h4>
+        <p>{comment.text}</p>
+        <span class="date">{now.strftime('%B %d, %Y')}</span>
+    </div>

@@ -1,0 +1,72 @@
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+view PageLayout():
+    <div class="layout">
+        <header class="header">
+            <slot name="header">
+                <h1>Default Header</h1>
+            </slot>
+        </header>
+        
+        <div class="sidebar">
+            <slot name="sidebar">
+                <nav>Default Navigation</nav>
+            </slot>
+        </div>
+        
+        <main class="content">
+            <slot name="content">
+                <p>Default content</p>
+            </slot>
+        </main>
+        
+        <footer class="footer">
+            <slot name="footer">
+                <p>&copy; 2025 Biscuit</p>
+            </slot>
+        </footer>
+    </div>
+
+view HomePage():
+    <PageLayout>
+        <template slot="header">
+            <h1>Welcome to My Site!!!</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </nav>
+        </template>
+        
+        <template slot="sidebar">
+            <div class="sidebar-widgets">
+                <div class="widget">Recent Posts</div>
+                <div class="widget">Categories</div>
+            </div>
+        </template>
+        
+        <template slot="content">
+            <div class="main-content">
+                <h2>Home Page</h2>
+                <p>Welcome to my website built with Biscuit!</p>
+            </div>
+        </template>
+
+        <template slot="footer">
+            <p>&copy; 2025 My Website</p>
+            <p>Built with Biscuit</p>
+        </template>
+    </PageLayout>
+
+# Example usage
+if __name__ == "__main__":
+    app = FastAPI(title="Biscuit Example 6: Slots")
+    
+    # Render the user profile
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        return HomePage().render()
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)

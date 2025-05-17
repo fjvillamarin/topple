@@ -1,0 +1,18 @@
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+view HelloWorld():
+    <div>
+        <h1>Hello, World!</h1>
+        <p>This is my first Biscuit view.</p>
+    </div>
+
+if __name__ == "__main__":
+    app = FastAPI(title="Biscuit Example: Hello World")
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        return HelloWorld().render()
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)

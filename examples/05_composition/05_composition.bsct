@@ -1,0 +1,61 @@
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+# Define the User class for this example
+class User:
+    def __init__(self, name: str, avatar: str, bio: str):
+        self.name = name
+        self.avatar = avatar
+        self.bio = bio
+
+# Button component with proper type hints
+view Button(text: str, type: str = "primary", disabled: bool = False):
+    <button 
+        class=f"btn btn-{type}" 
+        disabled={disabled}>
+        {text}
+    </button>
+
+# Card component with slots parameter
+view Card(title: str):
+    <div class="card">
+        <div class="card-header">
+            <h3>{title}</h3>
+        </div>
+        <div class="card-body">
+            <slot name="default"/>
+        </div>
+        <div class="card-footer">
+            <Button text="Close" type="secondary" />
+            <Button text="Save" disabled={True} />
+        </div>
+    </div>
+
+# UserProfile component using nested views
+view UserProfile(user: User):
+    <Card title="User Profile">
+        <template slot="default">
+            <div class="profile-content">
+                <img src={user.avatar} alt="Profile Picture" height="100px"/>
+                <h2>{user.name}</h2>
+                <p>{user.bio}</p>
+            </div>
+        </template>
+    </Card>
+
+if __name__ == "__main__":
+    app = FastAPI(title="Biscuit Example 5: Composition")
+
+    user = User(
+        name="Jane Doe",
+        avatar="https://thispersondoesnotexist.com/",
+        bio="Full-stack developer with a passion for UI design."
+    )
+    
+    # Render the user profile
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        return UserProfile(user=user).render()
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)

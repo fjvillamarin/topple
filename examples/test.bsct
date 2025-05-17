@@ -1,0 +1,7 @@
+view Test():
+    for i in range(10):
+        # Print the div
+        <div>
+            <h1>Hello, World!</h1>
+        </div>
+        

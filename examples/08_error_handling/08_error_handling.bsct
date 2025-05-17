@@ -1,0 +1,100 @@
+from typing import Optional, Dict
+from datetime import datetime
+
+# Custom exceptions
+class UserNotFoundError(Exception):
+    """Raised when a user is not found in the database."""
+    pass
+
+class DatabaseError(Exception):
+    """Raised when there's an error communicating with the database."""
+    pass
+
+# User model
+class User:
+    def __init__(self, id: int, name: str, email: str, avatar: str, join_date: datetime):
+        self.id = id
+        self.name = name
+        self.email = email
+        self.avatar = avatar
+        self.join_date = join_date
+
+# Mock database for the example
+class MockDatabase:
+    def __init__(self, should_fail: bool = False, connection_error: bool = False):
+        self.users: Dict[int, User] = {
+            1: User(1, "John Doe", "john@example.com", "/images/john.jpg", 
+                    datetime(2022, 3, 15)),
+            2: User(2, "Jane Smith", "jane@example.com", "/images/jane.jpg", 
+                    datetime(2021, 11, 8))
+        }
+        self.should_fail = should_fail
+        self.connection_error = connection_error
+    
+    def get_user_by_id(self, user_id: int) -> User:
+        if self.should_fail:
+            if self.connection_error:
+                raise DatabaseError("Database connection timed out")
+            else:
+                raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        user = self.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User with ID {user_id} not found")
+        
+        return user
+
+# Mock logging function
+def log_profile_access_attempt(user_id: int) -> None:
+    print(f"[LOG] Profile access attempt for user ID: {user_id} at {datetime.now()}")
+
+# The view with error handling
+view UserProfile(user_id: int, db: MockDatabase):
+    try:
+        user = db.get_user_by_id(user_id)
+        
+        <div class="profile">
+            <h1>{user.name}</h1>
+            <img src="{user.avatar}" alt="Profile Picture" />
+            <div class="user-details">
+                <p>Email: {user.email}</p>
+                <p>Joined: {user.join_date.strftime('%B %d, %Y')}</p>
+            </div>
+        </div>
+        
+    except UserNotFoundError:
+        <div class="error-message">
+            <h2>User Not Found</h2>
+            <p>Sorry, the requested user profile could not be found.</p>
+            <a href="/users">Back to Users</a>
+        </div>
+        
+    except DatabaseError as e:
+        <div class="error-message">
+            <h2>System Error</h2>
+            <p>There was a problem retrieving this user: {str(e)}</p>
+            <p>Please try again later.</p>
+        </div>
+        
+    finally:
+        log_profile_access_attempt(user_id)
+
+# Example usage
+if __name__ == "__main__":
+    # Successful case
+    print("=== Successful Case ===")
+    db = MockDatabase()
+    profile = UserProfile(1, db)
+    print(profile)
+    
+    # User not found case
+    print("=== User Not Found Case ===")
+    db = MockDatabase(should_fail=True, connection_error=False)
+    not_found = UserProfile(999, db)
+    print(not_found)
+    
+    # Database error case
+    print("=== Database Error Case ===")
+    db = MockDatabase(should_fail=True, connection_error=True)
+    error = UserProfile(1, db)
+    print(error)

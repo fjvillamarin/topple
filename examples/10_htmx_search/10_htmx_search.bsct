@@ -1,0 +1,102 @@
+from fastapi import FastAPI, Depends
+from fastapi.responses import HTMLResponse
+from typing import List, Optional
+from pydantic import BaseModel
+import uvicorn
+
+# Product model
+class Product(BaseModel):
+    id: int
+    name: str
+    price: float
+    description: str
+
+# Mock database class
+class MockDatabase:
+    def __init__(self):
+        self.products = [
+            Product(id=1, name="Smartphone", price=599.99, description="Latest model with advanced features"),
+            Product(id=2, name="Laptop", price=1299.99, description="Powerful laptop for work and play"),
+            Product(id=3, name="Headphones", price=149.99, description="Noise-cancelling wireless headphones")
+        ]
+    
+    def search_products(self, query: str) -> List[Product]:
+        query = query.lower()
+        return [p for p in self.products if query in p.name.lower() or query in p.description.lower()]
+
+# Dependency to get the database
+def get_db():
+    return MockDatabase()
+
+# FastAPI app instance
+app = FastAPI()
+
+# Search interface component
+view SearchInterface():
+    <div>
+        <h2>Product Search</h2>
+        
+        <input 
+            type="search" 
+            name="q" 
+            placeholder="Search products..." 
+            hx-get="/search" 
+            hx-trigger="keyup changed delay:500ms, search" 
+            hx-target="#search-results" 
+            hx-indicator=".spinner" 
+        />
+        
+        <div class="spinner" style="display:none;">
+            {"Searching..."}
+        </div>
+        
+        <div id="search-results"></div>
+    </div>
+
+# HTMX endpoint for search results
+@app.get("/search", response_class=HTMLResponse)
+view SearchResults(q: Optional[str] = None, db = Depends(get_db)):
+    if not q or len(q) < 2:
+        <div>
+            <p>Type at least 2 characters to search</p>
+        </div>
+        return
+    
+    products = db.search_products(q)
+    
+    if not products:
+        <div>
+            <p>No results found for "{q}"</p>
+        </div>
+        return
+    
+    <div>
+        for product in products:
+            <div>
+                <h3>{product.name}</h3>
+                <p>${product.price}</p>
+                <button 
+                    hx-post="/add-to-cart/{product.id}" 
+                    hx-target="#cart-count" 
+                    hx-swap="innerHTML">
+                    {"Add to Cart"}
+                </button>
+            </div>
+    </div>
+
+# Homepage with the search interface
+@app.get("/", response_class=HTMLResponse)
+view HomePage():
+    <html>
+        <head>
+            <title>HTMX Search Example</title>
+            <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+        </head>
+        <body>
+            <SearchInterface />
+        </body>
+    </html>
+
+# Example usage
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

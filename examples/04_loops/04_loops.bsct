@@ -1,0 +1,45 @@
+from typing import List
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+class TodoItem:
+    def __init__(self, title: str, done: bool = False):
+        self.title = title
+        self.done = done
+
+view TodoList(items: List[TodoItem]):
+    <div class="todo-list">
+        <h1>Todo Items</h1>
+        
+        if not items:
+            <p>No items to display.</p>
+        else:
+            <ul>
+                for item in items:
+                    <li>
+                        if item.done:
+                            <s><span>{item.title}</span></s>
+                        else:
+                            <span>{item.title}</span>
+                    </li>
+            </ul>
+            
+        <p>Total: {len(items)} item(s)</p>
+    </div>
+
+# Example usage
+if __name__ == "__main__":
+    app = FastAPI(title="Biscuit Example 4: Loops")
+
+    todos = [
+        TodoItem("Learn Biscuit", True),
+        TodoItem("Build an app with Biscuit", False),
+        TodoItem("Share Biscuit with others", False)
+    ]
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        return TodoList(items=todos).render()
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)

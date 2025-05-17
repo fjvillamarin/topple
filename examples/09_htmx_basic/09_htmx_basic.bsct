@@ -1,0 +1,52 @@
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+
+# FastAPI app instance
+app = FastAPI(title="Biscuit Example: HTMX Counter")
+
+# Shared counter for all clients
+count = 0
+
+# Counter component
+view IncrementCounter(count: int = 0):
+    <div>
+        <div id="counter" hx-target="this" hx-swap="outerHTML">
+            <p class="count">Count: {count}</p>
+            <button 
+                hx-post="/increment" 
+                hx-trigger="click">
+                {"Increment"}
+            </button>
+        </div>
+    </div>
+
+# HTMX endpoint - this gets called when the button is clicked
+@app.post("/increment", response_class=HTMLResponse)
+def increment():
+    global count
+    count += 1
+
+    return IncrementCounter(count).render()
+
+# Homepage with basic HTML structure
+@app.get("/", response_class=HTMLResponse)
+view HomePage():
+    global count
+
+    <html>
+        <head>
+            <title>HTMX Shared Counter Example</title>
+            <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+        </head>
+        <body>
+            <h1>HTMX Shared Counter Example</h1>
+            <p>This counter is shared across all clients</p>
+
+            <IncrementCounter count={count}/>
+        </body>
+    </html>
+
+# For demonstration purposes only
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

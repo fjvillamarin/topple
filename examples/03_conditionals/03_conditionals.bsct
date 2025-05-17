@@ -1,0 +1,34 @@
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+class User:
+    def __init__(self, name: str, is_active: bool, is_admin: bool):
+        self.name = name
+        self.is_active = is_active
+        self.is_admin = is_admin
+view UserStatus(user: User):
+    <div class="user-card">
+        <h2>{user.name}</h2>
+        
+        if user.is_active:
+            <span class="status active">Active</span>
+        else:
+            <span class="status inactive">Inactive</span>
+            
+        if user.is_admin:
+            <div class="admin-badge">
+                <span>Administrator</span>
+            </div>
+    </div>
+
+if __name__ == "__main__":
+    app = FastAPI(title="Biscuit Example 3: Conditionals")
+
+    user = User(name="John Doe", is_active=True, is_admin=True)
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index():
+        return UserStatus(user=user).render()
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)
