@@ -1,7 +1,7 @@
 // token.go
 //
 // Tokens for a (CPython-3.12) Python scanner, suitable for the
-// “Crafting Interpreters” architecture but written in Go.
+// "Crafting Interpreters" architecture but written in Go.
 //
 // The scanner should emit INDENT / DEDENT *layout* tokens, NEWLINE
 // tokens at the ends of logical lines, and EOF when input is finished.
@@ -272,7 +272,7 @@ func (t Token) String() string {
 }
 
 func (t Token) Span() string {
-	return fmt.Sprintf("%s-%s", t.Start, t.End)
+	return fmt.Sprintf("%s-%s", t.StartPos, t.EndPos)
 }
 
 // Keywords maps the textual form of each keyword to its TokenType.

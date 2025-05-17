@@ -81,8 +81,8 @@ func (p *ASTPrinter) VisitName(node *Name) Visitor {
 	return p
 }
 
-// VisitConstant handles Constant nodes
-func (p *ASTPrinter) VisitConstant(node *Constant) Visitor {
+// VisitLiteral handles Literal nodes
+func (p *ASTPrinter) VisitLiteral(node *Literal) Visitor {
 	var typeStr string
 	switch node.Token.Type {
 	case String:
@@ -95,6 +95,89 @@ func (p *ASTPrinter) VisitConstant(node *Constant) Visitor {
 
 	p.printNodeStart(typeStr, node)
 	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.String()))
+	return p
+}
+
+// VisitAttribute handles Attribute nodes
+func (p *ASTPrinter) VisitAttribute(node *Attribute) Visitor {
+	p.printNodeStart("Attribute", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the object expression
+	if node.Object != nil {
+		p.result.WriteString(fmt.Sprintf("%sobject:\n", p.indent()))
+		p.indentLevel++
+		node.Object.Accept(p)
+		p.indentLevel--
+	}
+
+	// Display the attribute name
+	p.result.WriteString(fmt.Sprintf("%sattribute: %s\n", p.indent(), node.Name.Lexeme))
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitCall handles Call nodes
+func (p *ASTPrinter) VisitCall(node *Call) Visitor {
+	p.printNodeStart("Call", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the function expression
+	if node.Callee != nil {
+		p.result.WriteString(fmt.Sprintf("%sfunction:\n", p.indent()))
+		p.indentLevel++
+		node.Callee.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the arguments
+	if len(node.Arguments) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sarguments:\n", p.indent()))
+		p.indentLevel++
+		for i, arg := range node.Arguments {
+			if arg != nil {
+				p.result.WriteString(fmt.Sprintf("%sarg %d:\n", p.indent(), i))
+				p.indentLevel++
+				arg.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitSubscript handles Subscript nodes
+func (p *ASTPrinter) VisitSubscript(node *Subscript) Visitor {
+	p.printNodeStart("Subscript", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the object expression
+	if node.Object != nil {
+		p.result.WriteString(fmt.Sprintf("%sobject:\n", p.indent()))
+		p.indentLevel++
+		node.Object.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the index expression
+	if node.Index != nil {
+		p.result.WriteString(fmt.Sprintf("%sindex:\n", p.indent()))
+		p.indentLevel++
+		node.Index.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
 

@@ -11,7 +11,12 @@ type ScannerError struct {
 }
 
 func (e *ScannerError) Error() string {
-	return fmt.Sprintf("Error: %s at position %d:%d", e.Message, e.Line, e.Column)
+	return fmt.Sprintf("Error: %s at position %s", e.Message, e.Span())
+}
+
+// Span returns a string representation of the error's position.
+func (e *ScannerError) Span() string {
+	return fmt.Sprintf("L%d:%d", e.Line, e.Column)
 }
 
 // NewScannerError creates a new ScannerError.
@@ -28,9 +33,14 @@ type ParseError struct {
 // Error returns a string representation of the ParseError.
 func (e *ParseError) Error() string {
 	if e.Token.Type == EOF {
-		return fmt.Sprintf("at end: %s", e.Message)
+		return fmt.Sprintf("at end: %s (position %s)", e.Message, e.Span())
 	}
-	return fmt.Sprintf("at '%s': %s", e.Token.Lexeme, e.Message)
+	return fmt.Sprintf("at '%s': %s (position %s)", e.Token.Lexeme, e.Message, e.Span())
+}
+
+// Span returns the span of the token that caused the error.
+func (e *ParseError) Span() string {
+	return e.Token.Span()
 }
 
 // NewParseError creates a new ParseError.
@@ -47,6 +57,11 @@ type RuntimeError struct {
 // Error returns a string representation of the RuntimeError.
 func (e *RuntimeError) Error() string {
 	return fmt.Sprintf("Runtime error: %s at position %s", e.Message, e.Token.Span())
+}
+
+// Span returns the span of the token that caused the error.
+func (e *RuntimeError) Span() string {
+	return e.Token.Span()
 }
 
 // NewRuntimeError creates a new RuntimeError.
@@ -80,7 +95,12 @@ type ResolverError struct {
 }
 
 func (e *ResolverError) Error() string {
-	return fmt.Sprintf("Resolver error: %s at position %d:%d", e.Message, e.Line, e.Column)
+	return fmt.Sprintf("Resolver error: %s at position %s", e.Message, e.Span())
+}
+
+// Span returns a string representation of the error's position.
+func (e *ResolverError) Span() string {
+	return fmt.Sprintf("L%d:%d", e.Line, e.Column)
 }
 
 // NewResolverError creates a new ResolverError.

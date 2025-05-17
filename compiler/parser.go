@@ -90,7 +90,7 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 
 // expression parses an expression.
 func (p *Parser) expression() (Expr, error) {
-	atom, err := p.atom()
+	atom, err := p.primary()
 	if err != nil {
 		return nil, err
 	}
@@ -98,31 +98,111 @@ func (p *Parser) expression() (Expr, error) {
 	return atom, nil
 }
 
+// primary parses a primary expression.
+func (p *Parser) primary() (Expr, error) {
+	// Parse the initial atom
+	expr, err := p.atom()
+	if err != nil {
+		return nil, err
+	}
+
+	// Keep parsing postfix operations while they exist
+	for {
+		if p.match(Dot) {
+			// Handle attribute access: expr.NAME
+			name, err := p.consume(Identifier, "expected identifier after '.'")
+			if err != nil {
+				return nil, err
+			}
+			expr = NewAttribute(expr, name, expr.Start(), name.End())
+		} else if p.match(LeftParen) {
+			// Handle function call: expr(args)
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else if p.match(LeftBracket) {
+			// Handle subscript access: expr[index]
+			index, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+
+			right, err := p.consume(RightBracket, "expected ']' after index")
+			if err != nil {
+				return nil, err
+			}
+			expr = NewSubscript(expr, index, expr.Start(), right.End())
+		} else {
+			// No more postfix operations
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee Expr) (Expr, error) {
+	args := []Expr{}
+	if !p.check(RightParen) {
+		// Parse first argument
+		arg, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+
+		// Parse additional arguments
+		for p.match(Comma) {
+			// If there's a right parenthesis after the comma,
+			// it's a trailing comma, so we're done parsing arguments
+			if p.check(RightParen) {
+				break
+			}
+
+			arg, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+		}
+	}
+
+	right, err := p.consume(RightParen, "expected ')' after arguments")
+	if err != nil {
+		return nil, err
+	}
+
+	return NewCall(callee, args, callee.Start(), right.End()), nil
+}
+
 // atom parses an atom.
 func (p *Parser) atom() (Expr, error) {
 	if p.match(False) {
-		return NewConstant(p.previous(), false, p.previous().Start(), p.previous().End()), nil
+		return NewLiteral(p.previous(), false, p.previous().Start(), p.previous().End()), nil
 	}
 
 	if p.match(True) {
-		return NewConstant(p.previous(), true, p.previous().Start(), p.previous().End()), nil
+		return NewLiteral(p.previous(), true, p.previous().Start(), p.previous().End()), nil
 	}
 
 	if p.match(None) {
-		return NewConstant(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
+		return NewLiteral(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
 	}
 
 	if p.match(Number, String) {
-		return NewConstant(p.previous(), p.previous().Literal, p.previous().Start(), p.previous().End()), nil
+		return NewLiteral(p.previous(), p.previous().Literal, p.previous().Start(), p.previous().End()), nil
 	}
 
 	if p.match(Ellipsis) {
-		return NewConstant(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
+		return NewLiteral(p.previous(), nil, p.previous().Start(), p.previous().End()), nil
 	}
 
 	if p.match(Identifier) {
 		return NewName(p.previous(), p.previous().Start(), p.previous().End()), nil
 	}
+
+	// TODO: Support tuples, groups, lists, etc.
 
 	return nil, p.error(p.peek(), "unexpected token")
 }
