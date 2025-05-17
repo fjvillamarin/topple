@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"biscuit/internal/compiler"
+	"biscuit/compiler"
 	"biscuit/internal/filesystem"
 )
 

@@ -1,0 +1,20 @@
+=== 09_fstrings.py ===
+
+0: Identifier 45 "name" <nil> @ L1:1-L1:5
+1: Equal 20 "=" <nil> @ L1:6-L1:7
+2: String 46 "\"Biscuit\"" Biscuit @ L1:8-L1:17
+3: Newline 49 "\n" <nil> @ L1:17-L2:1
+4: Identifier 45 "count" <nil> @ L2:1-L2:6
+5: Equal 20 "=" <nil> @ L2:7-L2:8
+6: Number 47 "3" 3 @ L2:9-L2:10
+7: Newline 49 "\n" <nil> @ L2:10-L3:1
+8: Identifier 45 "msg" <nil> @ L3:1-L3:4
+9: Equal 20 "=" <nil> @ L3:5-L3:6
+10: Identifier 45 "f" <nil> @ L3:7-L3:8
+11: String 46 "\"{name:=^20} appears {count * 2 + 1} times\"" {name:=^20} appears {count * 2 + 1} times @ L3:8-L3:51
+12: Newline 49 "\n" <nil> @ L3:51-L4:1
+13: Identifier 45 "print" <nil> @ L4:1-L4:6
+14: LeftParen 0 "(" <nil> @ L4:6-L4:7
+15: Identifier 45 "msg" <nil> @ L4:7-L4:10
+16: RightParen 1 ")" <nil> @ L4:10-L4:11
+17: EOF 92 "" <nil> @ L4:12-L4:12

@@ -1,0 +1,29 @@
+=== 13_error_bad_indent.py ===
+
+0: Def 60 "def" <nil> @ L1:1-L1:4
+1: Identifier 45 "bad" <nil> @ L1:5-L1:8
+2: LeftParen 0 "(" <nil> @ L1:8-L1:9
+3: RightParen 1 ")" <nil> @ L1:9-L1:10
+4: Colon 7 ":" <nil> @ L1:10-L1:11
+5: Newline 49 "\n" <nil> @ L1:11-L2:1
+6: Indent 50 "\n    " <nil> @ L1:11-L2:5
+7: If 70 "if" <nil> @ L2:5-L2:7
+8: Identifier 45 "True" <nil> @ L2:8-L2:12
+9: Colon 7 ":" <nil> @ L2:12-L2:13
+10: Newline 49 "\n" <nil> @ L2:13-L3:1
+11: Indent 50 "\n        " <nil> @ L2:13-L3:9
+12: Identifier 45 "print" <nil> @ L3:9-L3:14
+13: LeftParen 0 "(" <nil> @ L3:14-L3:15
+14: String 46 "\"good indent\"" good indent @ L3:15-L3:28
+15: RightParen 1 ")" <nil> @ L3:28-L3:29
+16: Newline 49 "\n" <nil> @ L3:29-L4:1
+17: Dedent 51 "\n      " <nil> @ L3:29-L4:7
+18: Identifier 45 "print" <nil> @ L4:7-L4:12
+19: LeftParen 0 "(" <nil> @ L4:12-L4:13
+20: String 46 "\"bad indent\"" bad indent @ L4:13-L4:25
+21: RightParen 1 ")" <nil> @ L4:25-L4:26
+22: Dedent 51 "# inconsistent indentation (2 spaces) " <nil> @ L4:28-L4:66
+23: EOF 92 "" <nil> @ L4:66-L4:66
+
+-- Errors (1) --
+1: Error: inconsistent indentation at position 3:29

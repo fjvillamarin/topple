@@ -1,0 +1,100 @@
+=== 05_classes.py ===
+
+0: Class 58 "class" <nil> @ L1:1-L1:6
+1: Identifier 45 "Animal" <nil> @ L1:7-L1:13
+2: Colon 7 ":" <nil> @ L1:13-L1:14
+3: Newline 49 "\n" <nil> @ L1:14-L2:1
+4: Indent 50 "\n    " <nil> @ L1:14-L2:5
+5: Identifier 45 "kingdom" <nil> @ L2:5-L2:12
+6: Equal 20 "=" <nil> @ L2:13-L2:14
+7: String 46 "\"Animalia\"" Animalia @ L2:15-L2:25
+8: Newline 49 "\n" <nil> @ L2:25-L3:1
+9: Newline 49 "\n" <nil> @ L3:1-L4:1
+10: Def 60 "def" <nil> @ L4:5-L4:8
+11: Identifier 45 "__init__" <nil> @ L4:9-L4:17
+12: LeftParen 0 "(" <nil> @ L4:17-L4:18
+13: Identifier 45 "self" <nil> @ L4:18-L4:22
+14: Comma 6 "," <nil> @ L4:22-L4:23
+15: Identifier 45 "name" <nil> @ L4:24-L4:28
+16: Colon 7 ":" <nil> @ L4:28-L4:29
+17: Identifier 45 "str" <nil> @ L4:30-L4:33
+18: RightParen 1 ")" <nil> @ L4:33-L4:34
+19: Colon 7 ":" <nil> @ L4:34-L4:35
+20: Newline 49 "\n" <nil> @ L4:35-L5:1
+21: Indent 50 "\n        " <nil> @ L4:35-L5:9
+22: Identifier 45 "self" <nil> @ L5:9-L5:13
+23: Dot 8 "." <nil> @ L5:13-L5:14
+24: Identifier 45 "name" <nil> @ L5:14-L5:18
+25: Equal 20 "=" <nil> @ L5:19-L5:20
+26: Identifier 45 "name" <nil> @ L5:21-L5:25
+27: Newline 49 "\n" <nil> @ L5:25-L6:1
+28: Newline 49 "\n" <nil> @ L6:1-L7:1
+29: Dedent 51 "\n    " <nil> @ L6:1-L7:5
+30: Def 60 "def" <nil> @ L7:5-L7:8
+31: Identifier 45 "speak" <nil> @ L7:9-L7:14
+32: LeftParen 0 "(" <nil> @ L7:14-L7:15
+33: Identifier 45 "self" <nil> @ L7:15-L7:19
+34: RightParen 1 ")" <nil> @ L7:19-L7:20
+35: Arrow 29 "->" <nil> @ L7:21-L7:23
+36: Identifier 45 "str" <nil> @ L7:24-L7:27
+37: Colon 7 ":" <nil> @ L7:27-L7:28
+38: Newline 49 "\n" <nil> @ L7:28-L8:1
+39: Indent 50 "\n        " <nil> @ L7:28-L8:9
+40: Return 82 "return" <nil> @ L8:9-L8:15
+41: Identifier 45 "f" <nil> @ L8:16-L8:17
+42: String 46 "\"{self.name} makes a sound\"" {self.name} makes a sound @ L8:17-L8:44
+43: Newline 49 "\n" <nil> @ L8:44-L9:1
+44: Newline 49 "\n" <nil> @ L9:1-L10:1
+45: Newline 49 "\n" <nil> @ L10:1-L11:1
+46: Dedent 51 "\n" <nil> @ L10:1-L11:1
+47: Dedent 51 "\n" <nil> @ L10:1-L11:1
+48: Class 58 "class" <nil> @ L11:1-L11:6
+49: Identifier 45 "Dog" <nil> @ L11:7-L11:10
+50: LeftParen 0 "(" <nil> @ L11:10-L11:11
+51: Identifier 45 "Animal" <nil> @ L11:11-L11:17
+52: RightParen 1 ")" <nil> @ L11:17-L11:18
+53: Colon 7 ":" <nil> @ L11:18-L11:19
+54: Newline 49 "\n" <nil> @ L11:19-L12:1
+55: Indent 50 "\n    " <nil> @ L11:19-L12:5
+56: Def 60 "def" <nil> @ L12:5-L12:8
+57: Identifier 45 "speak" <nil> @ L12:9-L12:14
+58: LeftParen 0 "(" <nil> @ L12:14-L12:15
+59: Identifier 45 "self" <nil> @ L12:15-L12:19
+60: RightParen 1 ")" <nil> @ L12:19-L12:20
+61: Arrow 29 "->" <nil> @ L12:21-L12:23
+62: Identifier 45 "str" <nil> @ L12:24-L12:27
+63: Colon 7 ":" <nil> @ L12:27-L12:28
+64: Newline 49 "\n" <nil> @ L12:28-L13:1
+65: Indent 50 "\n        " <nil> @ L12:28-L13:9
+66: Return 82 "return" <nil> @ L13:9-L13:15
+67: Identifier 45 "f" <nil> @ L13:16-L13:17
+68: String 46 "\"{self.name} says woof!\"" {self.name} says woof! @ L13:17-L13:41
+69: Newline 49 "\n" <nil> @ L13:41-L14:1
+70: Newline 49 "\n" <nil> @ L14:1-L15:1
+71: Newline 49 "\n" <nil> @ L15:1-L16:1
+72: Dedent 51 "\n" <nil> @ L15:1-L16:1
+73: Dedent 51 "\n" <nil> @ L15:1-L16:1
+74: If 70 "if" <nil> @ L16:1-L16:3
+75: Identifier 45 "__name__" <nil> @ L16:4-L16:12
+76: EqualEqual 40 "==" <nil> @ L16:13-L16:15
+77: String 46 "\"__main__\"" __main__ @ L16:16-L16:26
+78: Colon 7 ":" <nil> @ L16:26-L16:27
+79: Newline 49 "\n" <nil> @ L16:27-L17:1
+80: Indent 50 "\n    " <nil> @ L16:27-L17:5
+81: Identifier 45 "dog" <nil> @ L17:5-L17:8
+82: Equal 20 "=" <nil> @ L17:9-L17:10
+83: Identifier 45 "Dog" <nil> @ L17:11-L17:14
+84: LeftParen 0 "(" <nil> @ L17:14-L17:15
+85: String 46 "\"Fido\"" Fido @ L17:15-L17:21
+86: RightParen 1 ")" <nil> @ L17:21-L17:22
+87: Newline 49 "\n" <nil> @ L17:22-L18:1
+88: Identifier 45 "print" <nil> @ L18:5-L18:10
+89: LeftParen 0 "(" <nil> @ L18:10-L18:11
+90: Identifier 45 "dog" <nil> @ L18:11-L18:14
+91: Dot 8 "." <nil> @ L18:14-L18:15
+92: Identifier 45 "speak" <nil> @ L18:15-L18:20
+93: LeftParen 0 "(" <nil> @ L18:20-L18:21
+94: RightParen 1 ")" <nil> @ L18:21-L18:22
+95: RightParen 1 ")" <nil> @ L18:22-L18:23
+96: Dedent 51 " " <nil> @ L18:23-L18:24
+97: EOF 92 "" <nil> @ L18:24-L18:24

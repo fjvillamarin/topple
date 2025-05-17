@@ -1,0 +1,114 @@
+=== 06_async.py ===
+
+0: Import 71 "import" <nil> @ L1:1-L1:7
+1: Identifier 45 "asyncio" <nil> @ L1:8-L1:15
+2: Newline 49 "\n" <nil> @ L1:15-L2:1
+3: Newline 49 "\n" <nil> @ L2:1-L3:1
+4: Newline 49 "\n" <nil> @ L3:1-L4:1
+5: Async 55 "async" <nil> @ L4:1-L4:6
+6: Def 60 "def" <nil> @ L4:7-L4:10
+7: Identifier 45 "fetch_data" <nil> @ L4:11-L4:21
+8: LeftParen 0 "(" <nil> @ L4:21-L4:22
+9: RightParen 1 ")" <nil> @ L4:22-L4:23
+10: Colon 7 ":" <nil> @ L4:23-L4:24
+11: Newline 49 "\n" <nil> @ L4:24-L5:1
+12: Indent 50 "\n    " <nil> @ L4:24-L5:5
+13: Await 56 "await" <nil> @ L5:5-L5:10
+14: Identifier 45 "asyncio" <nil> @ L5:11-L5:18
+15: Dot 8 "." <nil> @ L5:18-L5:19
+16: Identifier 45 "sleep" <nil> @ L5:19-L5:24
+17: LeftParen 0 "(" <nil> @ L5:24-L5:25
+18: Number 47 "0.1" 0.1 @ L5:25-L5:28
+19: RightParen 1 ")" <nil> @ L5:28-L5:29
+20: Newline 49 "\n" <nil> @ L5:29-L6:1
+21: Return 82 "return" <nil> @ L6:5-L6:11
+22: LeftBrace 4 "{" <nil> @ L6:12-L6:13
+23: String 46 "\"data\"" data @ L6:13-L6:19
+24: Colon 7 ":" <nil> @ L6:19-L6:20
+25: Number 47 "123" 123 @ L6:21-L6:24
+26: RightBrace 5 "}" <nil> @ L6:24-L6:25
+27: Newline 49 "\n" <nil> @ L6:25-L7:1
+28: Newline 49 "\n" <nil> @ L7:1-L8:1
+29: Newline 49 "\n" <nil> @ L8:1-L9:1
+30: Dedent 51 "\n" <nil> @ L8:1-L9:1
+31: Async 55 "async" <nil> @ L9:1-L9:6
+32: Def 60 "def" <nil> @ L9:7-L9:10
+33: Identifier 45 "async_generator" <nil> @ L9:11-L9:26
+34: LeftParen 0 "(" <nil> @ L9:26-L9:27
+35: RightParen 1 ")" <nil> @ L9:27-L9:28
+36: Colon 7 ":" <nil> @ L9:28-L9:29
+37: Newline 49 "\n" <nil> @ L9:29-L10:1
+38: Indent 50 "\n    " <nil> @ L9:29-L10:5
+39: For 67 "for" <nil> @ L10:5-L10:8
+40: Identifier 45 "i" <nil> @ L10:9-L10:10
+41: In 72 "in" <nil> @ L10:11-L10:13
+42: Identifier 45 "range" <nil> @ L10:14-L10:19
+43: LeftParen 0 "(" <nil> @ L10:19-L10:20
+44: Number 47 "3" 3 @ L10:20-L10:21
+45: RightParen 1 ")" <nil> @ L10:21-L10:22
+46: Colon 7 ":" <nil> @ L10:22-L10:23
+47: Newline 49 "\n" <nil> @ L10:23-L11:1
+48: Indent 50 "\n        " <nil> @ L10:23-L11:9
+49: Yield 87 "yield" <nil> @ L11:9-L11:14
+50: Identifier 45 "i" <nil> @ L11:15-L11:16
+51: Newline 49 "\n" <nil> @ L11:16-L12:1
+52: Newline 49 "\n" <nil> @ L12:1-L13:1
+53: Newline 49 "\n" <nil> @ L13:1-L14:1
+54: Dedent 51 "\n" <nil> @ L13:1-L14:1
+55: Dedent 51 "\n" <nil> @ L13:1-L14:1
+56: Async 55 "async" <nil> @ L14:1-L14:6
+57: Def 60 "def" <nil> @ L14:7-L14:10
+58: Identifier 45 "main" <nil> @ L14:11-L14:15
+59: LeftParen 0 "(" <nil> @ L14:15-L14:16
+60: RightParen 1 ")" <nil> @ L14:16-L14:17
+61: Colon 7 ":" <nil> @ L14:17-L14:18
+62: Newline 49 "\n" <nil> @ L14:18-L15:1
+63: Indent 50 "\n    " <nil> @ L14:18-L15:5
+64: Async 55 "async" <nil> @ L15:5-L15:10
+65: For 67 "for" <nil> @ L15:11-L15:14
+66: Identifier 45 "i" <nil> @ L15:15-L15:16
+67: In 72 "in" <nil> @ L15:17-L15:19
+68: Identifier 45 "async_generator" <nil> @ L15:20-L15:35
+69: LeftParen 0 "(" <nil> @ L15:35-L15:36
+70: RightParen 1 ")" <nil> @ L15:36-L15:37
+71: Colon 7 ":" <nil> @ L15:37-L15:38
+72: Newline 49 "\n" <nil> @ L15:38-L16:1
+73: Indent 50 "\n        " <nil> @ L15:38-L16:9
+74: Identifier 45 "print" <nil> @ L16:9-L16:14
+75: LeftParen 0 "(" <nil> @ L16:14-L16:15
+76: Identifier 45 "i" <nil> @ L16:15-L16:16
+77: RightParen 1 ")" <nil> @ L16:16-L16:17
+78: Newline 49 "\n" <nil> @ L16:17-L17:1
+79: Dedent 51 "\n    " <nil> @ L16:17-L17:5
+80: Identifier 45 "result" <nil> @ L17:5-L17:11
+81: Equal 20 "=" <nil> @ L17:12-L17:13
+82: Await 56 "await" <nil> @ L17:14-L17:19
+83: Identifier 45 "fetch_data" <nil> @ L17:20-L17:30
+84: LeftParen 0 "(" <nil> @ L17:30-L17:31
+85: RightParen 1 ")" <nil> @ L17:31-L17:32
+86: Newline 49 "\n" <nil> @ L17:32-L18:1
+87: Identifier 45 "print" <nil> @ L18:5-L18:10
+88: LeftParen 0 "(" <nil> @ L18:10-L18:11
+89: Identifier 45 "result" <nil> @ L18:11-L18:17
+90: RightParen 1 ")" <nil> @ L18:17-L18:18
+91: Newline 49 "\n" <nil> @ L18:18-L19:1
+92: Newline 49 "\n" <nil> @ L19:1-L20:1
+93: Newline 49 "\n" <nil> @ L20:1-L21:1
+94: Dedent 51 "\n" <nil> @ L20:1-L21:1
+95: If 70 "if" <nil> @ L21:1-L21:3
+96: Identifier 45 "__name__" <nil> @ L21:4-L21:12
+97: EqualEqual 40 "==" <nil> @ L21:13-L21:15
+98: String 46 "\"__main__\"" __main__ @ L21:16-L21:26
+99: Colon 7 ":" <nil> @ L21:26-L21:27
+100: Newline 49 "\n" <nil> @ L21:27-L22:1
+101: Indent 50 "\n    " <nil> @ L21:27-L22:5
+102: Identifier 45 "asyncio" <nil> @ L22:5-L22:12
+103: Dot 8 "." <nil> @ L22:12-L22:13
+104: Identifier 45 "run" <nil> @ L22:13-L22:16
+105: LeftParen 0 "(" <nil> @ L22:16-L22:17
+106: Identifier 45 "main" <nil> @ L22:17-L22:21
+107: LeftParen 0 "(" <nil> @ L22:21-L22:22
+108: RightParen 1 ")" <nil> @ L22:22-L22:23
+109: RightParen 1 ")" <nil> @ L22:23-L22:24
+110: Dedent 51 " " <nil> @ L22:24-L22:25
+111: EOF 92 "" <nil> @ L22:25-L22:25

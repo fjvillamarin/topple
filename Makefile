@@ -8,9 +8,9 @@ run:
 watch:
 	go run ./cmd/... watch examples/ -d
 
-.PHONY: tests
-test:
-	go test -v ./...
+.PHONY: scan
+scan:
+	go run ./cmd/... scan examples/python/ -d -w -r
 
 build:
 	go build -ldflags="-X 'main.Version=$(VERSION)'" -o bin/biscuit ./cmd/...

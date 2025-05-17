@@ -1,0 +1,124 @@
+=== 07_match.py ===
+
+0: Def 60 "def" <nil> @ L1:1-L1:4
+1: Identifier 45 "classify" <nil> @ L1:5-L1:13
+2: LeftParen 0 "(" <nil> @ L1:13-L1:14
+3: Identifier 45 "val" <nil> @ L1:14-L1:17
+4: RightParen 1 ")" <nil> @ L1:17-L1:18
+5: Colon 7 ":" <nil> @ L1:18-L1:19
+6: Newline 49 "\n" <nil> @ L1:19-L2:1
+7: Indent 50 "\n    " <nil> @ L1:19-L2:5
+8: Match 75 "match" <nil> @ L2:5-L2:10
+9: Identifier 45 "val" <nil> @ L2:11-L2:14
+10: Colon 7 ":" <nil> @ L2:14-L2:15
+11: Newline 49 "\n" <nil> @ L2:15-L3:1
+12: Indent 50 "\n        " <nil> @ L2:15-L3:9
+13: Case 88 "case" <nil> @ L3:9-L3:13
+14: Number 47 "0" 0 @ L3:14-L3:15
+15: Colon 7 ":" <nil> @ L3:15-L3:16
+16: Newline 49 "\n" <nil> @ L3:16-L4:1
+17: Indent 50 "\n            " <nil> @ L3:16-L4:13
+18: Return 82 "return" <nil> @ L4:13-L4:19
+19: String 46 "\"zero\"" zero @ L4:20-L4:26
+20: Newline 49 "\n" <nil> @ L4:26-L5:1
+21: Dedent 51 "\n        " <nil> @ L4:26-L5:9
+22: Case 88 "case" <nil> @ L5:9-L5:13
+23: Number 47 "1" 1 @ L5:14-L5:15
+24: Pipe 15 "|" <nil> @ L5:16-L5:17
+25: Number 47 "2" 2 @ L5:18-L5:19
+26: Pipe 15 "|" <nil> @ L5:20-L5:21
+27: Number 47 "3" 3 @ L5:22-L5:23
+28: Colon 7 ":" <nil> @ L5:23-L5:24
+29: Newline 49 "\n" <nil> @ L5:24-L6:1
+30: Indent 50 "\n            " <nil> @ L5:24-L6:13
+31: Return 82 "return" <nil> @ L6:13-L6:19
+32: String 46 "\"small\"" small @ L6:20-L6:27
+33: Newline 49 "\n" <nil> @ L6:27-L7:1
+34: Dedent 51 "\n        " <nil> @ L6:27-L7:9
+35: Case 88 "case" <nil> @ L7:9-L7:13
+36: LeftBracket 2 "[" <nil> @ L7:14-L7:15
+37: Identifier 45 "x" <nil> @ L7:15-L7:16
+38: Comma 6 "," <nil> @ L7:16-L7:17
+39: Identifier 45 "y" <nil> @ L7:18-L7:19
+40: RightBracket 3 "]" <nil> @ L7:19-L7:20
+41: Colon 7 ":" <nil> @ L7:20-L7:21
+42: Newline 49 "\n" <nil> @ L7:21-L8:1
+43: Indent 50 "\n            " <nil> @ L7:21-L8:13
+44: Return 82 "return" <nil> @ L8:13-L8:19
+45: Identifier 45 "f" <nil> @ L8:20-L8:21
+46: String 46 "\"pair {x} {y}\"" pair {x} {y} @ L8:21-L8:35
+47: Newline 49 "\n" <nil> @ L8:35-L9:1
+48: Dedent 51 "\n        " <nil> @ L8:35-L9:9
+49: Case 88 "case" <nil> @ L9:9-L9:13
+50: LeftBrace 4 "{" <nil> @ L9:14-L9:15
+51: String 46 "\"key\"" key @ L9:15-L9:20
+52: Colon 7 ":" <nil> @ L9:20-L9:21
+53: Identifier 45 "value" <nil> @ L9:22-L9:27
+54: RightBrace 5 "}" <nil> @ L9:27-L9:28
+55: Colon 7 ":" <nil> @ L9:28-L9:29
+56: Newline 49 "\n" <nil> @ L9:29-L10:1
+57: Indent 50 "\n            " <nil> @ L9:29-L10:13
+58: Return 82 "return" <nil> @ L10:13-L10:19
+59: Identifier 45 "f" <nil> @ L10:20-L10:21
+60: String 46 "\"dict with key={value}\"" dict with key={value} @ L10:21-L10:44
+61: Newline 49 "\n" <nil> @ L10:44-L11:1
+62: Dedent 51 "\n        " <nil> @ L10:44-L11:9
+63: Case 88 "case" <nil> @ L11:9-L11:13
+64: Identifier 45 "_" <nil> @ L11:14-L11:15
+65: Colon 7 ":" <nil> @ L11:15-L11:16
+66: Newline 49 "\n" <nil> @ L11:16-L12:1
+67: Indent 50 "\n            " <nil> @ L11:16-L12:13
+68: Return 82 "return" <nil> @ L12:13-L12:19
+69: String 46 "\"something else\"" something else @ L12:20-L12:36
+70: Newline 49 "\n" <nil> @ L12:36-L13:1
+71: Newline 49 "\n" <nil> @ L13:1-L14:1
+72: Newline 49 "\n" <nil> @ L14:1-L15:1
+73: Dedent 51 "\n" <nil> @ L14:1-L15:1
+74: Dedent 51 "\n" <nil> @ L14:1-L15:1
+75: Dedent 51 "\n" <nil> @ L14:1-L15:1
+76: If 70 "if" <nil> @ L15:1-L15:3
+77: Identifier 45 "__name__" <nil> @ L15:4-L15:12
+78: EqualEqual 40 "==" <nil> @ L15:13-L15:15
+79: String 46 "\"__main__\"" __main__ @ L15:16-L15:26
+80: Colon 7 ":" <nil> @ L15:26-L15:27
+81: Newline 49 "\n" <nil> @ L15:27-L16:1
+82: Indent 50 "\n    " <nil> @ L15:27-L16:5
+83: Identifier 45 "samples" <nil> @ L16:5-L16:12
+84: Equal 20 "=" <nil> @ L16:13-L16:14
+85: LeftBracket 2 "[" <nil> @ L16:15-L16:16
+86: Number 47 "0" 0 @ L16:16-L16:17
+87: Comma 6 "," <nil> @ L16:17-L16:18
+88: Number 47 "2" 2 @ L16:19-L16:20
+89: Comma 6 "," <nil> @ L16:20-L16:21
+90: LeftBracket 2 "[" <nil> @ L16:22-L16:23
+91: Number 47 "10" 10 @ L16:23-L16:25
+92: Comma 6 "," <nil> @ L16:25-L16:26
+93: Number 47 "20" 20 @ L16:27-L16:29
+94: RightBracket 3 "]" <nil> @ L16:29-L16:30
+95: Comma 6 "," <nil> @ L16:30-L16:31
+96: LeftBrace 4 "{" <nil> @ L16:32-L16:33
+97: String 46 "\"key\"" key @ L16:33-L16:38
+98: Colon 7 ":" <nil> @ L16:38-L16:39
+99: Number 47 "99" 99 @ L16:40-L16:42
+100: RightBrace 5 "}" <nil> @ L16:42-L16:43
+101: Comma 6 "," <nil> @ L16:43-L16:44
+102: Identifier 45 "None" <nil> @ L16:45-L16:49
+103: RightBracket 3 "]" <nil> @ L16:49-L16:50
+104: Newline 49 "\n" <nil> @ L16:50-L17:1
+105: For 67 "for" <nil> @ L17:5-L17:8
+106: Identifier 45 "s" <nil> @ L17:9-L17:10
+107: In 72 "in" <nil> @ L17:11-L17:13
+108: Identifier 45 "samples" <nil> @ L17:14-L17:21
+109: Colon 7 ":" <nil> @ L17:21-L17:22
+110: Newline 49 "\n" <nil> @ L17:22-L18:1
+111: Indent 50 "\n        " <nil> @ L17:22-L18:9
+112: Identifier 45 "print" <nil> @ L18:9-L18:14
+113: LeftParen 0 "(" <nil> @ L18:14-L18:15
+114: Identifier 45 "classify" <nil> @ L18:15-L18:23
+115: LeftParen 0 "(" <nil> @ L18:23-L18:24
+116: Identifier 45 "s" <nil> @ L18:24-L18:25
+117: RightParen 1 ")" <nil> @ L18:25-L18:26
+118: RightParen 1 ")" <nil> @ L18:26-L18:27
+119: Dedent 51 " " <nil> @ L18:27-L18:28
+120: Dedent 51 " " <nil> @ L18:27-L18:28
+121: EOF 92 "" <nil> @ L18:28-L18:28

@@ -36,6 +36,7 @@ type CLI struct {
 	// Commands
 	Compile CompileCmd `cmd:"" help:"Compile Biscuit files to Python"`
 	Watch   WatchCmd   `cmd:"" help:"Watch for changes and compile on the fly"`
+	Scan    ScanCmd    `cmd:"" help:"Run the scanner and show/output tokens"`
 }
 
 func main() {
