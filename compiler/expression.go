@@ -13,6 +13,9 @@ type ExprVisitor interface {
 	VisitSubscript(s *Subscript) Visitor
 	VisitBinary(b *Binary) Visitor
 	VisitUnary(u *Unary) Visitor
+	VisitAssignExpr(a *AssignExpr) Visitor
+	VisitStarExpr(s *StarExpr) Visitor
+	VisitTernaryExpr(t *TernaryExpr) Visitor
 }
 
 // Name represents an identifier expression.
@@ -216,4 +219,91 @@ func (u *Unary) String() string {
 // Accept calls the VisitUnary method on the visitor
 func (u *Unary) Accept(visitor Visitor) {
 	visitor.VisitUnary(u)
+}
+
+// AssignExpr represents an assignment expression (left = right)
+type AssignExpr struct {
+	BaseNode
+	Left  Expr
+	Right Expr
+}
+
+func NewAssignExpr(left Expr, right Expr, startPos Position, endPos Position) *AssignExpr {
+	return &AssignExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Left:  left,
+		Right: right,
+	}
+}
+
+func (a *AssignExpr) isExpr() {}
+
+func (a *AssignExpr) String() string {
+	return fmt.Sprintf("%v = %v", a.Left, a.Right)
+}
+
+// Accept calls the VisitAssignExpr method on the visitor
+func (a *AssignExpr) Accept(visitor Visitor) {
+	visitor.VisitAssignExpr(a)
+}
+
+// StarExpr represents a star expression (*expr)
+type StarExpr struct {
+	BaseNode
+	Expr Expr
+}
+
+func NewStarExpr(expr Expr, startPos Position, endPos Position) *StarExpr {
+	return &StarExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Expr: expr,
+	}
+}
+
+func (s *StarExpr) isExpr() {}
+
+func (s *StarExpr) String() string {
+	return fmt.Sprintf("*%v", s.Expr)
+}
+
+// Accept calls the VisitStarExpr method on the visitor
+func (s *StarExpr) Accept(visitor Visitor) {
+	visitor.VisitStarExpr(s)
+}
+
+// TernaryExpr represents a ternary expression (if condition then true else false)
+type TernaryExpr struct {
+	BaseNode
+	Condition Expr
+	TrueExpr  Expr
+	FalseExpr Expr
+}
+
+func NewTernaryExpr(condition Expr, trueExpr Expr, falseExpr Expr, startPos Position, endPos Position) *TernaryExpr {
+	return &TernaryExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Condition: condition,
+		TrueExpr:  trueExpr,
+		FalseExpr: falseExpr,
+	}
+}
+
+func (t *TernaryExpr) isExpr() {}
+
+func (t *TernaryExpr) String() string {
+	return fmt.Sprintf("%v ? %v : %v", t.Condition, t.TrueExpr, t.FalseExpr)
+}
+
+// Accept calls the VisitTernaryExpr method on the visitor
+func (t *TernaryExpr) Accept(visitor Visitor) {
+	visitor.VisitTernaryExpr(t)
 }

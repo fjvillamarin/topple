@@ -90,7 +90,28 @@ func (p *Parser) expressionStatement() (Stmt, error) {
 
 // expression parses an expression.
 func (p *Parser) expression() (Expr, error) {
-	return p.disjunction()
+	expr, err := p.disjunction()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(If) {
+		condition, err := p.disjunction()
+		if err != nil {
+			return nil, err
+		}
+		_, err = p.consume(Else, "expected 'else' after condition")
+		if err != nil {
+			return nil, err
+		}
+		elseExpr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		return NewTernaryExpr(condition, expr, elseExpr, expr.Start(), elseExpr.End()), nil
+	}
+
+	return expr, nil
 }
 
 // disjunction parses a disjunction expression.

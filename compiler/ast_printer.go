@@ -243,3 +243,84 @@ func (p *ASTPrinter) Print(node Node) string {
 
 	return p.result.String()
 }
+
+// VisitAssignExpr handles AssignExpr nodes
+func (p *ASTPrinter) VisitAssignExpr(node *AssignExpr) Visitor {
+	p.printNodeStart("AssignExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the left expression
+	if node.Left != nil {
+		p.result.WriteString(fmt.Sprintf("%sleft:\n", p.indent()))
+		p.indentLevel++
+		node.Left.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the right expression
+	if node.Right != nil {
+		p.result.WriteString(fmt.Sprintf("%sright:\n", p.indent()))
+		p.indentLevel++
+		node.Right.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitStarExpr handles StarExpr nodes
+func (p *ASTPrinter) VisitStarExpr(node *StarExpr) Visitor {
+	p.printNodeStart("StarExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the expression
+	if node.Expr != nil {
+		p.result.WriteString(fmt.Sprintf("%sexpr:\n", p.indent()))
+		p.indentLevel++
+		node.Expr.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitTernaryExpr handles TernaryExpr nodes
+func (p *ASTPrinter) VisitTernaryExpr(node *TernaryExpr) Visitor {
+	p.printNodeStart("TernaryExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the condition expression
+	if node.Condition != nil {
+		p.result.WriteString(fmt.Sprintf("%scondition:\n", p.indent()))
+		p.indentLevel++
+		node.Condition.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the true expression
+	if node.TrueExpr != nil {
+		p.result.WriteString(fmt.Sprintf("%strue:\n", p.indent()))
+		p.indentLevel++
+		node.TrueExpr.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the false expression
+	if node.FalseExpr != nil {
+		p.result.WriteString(fmt.Sprintf("%sfalse:\n", p.indent()))
+		p.indentLevel++
+		node.FalseExpr.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
