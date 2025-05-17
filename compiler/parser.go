@@ -478,9 +478,362 @@ func (p *Parser) atom() (Expr, error) {
 		return NewName(p.previous(), p.previous().Start(), p.previous().End()), nil
 	}
 
-	// TODO: Support tuples, groups, lists, etc.
+	if p.check(LeftParen) {
+		// This could be either a tuple or a group (parenthesized expression)
+		return p.tuple()
+	}
+
+	if p.check(LeftBracket) {
+		// List literal
+		return p.list()
+	}
+
+	if p.check(LeftBrace) {
+		// Set literal
+		return p.set()
+	}
+
+	if p.check(Yield) {
+		// Yield expression
+		return p.yieldExpression()
+	}
 
 	return nil, p.error(p.peek(), "unexpected token")
+}
+
+func (p *Parser) list() (Expr, error) {
+	// Expect opening bracket
+	leftBracket, err := p.consume(LeftBracket, "expected '['")
+	if err != nil {
+		return nil, err
+	}
+
+	elements := []Expr{}
+
+	// Parse elements if the list is not empty
+	if !p.check(RightBracket) {
+		// Parse star named expressions
+		expr, err := p.starNamedExpression()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, expr)
+
+		// Parse additional elements separated by commas
+		for p.match(Comma) {
+			// Allow trailing comma
+			if p.check(RightBracket) {
+				break
+			}
+
+			expr, err := p.starNamedExpression()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, expr)
+		}
+	}
+
+	// Expect closing bracket
+	rightBracket, err := p.consume(RightBracket, "expected ']'")
+	if err != nil {
+		return nil, err
+	}
+
+	return NewListExpr(elements, leftBracket.Start(), rightBracket.End()), nil
+}
+
+func (p *Parser) tuple() (Expr, error) {
+	// Expect opening parenthesis
+	leftParen, err := p.consume(LeftParen, "expected '('")
+	if err != nil {
+		return nil, err
+	}
+
+	// Empty tuple
+	if p.check(RightParen) {
+		rightParen, err := p.consume(RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return NewTupleExpr([]Expr{}, leftParen.Start(), rightParen.End()), nil
+	}
+
+	// Parse the first expression (could be a star expression or named expression)
+	expr, err := p.starNamedExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	// If the next token is 'yield', it's a group
+	if p.checkNext(Yield) {
+		expr, err := p.yieldExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		rightParen, err := p.consume(RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return NewGroupExpr(expr, leftParen.Start(), rightParen.End()), nil
+	}
+
+	// If there's a comma, it's a tuple
+	if p.match(Comma) {
+		elements := []Expr{expr}
+
+		// Parse additional elements if present
+		if !p.check(RightParen) {
+			for {
+				nextExpr, err := p.starNamedExpression()
+				if err != nil {
+					return nil, err
+				}
+				elements = append(elements, nextExpr)
+
+				if !p.match(Comma) {
+					break
+				}
+
+				// Allow trailing comma
+				if p.check(RightParen) {
+					break
+				}
+			}
+		}
+
+		rightParen, err := p.consume(RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return NewTupleExpr(elements, leftParen.Start(), rightParen.End()), nil
+	} else {
+		// No comma, so it's a group
+		// Groups can only contain named expressions, not star expressions
+		_, isStarExpr := expr.(*StarExpr)
+		if isStarExpr {
+			return nil, p.error(p.previous(), "starred expression cannot appear in a group")
+		}
+
+		rightParen, err := p.consume(RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return NewGroupExpr(expr, leftParen.Start(), rightParen.End()), nil
+	}
+}
+
+func (p *Parser) set() (Expr, error) {
+	// Expect opening brace
+	leftBrace, err := p.consume(LeftBrace, "expected '{'")
+	if err != nil {
+		return nil, err
+	}
+
+	elements := []Expr{}
+
+	// Parse elements
+	// First element
+	expr, err := p.starNamedExpression()
+	if err != nil {
+		return nil, err
+	}
+	elements = append(elements, expr)
+
+	// Parse additional elements separated by commas
+	for p.match(Comma) {
+		// Allow trailing comma
+		if p.check(RightBrace) {
+			break
+		}
+
+		expr, err := p.starNamedExpression()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, expr)
+	}
+
+	// Expect closing brace
+	rightBrace, err := p.consume(RightBrace, "expected '}'")
+	if err != nil {
+		return nil, err
+	}
+
+	return NewSetExpr(elements, leftBrace.Start(), rightBrace.End()), nil
+}
+
+func (p *Parser) yieldExpression() (Expr, error) {
+	// Expect 'yield' keyword
+	yieldToken, err := p.consume(Yield, "expected 'yield'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for 'yield from' form
+	isFrom := false
+	if p.match(From) {
+		isFrom = true
+		// Parse the expression after 'yield from'
+		expr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		return NewYieldExpr(isFrom, expr, yieldToken.Start(), expr.End()), nil
+	}
+
+	// Check if there's an expression after 'yield'
+	if p.isAtEnd() || p.check(Newline) || p.check(Semicolon) || p.check(RightParen) || p.check(Comma) {
+		// No expression, yield on its own
+		return NewYieldExpr(false, nil, yieldToken.Start(), yieldToken.End()), nil
+	}
+
+	// Parse star expressions after 'yield'
+	expr, err := p.starExpressions()
+	if err != nil {
+		return nil, err
+	}
+	return NewYieldExpr(false, expr, yieldToken.Start(), expr.End()), nil
+}
+
+func (p *Parser) starExpressions() (Expr, error) {
+	// Parse the first star expression
+	expr, err := p.starExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	// If there's no comma, return the expression as is
+	if !p.match(Comma) {
+		return expr, nil
+	}
+
+	// We have a comma, so this is a tuple of expressions
+	elements := []Expr{expr}
+
+	// Allow trailing comma with no following expression
+	if !p.check(Newline) && !p.check(RightParen) && !p.check(RightBracket) && !p.check(RightBrace) && !p.check(Semicolon) && !p.isAtEnd() {
+		// Parse subsequent expressions
+		for {
+			expr, err := p.starExpression()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, expr)
+
+			if !p.match(Comma) {
+				break
+			}
+
+			// Allow trailing comma
+			if p.check(Newline) || p.check(RightParen) || p.check(RightBracket) || p.check(RightBrace) || p.check(Semicolon) || p.isAtEnd() {
+				break
+			}
+		}
+	}
+
+	// Create a tuple with the collected expressions
+	return NewTupleExpr(elements, elements[0].Start(), elements[len(elements)-1].End()), nil
+}
+
+func (p *Parser) group() (Expr, error) {
+	// Expect opening parenthesis
+	leftParen, err := p.consume(LeftParen, "expected '('")
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for yield expression
+	if p.check(Yield) {
+		expr, err := p.yieldExpression()
+		if err != nil {
+			return nil, err
+		}
+
+		// Expect closing parenthesis
+		rightParen, err := p.consume(RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewGroupExpr(expr, leftParen.Start(), rightParen.End()), nil
+	}
+
+	// Parse named expression
+	expr, err := p.namedExpression()
+	if err != nil {
+		return nil, err
+	}
+
+	// Expect closing parenthesis
+	rightParen, err := p.consume(RightParen, "expected ')'")
+	if err != nil {
+		return nil, err
+	}
+
+	return NewGroupExpr(expr, leftParen.Start(), rightParen.End()), nil
+}
+
+func (p *Parser) starExpression() (Expr, error) {
+	if p.match(Star) {
+		// This is a starred expression like *args
+		star := p.previous()
+		expr, err := p.bitwiseOr() // According to the grammar, star expressions use bitwise_or
+		if err != nil {
+			return nil, err
+		}
+
+		return NewStarExpr(expr, star.Start(), expr.End()), nil
+	}
+
+	// Not a star expression, parse as a regular expression
+	return p.expression()
+}
+
+func (p *Parser) namedExpression() (Expr, error) {
+	// Handle assignment expressions first (the walrus operator)
+	if p.check(Identifier) && p.checkNext(Walrus) {
+		name, err := p.consume(Identifier, "expected identifier") // Consume the identifier
+		if err != nil {
+			return nil, err
+		}
+		_, err = p.consume(Walrus, "expected ':=' after identifier") // Consume the ':=' operator
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewAssignExpr(
+			NewName(name, name.Start(), name.End()),
+			value,
+			name.Start(),
+			value.End(),
+		), nil
+	}
+
+	// If not an assignment expression, parse a regular expression
+	return p.expression()
+}
+
+func (p *Parser) starNamedExpression() (Expr, error) {
+	if p.match(Star) {
+		// This is a starred expression like *args
+		star := p.previous()
+		expr, err := p.bitwiseOr() // According to the grammar, star expressions use bitwise_or
+		if err != nil {
+			return nil, err
+		}
+
+		return NewStarExpr(expr, star.Start(), expr.End()), nil
+	}
+
+	// Not a star expression, parse as a regular expression
+	return p.namedExpression()
 }
 
 // ----------------------------------------------------------------------------
@@ -517,6 +870,13 @@ func (p *Parser) check(t TokenType) bool {
 	return p.peek().Type == t
 }
 
+func (p *Parser) checkNext(t TokenType) bool {
+	if p.isAtEnd() {
+		return false
+	}
+	return p.peekN(1).Type == t
+}
+
 func (p *Parser) advance() Token {
 	if !p.isAtEnd() {
 		p.Current++
@@ -530,6 +890,10 @@ func (p *Parser) isAtEnd() bool {
 
 func (p *Parser) peek() Token {
 	return p.Tokens[p.Current]
+}
+
+func (p *Parser) peekN(n int) Token {
+	return p.Tokens[p.Current+n]
 }
 
 func (p *Parser) previous() Token {

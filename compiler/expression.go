@@ -16,6 +16,11 @@ type ExprVisitor interface {
 	VisitAssignExpr(a *AssignExpr) Visitor
 	VisitStarExpr(s *StarExpr) Visitor
 	VisitTernaryExpr(t *TernaryExpr) Visitor
+	VisitListExpr(l *ListExpr) Visitor
+	VisitTupleExpr(t *TupleExpr) Visitor
+	VisitSetExpr(s *SetExpr) Visitor
+	VisitYieldExpr(y *YieldExpr) Visitor
+	VisitGroupExpr(g *GroupExpr) Visitor
 }
 
 // Name represents an identifier expression.
@@ -306,4 +311,144 @@ func (t *TernaryExpr) String() string {
 // Accept calls the VisitTernaryExpr method on the visitor
 func (t *TernaryExpr) Accept(visitor Visitor) {
 	visitor.VisitTernaryExpr(t)
+}
+
+// ListExpr represents a list expression [items]
+type ListExpr struct {
+	BaseNode
+	Elements []Expr
+}
+
+func NewListExpr(elements []Expr, startPos Position, endPos Position) *ListExpr {
+	return &ListExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Elements: elements,
+	}
+}
+
+func (l *ListExpr) isExpr() {}
+
+func (l *ListExpr) String() string {
+	return fmt.Sprintf("[...]")
+}
+
+// Accept calls the VisitListExpr method on the visitor
+func (l *ListExpr) Accept(visitor Visitor) {
+	visitor.VisitListExpr(l)
+}
+
+// TupleExpr represents a tuple expression (items)
+type TupleExpr struct {
+	BaseNode
+	Elements []Expr
+}
+
+func NewTupleExpr(elements []Expr, startPos Position, endPos Position) *TupleExpr {
+	return &TupleExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Elements: elements,
+	}
+}
+
+func (t *TupleExpr) isExpr() {}
+
+func (t *TupleExpr) String() string {
+	return fmt.Sprintf("(...)")
+}
+
+// Accept calls the VisitTupleExpr method on the visitor
+func (t *TupleExpr) Accept(visitor Visitor) {
+	visitor.VisitTupleExpr(t)
+}
+
+// SetExpr represents a set expression {items}
+type SetExpr struct {
+	BaseNode
+	Elements []Expr
+}
+
+func NewSetExpr(elements []Expr, startPos Position, endPos Position) *SetExpr {
+	return &SetExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Elements: elements,
+	}
+}
+
+func (s *SetExpr) isExpr() {}
+
+func (s *SetExpr) String() string {
+	return fmt.Sprintf("{...}")
+}
+
+// Accept calls the VisitSetExpr method on the visitor
+func (s *SetExpr) Accept(visitor Visitor) {
+	visitor.VisitSetExpr(s)
+}
+
+// YieldExpr represents a yield expression (yield value)
+type YieldExpr struct {
+	BaseNode
+	IsFrom bool
+	Value  Expr
+}
+
+func NewYieldExpr(isFrom bool, value Expr, startPos Position, endPos Position) *YieldExpr {
+	return &YieldExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		IsFrom: isFrom,
+		Value:  value,
+	}
+}
+
+func (y *YieldExpr) isExpr() {}
+
+func (y *YieldExpr) String() string {
+	if y.IsFrom {
+		return fmt.Sprintf("yield from %v", y.Value)
+	}
+	return fmt.Sprintf("yield %v", y.Value)
+}
+
+// Accept calls the VisitYieldExpr method on the visitor
+func (y *YieldExpr) Accept(visitor Visitor) {
+	visitor.VisitYieldExpr(y)
+}
+
+// GroupExpr represents a parenthesized expression (expr)
+type GroupExpr struct {
+	BaseNode
+	Expression Expr
+}
+
+func NewGroupExpr(expression Expr, startPos Position, endPos Position) *GroupExpr {
+	return &GroupExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Expression: expression,
+	}
+}
+
+func (g *GroupExpr) isExpr() {}
+
+func (g *GroupExpr) String() string {
+	return fmt.Sprintf("(%v)", g.Expression)
+}
+
+// Accept calls the VisitGroupExpr method on the visitor
+func (g *GroupExpr) Accept(visitor Visitor) {
+	visitor.VisitGroupExpr(g)
 }

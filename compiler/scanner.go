@@ -240,7 +240,11 @@ func (s *Scanner) scanToken() {
 	case ',':
 		s.addToken(Comma)
 	case ':':
-		s.addToken(Colon)
+		if s.match('=') {
+			s.addToken(Walrus)
+		} else {
+			s.addToken(Colon)
+		}
 	case ';':
 		s.addToken(Semicolon)
 	case '~':

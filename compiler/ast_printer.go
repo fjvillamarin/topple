@@ -324,3 +324,122 @@ func (p *ASTPrinter) VisitTernaryExpr(node *TernaryExpr) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitListExpr handles ListExpr nodes
+func (p *ASTPrinter) VisitListExpr(node *ListExpr) Visitor {
+	p.printNodeStart("ListExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit all elements in the list
+	if len(node.Elements) > 0 {
+		p.result.WriteString(fmt.Sprintf("%selements:\n", p.indent()))
+		p.indentLevel++
+		for i, elem := range node.Elements {
+			if elem != nil {
+				p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+				p.indentLevel++
+				elem.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitTupleExpr handles TupleExpr nodes
+func (p *ASTPrinter) VisitTupleExpr(node *TupleExpr) Visitor {
+	p.printNodeStart("TupleExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit all elements in the tuple
+	if len(node.Elements) > 0 {
+		p.result.WriteString(fmt.Sprintf("%selements:\n", p.indent()))
+		p.indentLevel++
+		for i, elem := range node.Elements {
+			if elem != nil {
+				p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+				p.indentLevel++
+				elem.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitSetExpr handles SetExpr nodes
+func (p *ASTPrinter) VisitSetExpr(node *SetExpr) Visitor {
+	p.printNodeStart("SetExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit all elements in the set
+	if len(node.Elements) > 0 {
+		p.result.WriteString(fmt.Sprintf("%selements:\n", p.indent()))
+		p.indentLevel++
+		for i, elem := range node.Elements {
+			if elem != nil {
+				p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+				p.indentLevel++
+				elem.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitYieldExpr handles YieldExpr nodes
+func (p *ASTPrinter) VisitYieldExpr(node *YieldExpr) Visitor {
+	p.printNodeStart("YieldExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Display whether this is a "yield from" expression
+	p.result.WriteString(fmt.Sprintf("%sisFrom: %t\n", p.indent(), node.IsFrom))
+
+	// Visit the yield value if present
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitGroupExpr handles GroupExpr nodes
+func (p *ASTPrinter) VisitGroupExpr(node *GroupExpr) Visitor {
+	p.printNodeStart("GroupExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the inner expression
+	if node.Expression != nil {
+		p.result.WriteString(fmt.Sprintf("%sexpression:\n", p.indent()))
+		p.indentLevel++
+		node.Expression.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

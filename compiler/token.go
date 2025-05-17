@@ -64,6 +64,7 @@ const (
 	LessEqual           // <=
 	Greater             // >
 	GreaterEqual        // >=
+	Walrus              // :=
 	IsNot               // is not
 	NotIn               // not in
 
