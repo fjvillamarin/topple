@@ -3,7 +3,7 @@ package compiler
 // scanner.go
 //
 // A hand-written scanner for Python 3.12, following the style of
-// “Crafting Interpreters” but implemented in Go.
+// "Crafting Interpreters" but implemented in Go.
 //
 // It produces a flat slice of Token values; the parser drives
 // consumption.  Any diagnostics are placed in the public Errors slice.
@@ -196,7 +196,8 @@ func (s *Scanner) scanToken() {
 	case '~':
 		s.addToken(Tilde)
 	case '.':
-		if s.match('.') && s.match('.') { // "..."
+		//lint:ignore SA4000 // Intentional consecutive matches for ellipsis
+		if s.match('.') && s.match('.') {
 			s.addToken(Ellipsis)
 		} else if isDigit(s.peek()) {
 			s.number()
@@ -399,8 +400,7 @@ func (s *Scanner) identifier() {
 	for isIdentifierContinue(s.peek()) {
 		s.advance()
 	}
-	text := string(s.src[s.start:s.cur])
-	if tok, ok := Keywords[text]; ok {
+	if tok, ok := Keywords[string(s.src[s.start:s.cur])]; ok {
 		s.addToken(tok)
 		return
 	}
