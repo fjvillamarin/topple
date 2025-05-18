@@ -991,8 +991,8 @@ func (p *Parser) primary() (Expr, error) {
 				return nil, err
 			}
 		} else if p.match(LeftBracket) {
-			// Handle subscript access: expr[index]
-			index, err := p.expression()
+			// Handle subscript access: expr[index] or expr[slice]
+			indices, err := p.slices()
 			if err != nil {
 				return nil, err
 			}
@@ -1001,7 +1001,7 @@ func (p *Parser) primary() (Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = NewSubscript(expr, index, expr.Start(), right.End())
+			expr = NewSubscript(expr, indices, expr.Start(), right.End())
 		} else {
 			// No more postfix operations
 			break
@@ -1427,6 +1427,154 @@ func (p *Parser) starNamedExpression() (Expr, error) {
 
 	// Not a star expression, parse as a regular expression
 	return p.namedExpression()
+}
+
+// slice parses a single slice element as per the grammar:
+// slice:
+//
+//	| [expression] ':' [expression] [':' [expression] ]
+//	| named_expression
+func (p *Parser) slice() (Expr, error) {
+	// Check if this is a slice notation or just an expression
+	// We need to look ahead to see if there's a colon after the first expression (if any)
+	startPos := p.peek().Start()
+
+	// Empty slice is allowed (:)
+	if p.check(Colon) {
+		// No start expression, consume the colon
+		p.advance()
+
+		var end Expr
+		var err error
+
+		// Check for end expression after colon
+		if !p.check(Colon) && !p.check(RightBracket) && !p.check(Comma) {
+			end, err = p.expression()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Check for step (second colon)
+		var step Expr
+		if p.match(Colon) {
+			// Parse optional step
+			if !p.check(RightBracket) && !p.check(Comma) {
+				step, err = p.expression()
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		endPos := p.previous().End()
+		if step != nil {
+			endPos = step.End()
+		} else if end != nil {
+			endPos = end.End()
+		}
+
+		return NewSlice(nil, end, step, startPos, endPos), nil
+	}
+
+	// There's an expression before any potential colon
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	// If there's no colon after the expression, this is just a regular index
+	if !p.match(Colon) {
+		return expr, nil
+	}
+
+	// We have a slice with a start expression
+	var end Expr
+
+	// Check for end expression after colon
+	if !p.check(Colon) && !p.check(RightBracket) && !p.check(Comma) {
+		end, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Check for step (second colon)
+	var step Expr
+	if p.match(Colon) {
+		// Parse optional step
+		if !p.check(RightBracket) && !p.check(Comma) {
+			step, err = p.expression()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	endPos := p.previous().End()
+	if step != nil {
+		endPos = step.End()
+	} else if end != nil {
+		endPos = end.End()
+	} else {
+		endPos = expr.End()
+	}
+
+	return NewSlice(expr, end, step, startPos, endPos), nil
+}
+
+// slices parses one or more slice elements as per the grammar:
+// slices:
+//
+//	| slice !','
+//	| ','.(slice | starred_expression)+ [',']
+func (p *Parser) slices() ([]Expr, error) {
+	// Parse the first slice
+	first, err := p.slice()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize the slice with the first element
+	indices := []Expr{first}
+
+	// If there's no comma, it's just a single index/slice
+	if !p.match(Comma) {
+		return indices, nil
+	}
+
+	// Parse additional slice or starred_expression elements
+	for !p.check(RightBracket) {
+		// Handle starred expressions
+		if p.match(Star) {
+			// This is a starred expression like *args
+			star := p.previous()
+			expr, err := p.bitwiseOr() // According to the grammar, star expressions use bitwise_or
+			if err != nil {
+				return nil, err
+			}
+			indices = append(indices, NewStarExpr(expr, star.Start(), expr.End()))
+		} else {
+			// Regular slice expression
+			expr, err := p.slice()
+			if err != nil {
+				return nil, err
+			}
+			indices = append(indices, expr)
+		}
+
+		// Break if no more commas
+		if !p.match(Comma) {
+			break
+		}
+
+		// Allow trailing comma
+		if p.check(RightBracket) {
+			break
+		}
+	}
+
+	return indices, nil
 }
 
 // ----------------------------------------------------------------------------

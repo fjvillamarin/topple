@@ -168,11 +168,18 @@ func (p *ASTPrinter) VisitSubscript(node *Subscript) Visitor {
 		p.indentLevel--
 	}
 
-	// Visit the index expression
-	if node.Index != nil {
-		p.result.WriteString(fmt.Sprintf("%sindex:\n", p.indent()))
+	// Visit the indices
+	if len(node.Indices) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sindices:\n", p.indent()))
 		p.indentLevel++
-		node.Index.Accept(p)
+		for i, index := range node.Indices {
+			if index != nil {
+				p.result.WriteString(fmt.Sprintf("%sindex %d:\n", p.indent(), i))
+				p.indentLevel++
+				index.Accept(p)
+				p.indentLevel--
+			}
+		}
 		p.indentLevel--
 	}
 	p.indentLevel--
@@ -804,4 +811,39 @@ func (p *ASTPrinter) visitDottedName(node *DottedName) {
 		parts[i] = name.Token.Lexeme
 	}
 	p.result.WriteString(strings.Join(parts, "."))
+}
+
+// VisitSlice handles Slice nodes
+func (p *ASTPrinter) VisitSlice(node *Slice) Visitor {
+	p.printNodeStart("Slice", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the start index if present
+	if node.StartIndex != nil {
+		p.result.WriteString(fmt.Sprintf("%sstart:\n", p.indent()))
+		p.indentLevel++
+		node.StartIndex.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the end index if present
+	if node.EndIndex != nil {
+		p.result.WriteString(fmt.Sprintf("%send:\n", p.indent()))
+		p.indentLevel++
+		node.EndIndex.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the step if present
+	if node.Step != nil {
+		p.result.WriteString(fmt.Sprintf("%sstep:\n", p.indent()))
+		p.indentLevel++
+		node.Step.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
 }

@@ -22,6 +22,7 @@ type ExprVisitor interface {
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitTypeParamExpr(t *TypeParamExpr) Visitor
+	VisitSlice(s *Slice) Visitor
 }
 
 // Name represents an identifier expression.
@@ -138,28 +139,28 @@ func (c *Call) Accept(visitor Visitor) {
 	visitor.VisitCall(c)
 }
 
-// Subscript represents a subscript access expression (obj[index])
+// Subscript represents a subscript access expression (obj[index] or obj[start:end:step])
 type Subscript struct {
 	BaseNode
-	Object Expr
-	Index  Expr
+	Object  Expr
+	Indices []Expr // Multiple indices or slices
 }
 
-func NewSubscript(object Expr, index Expr, startPos Position, endPos Position) *Subscript {
+func NewSubscript(object Expr, indices []Expr, startPos Position, endPos Position) *Subscript {
 	return &Subscript{
 		BaseNode: BaseNode{
 			StartPos: startPos,
 			EndPos:   endPos,
 		},
-		Object: object,
-		Index:  index,
+		Object:  object,
+		Indices: indices,
 	}
 }
 
 func (s *Subscript) isExpr() {}
 
 func (s *Subscript) String() string {
-	return fmt.Sprintf("%v[%v]", s.Object, s.Index)
+	return fmt.Sprintf("%v[...]", s.Object)
 }
 
 // Accept calls the VisitSubscript method on the visitor
@@ -494,4 +495,55 @@ func (t *TypeParamExpr) String() string {
 		prefix = "**"
 	}
 	return fmt.Sprintf("%s%s", prefix, t.Name.Lexeme)
+}
+
+// Slice represents a slice expression (start:end:step)
+type Slice struct {
+	BaseNode
+	StartIndex Expr // Optional start index
+	EndIndex   Expr // Optional end index
+	Step       Expr // Optional step
+}
+
+func NewSlice(start Expr, end Expr, step Expr, startPos Position, endPos Position) *Slice {
+	return &Slice{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		StartIndex: start,
+		EndIndex:   end,
+		Step:       step,
+	}
+}
+
+func (s *Slice) isExpr() {}
+
+func (s *Slice) String() string {
+	var startStr, endStr, stepStr string
+	if s.StartIndex != nil {
+		startStr = s.StartIndex.String()
+	}
+	if s.EndIndex != nil {
+		endStr = s.EndIndex.String()
+	}
+	if s.Step != nil {
+		stepStr = ":" + s.Step.String()
+	}
+	return fmt.Sprintf("%s:%s%s", startStr, endStr, stepStr)
+}
+
+// Start returns the start position of the node
+func (s *Slice) Start() Position {
+	return s.StartPos
+}
+
+// End returns the end position of the node
+func (s *Slice) End() Position {
+	return s.EndPos
+}
+
+// Accept calls the VisitSlice method on the visitor
+func (s *Slice) Accept(visitor Visitor) {
+	visitor.VisitSlice(s)
 }
