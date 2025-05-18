@@ -19,6 +19,8 @@ type StmtVisitor interface {
 	VisitAssertStmt(a *AssertStmt) Visitor
 	VisitGlobalStmt(g *GlobalStmt) Visitor
 	VisitNonlocalStmt(n *NonlocalStmt) Visitor
+	VisitImportStmt(i *ImportStmt) Visitor
+	VisitImportFromStmt(i *ImportFromStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -357,4 +359,130 @@ func (n *NonlocalStmt) String() string {
 		names[i] = name.String()
 	}
 	return fmt.Sprintf("NonlocalStmt(%s)", strings.Join(names, ", "))
+}
+
+// ImportStmt represents an 'import' statement.
+type ImportStmt struct {
+	BaseNode
+	Names []*ImportName // List of imported modules with optional aliases
+}
+
+func NewImportStmt(names []*ImportName, startPos Position, endPos Position) *ImportStmt {
+	return &ImportStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Names: names,
+	}
+}
+
+func (i *ImportStmt) isStmt() {}
+
+func (i *ImportStmt) Accept(visitor Visitor) {
+	visitor.VisitImportStmt(i)
+}
+
+func (i *ImportStmt) String() string {
+	names := make([]string, len(i.Names))
+	for j, name := range i.Names {
+		names[j] = name.String()
+	}
+	return fmt.Sprintf("ImportStmt(%s)", strings.Join(names, ", "))
+}
+
+// ImportName represents a single module import with optional alias.
+type ImportName struct {
+	BaseNode
+	DottedName *DottedName // The module path
+	AsName     *Name       // Optional alias name
+}
+
+func NewImportName(dottedName *DottedName, asName *Name, startPos Position, endPos Position) *ImportName {
+	return &ImportName{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		DottedName: dottedName,
+		AsName:     asName,
+	}
+}
+
+func (i *ImportName) String() string {
+	if i.AsName != nil {
+		return fmt.Sprintf("%s as %s", i.DottedName, i.AsName)
+	}
+	return i.DottedName.String()
+}
+
+// DottedName represents a dotted module path.
+type DottedName struct {
+	BaseNode
+	Names []*Name // Parts of the dotted path
+}
+
+func NewDottedName(names []*Name, startPos Position, endPos Position) *DottedName {
+	return &DottedName{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Names: names,
+	}
+}
+
+func (d *DottedName) String() string {
+	parts := make([]string, len(d.Names))
+	for i, name := range d.Names {
+		parts[i] = name.String()
+	}
+	return strings.Join(parts, ".")
+}
+
+// ImportFromStmt represents a 'from ... import ...' statement.
+type ImportFromStmt struct {
+	BaseNode
+	DottedName *DottedName   // The module path to import from (may be nil for relative imports)
+	DotCount   int           // Number of leading dots for relative imports
+	Names      []*ImportName // List of imported names with optional aliases
+	IsWildcard bool          // True if importing '*'
+}
+
+func NewImportFromStmt(dottedName *DottedName, dotCount int, names []*ImportName, isWildcard bool, startPos Position, endPos Position) *ImportFromStmt {
+	return &ImportFromStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		DottedName: dottedName,
+		DotCount:   dotCount,
+		Names:      names,
+		IsWildcard: isWildcard,
+	}
+}
+
+func (i *ImportFromStmt) isStmt() {}
+
+func (i *ImportFromStmt) Accept(visitor Visitor) {
+	visitor.VisitImportFromStmt(i)
+}
+
+func (i *ImportFromStmt) String() string {
+	var module string
+	if i.DottedName != nil {
+		module = i.DottedName.String()
+	} else {
+		module = strings.Repeat(".", i.DotCount)
+	}
+
+	if i.IsWildcard {
+		return fmt.Sprintf("ImportFromStmt(%s, *)", module)
+	}
+
+	names := make([]string, len(i.Names))
+	for j, name := range i.Names {
+		names[j] = name.String()
+	}
+	return fmt.Sprintf("ImportFromStmt(%s, [%s])", module, strings.Join(names, ", "))
 }

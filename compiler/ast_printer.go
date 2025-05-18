@@ -704,3 +704,104 @@ func (p *ASTPrinter) VisitNonlocalStmt(node *NonlocalStmt) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitImportStmt handles ImportStmt nodes
+func (p *ASTPrinter) VisitImportStmt(node *ImportStmt) Visitor {
+	p.printNodeStart("ImportStmt", node)
+
+	if len(node.Names) == 0 {
+		p.result.WriteString("\n")
+		return p
+	}
+
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Print imported modules
+	p.result.WriteString(fmt.Sprintf("%simports:\n", p.indent()))
+	p.indentLevel++
+	for i, importName := range node.Names {
+		p.result.WriteString(fmt.Sprintf("%s%d:\n", p.indent(), i))
+		p.indentLevel++
+		p.visitImportName(importName)
+		p.indentLevel--
+	}
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitImportFromStmt handles ImportFromStmt nodes
+func (p *ASTPrinter) VisitImportFromStmt(node *ImportFromStmt) Visitor {
+	p.printNodeStart("ImportFromStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Print the module path
+	p.result.WriteString(fmt.Sprintf("%smodule: ", p.indent()))
+
+	// For relative imports, print the dots
+	if node.DotCount > 0 {
+		p.result.WriteString(fmt.Sprintf("%s", strings.Repeat(".", node.DotCount)))
+		if node.DottedName != nil {
+			p.result.WriteString(".")
+		}
+	}
+
+	// Print the dotted name if it exists
+	if node.DottedName != nil {
+		p.visitDottedName(node.DottedName)
+	} else if node.DotCount == 0 {
+		p.result.WriteString("''")
+	}
+
+	p.result.WriteString("\n")
+
+	// Print wildcard or imported names
+	if node.IsWildcard {
+		p.result.WriteString(fmt.Sprintf("%simport: *\n", p.indent()))
+	} else {
+		p.result.WriteString(fmt.Sprintf("%simports:\n", p.indent()))
+		p.indentLevel++
+		for i, importName := range node.Names {
+			p.result.WriteString(fmt.Sprintf("%s%d:\n", p.indent(), i))
+			p.indentLevel++
+			p.visitImportName(importName)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// Helper method to visit an ImportName
+func (p *ASTPrinter) visitImportName(node *ImportName) {
+	// Print the module name
+	p.result.WriteString(fmt.Sprintf("%sname: ", p.indent()))
+	p.visitDottedName(node.DottedName)
+	p.result.WriteString("\n")
+
+	// Print the alias if it exists
+	if node.AsName != nil {
+		p.result.WriteString(fmt.Sprintf("%sas: ", p.indent()))
+		p.indentLevel++
+		node.AsName.Accept(p)
+		p.indentLevel--
+	}
+}
+
+// Helper method to visit a DottedName
+func (p *ASTPrinter) visitDottedName(node *DottedName) {
+	parts := make([]string, len(node.Names))
+	for i, name := range node.Names {
+		parts[i] = name.Token.Lexeme
+	}
+	p.result.WriteString(strings.Join(parts, "."))
+}
