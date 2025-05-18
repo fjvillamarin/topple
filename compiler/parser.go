@@ -227,7 +227,25 @@ func (p *Parser) typeParam() (Expr, error) {
 }
 
 func (p *Parser) returnStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'return' keyword
+	returnToken, err := p.consume(Return, "expected 'return'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Exit early if there's no return expression
+	if p.isAtEnd() || p.check(Newline) || p.check(Semicolon) {
+		p.advance()
+		return NewReturnStmt(nil, returnToken.Start(), returnToken.End()), nil
+	}
+
+	// Parse the return expression
+	expr, err := p.starExpressions()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewReturnStmt(expr, returnToken.Start(), expr.End()), nil
 }
 
 func (p *Parser) importStatement() (Stmt, error) {

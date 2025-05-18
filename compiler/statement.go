@@ -7,6 +7,7 @@ type StmtVisitor interface {
 	VisitModule(m *Module) Visitor
 	VisitExprStmt(e *ExprStmt) Visitor
 	VisitTypeAlias(t *TypeAlias) Visitor
+	VisitReturnStmt(r *ReturnStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -92,4 +93,30 @@ func (t *TypeAlias) Accept(visitor Visitor) {
 
 func (t *TypeAlias) String() string {
 	return fmt.Sprintf("TypeAlias(%s)", t.Name.Lexeme)
+}
+
+// ReturnStmt represents a 'return' statement.
+type ReturnStmt struct {
+	BaseNode
+	Value Expr
+}
+
+func NewReturnStmt(value Expr, startPos Position, endPos Position) *ReturnStmt {
+	return &ReturnStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Value: value,
+	}
+}
+
+func (r *ReturnStmt) isStmt() {}
+
+func (r *ReturnStmt) Accept(visitor Visitor) {
+	visitor.VisitReturnStmt(r)
+}
+
+func (r *ReturnStmt) String() string {
+	return fmt.Sprintf("ReturnStmt(%s)", r.Value)
 }

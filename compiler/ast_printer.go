@@ -525,3 +525,31 @@ func (p *ASTPrinter) VisitTypeAlias(node *TypeAlias) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitReturnStmt handles ReturnStmt nodes
+func (p *ASTPrinter) VisitReturnStmt(node *ReturnStmt) Visitor {
+	p.printNodeStart("ReturnStmt", node)
+
+	if node.Value != nil {
+		p.result.WriteString(" (\n")
+	} else {
+		p.result.WriteString("\n")
+	}
+
+	p.indentLevel++
+	// Visit the return expression
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		if node.Value != nil {
+			node.Value.Accept(p)
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	}
+	return p
+}
