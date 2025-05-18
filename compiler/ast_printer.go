@@ -865,3 +865,102 @@ func (p *ASTPrinter) VisitAwaitExpr(node *AwaitExpr) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitAssignStmt handles AssignStmt nodes
+func (p *ASTPrinter) VisitAssignStmt(node *AssignStmt) Visitor {
+	p.printNodeStart("AssignStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit targets
+	if len(node.Targets) > 0 {
+		p.result.WriteString(fmt.Sprintf("%stargets:\n", p.indent()))
+		p.indentLevel++
+		for i, target := range node.Targets {
+			if target != nil {
+				p.result.WriteString(fmt.Sprintf("%starget %d:\n", p.indent(), i))
+				p.indentLevel++
+				target.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Visit the value
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitAugAssignStmt handles AugAssignStmt nodes
+func (p *ASTPrinter) VisitAugAssignStmt(node *AugAssignStmt) Visitor {
+	p.printNodeStart("AugAssignStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Display the operator
+	p.result.WriteString(fmt.Sprintf("%soperator: %s\n", p.indent(), node.Operator.Lexeme))
+
+	// Visit the target
+	if node.Target != nil {
+		p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+		p.indentLevel++
+		node.Target.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the value
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitAnnotationStmt handles AnnotationStmt nodes
+func (p *ASTPrinter) VisitAnnotationStmt(node *AnnotationStmt) Visitor {
+	p.printNodeStart("AnnotationStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the target
+	if node.Target != nil {
+		p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+		p.indentLevel++
+		node.Target.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the type annotation
+	if node.Type != nil {
+		p.result.WriteString(fmt.Sprintf("%stype:\n", p.indent()))
+		p.indentLevel++
+		node.Type.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the value if it has one
+	if node.HasValue && node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

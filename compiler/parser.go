@@ -88,7 +88,24 @@ func (p *Parser) simpleStatement() (Stmt, error) {
 		return p.nonlocalStatement()
 	}
 
-	// TODO: Check for assignment
+	// Check for assignment before expression
+	if p.check(Identifier) || p.check(LeftParen) || p.check(LeftBracket) || p.check(Star) {
+		// Save current position
+		currentPos := p.Current
+
+		// Try to parse as assignment
+		stmt, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
+		return stmt, nil
+		// if err == nil {
+		// 	return stmt, nil
+		// }
+
+		// If assignment parsing failed, restore position and try as expression
+		p.Current = currentPos
+	}
 
 	expr, err := p.starExpressions()
 	if err != nil {
@@ -552,7 +569,21 @@ func (p *Parser) passStatement() (Stmt, error) {
 }
 
 func (p *Parser) delStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'del' keyword
+	delToken, err := p.consume(Del, "expected 'del'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the del_targets
+	targets, err := p.delTargets()
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Create and return a DelStmt node
+	// For now, return a placeholder
+	return NewExprStmt(targets, delToken.Start(), targets.End()), nil
 }
 
 func (p *Parser) yieldStatement() (Stmt, error) {
@@ -1653,4 +1684,957 @@ func (p *Parser) peekN(n int) Token {
 
 func (p *Parser) previous() Token {
 	return p.Tokens[p.Current-1]
+}
+
+// tPrimary parses a primary expression that must be followed by an accessor.
+// This is used for parsing chained targets in assignment contexts.
+func (p *Parser) tPrimary() (Expr, error) {
+	// Parse the initial atom
+	expr, err := p.atom()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if there's a lookahead token - required for all t_primary rules
+	if !p.tLookahead() {
+		return nil, p.error(p.peek(), "expected accessor token ('.', '[', or '(')")
+	}
+
+	// Handle the recursive cases - all involve consuming the accessor
+	// and then checking for another lookahead
+	for {
+		// Save the current position in case we need to restore it
+		originalPosition := p.Current
+
+		if p.match(Dot) {
+			// Handle attribute access: expr.NAME
+			name, err := p.consume(Identifier, "expected identifier after '.'")
+			if err != nil {
+				return nil, err
+			}
+			expr = NewAttribute(expr, name, expr.Start(), name.End())
+		} else if p.match(LeftParen) {
+			// Handle function call: expr(args)
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else if p.match(LeftBracket) {
+			// Handle subscript access: expr[index] or expr[slice]
+			indices, err := p.slices()
+			if err != nil {
+				return nil, err
+			}
+
+			right, err := p.consume(RightBracket, "expected ']' after index")
+			if err != nil {
+				return nil, err
+			}
+			expr = NewSubscript(expr, indices, expr.Start(), right.End())
+		} else if p.check(LeftParen) {
+			// TODO: Handle genexp
+			return nil, p.error(p.peek(), "generator expressions not yet implemented")
+		} else {
+			// If we didn't consume any accessor, we're done
+			// Either we have atom &t_lookahead or we've finished a chain
+			break
+		}
+
+		// Each accessor must be followed by another lookahead token
+		if !p.tLookahead() {
+			// If not, restore the position and return what we had before
+			p.Current = originalPosition
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+// tLookahead checks if the current token is one of the t_lookahead tokens: '(', '[', '.'
+func (p *Parser) tLookahead() bool {
+	if p.isAtEnd() {
+		return false
+	}
+	tokenType := p.peek().Type
+	return tokenType == LeftParen || tokenType == LeftBracket || tokenType == Dot
+}
+
+// singleSubscriptAttributeTarget parses a single target with attribute or subscription
+// as per the grammar:
+//
+// single_subscript_attribute_target:
+//
+//	| t_primary '.' NAME !t_lookahead
+//	| t_primary '[' slices ']' !t_lookahead
+func (p *Parser) singleSubscriptAttributeTarget() (Expr, error) {
+	// Parse the t_primary expression
+	expr, err := p.tPrimary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check which form it is
+	if p.match(Dot) {
+		// Handle attribute access: t_primary.NAME
+		name, err := p.consume(Identifier, "expected identifier after '.'")
+		if err != nil {
+			return nil, err
+		}
+		result := NewAttribute(expr, name, expr.Start(), name.End())
+
+		// Check negative lookahead - must NOT be followed by another accessor
+		if p.tLookahead() {
+			return nil, p.error(p.peek(), "unexpected accessor after attribute target")
+		}
+
+		return result, nil
+	} else if p.match(LeftBracket) {
+		// Handle subscript access: t_primary[slices]
+		indices, err := p.slices()
+		if err != nil {
+			return nil, err
+		}
+
+		right, err := p.consume(RightBracket, "expected ']' after index")
+		if err != nil {
+			return nil, err
+		}
+		result := NewSubscript(expr, indices, expr.Start(), right.End())
+
+		// Check negative lookahead - must NOT be followed by another accessor
+		if p.tLookahead() {
+			return nil, p.error(p.peek(), "unexpected accessor after subscript target")
+		}
+
+		return result, nil
+	}
+
+	return nil, p.error(p.peek(), "expected '.' or '[' after primary expression")
+}
+
+// singleTarget parses a single target as per the grammar:
+//
+// single_target:
+//
+//	| single_subscript_attribute_target
+//	| NAME
+//	| '(' single_target ')'
+func (p *Parser) singleTarget() (Expr, error) {
+	if p.check(Identifier) {
+		// Handle the NAME case first
+		// But first check if it might be a single_subscript_attribute_target
+		// by seeing if there's a lookahead accessor after the identifier
+		if p.checkNext(Dot) || p.checkNext(LeftBracket) || p.checkNext(LeftParen) {
+			return p.singleSubscriptAttributeTarget()
+		}
+
+		// Just a NAME
+		name := p.advance()
+		return NewName(name, name.Start(), name.End()), nil
+	} else if p.match(LeftParen) {
+		// Handle parenthesized form: '(' single_target ')'
+		target, err := p.singleTarget()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.consume(RightParen, "expected ')' after target")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewGroupExpr(target, p.previous().Start(), p.previous().End()), nil
+	}
+
+	// Try to parse as single_subscript_attribute_target
+	return p.singleSubscriptAttributeTarget()
+}
+
+// starTarget parses a star target as per the grammar:
+//
+// star_target:
+//
+//	| '*' (!'*' star_target)
+//	| target_with_star_atom
+func (p *Parser) starTarget() (Expr, error) {
+	if p.match(Star) {
+		// Handle starred expression
+		star := p.previous()
+
+		// Check not followed by another star
+		if p.check(Star) {
+			return nil, p.error(p.peek(), "cannot use ** in target expressions")
+		}
+
+		// Parse the inner star_target
+		expr, err := p.starTarget()
+		if err != nil {
+			return nil, err
+		}
+
+		return NewStarExpr(expr, star.Start(), expr.End()), nil
+	}
+
+	// Not a starred expression, parse as target_with_star_atom
+	return p.targetWithStarAtom()
+}
+
+// starTargets parses star targets as per the grammar:
+//
+// star_targets:
+//
+//	| star_target !','
+//	| star_target (',' star_target)* [',']
+func (p *Parser) starTargets() (Expr, error) {
+	// Parse the first star_target
+	target, err := p.starTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	// If there's no comma, return the single target
+	if !p.check(Comma) {
+		return target, nil
+	}
+
+	// We have a comma, so this is a tuple of targets
+	elements := []Expr{target}
+
+	// Consume the comma
+	p.match(Comma)
+
+	// Parse additional targets if any
+	for !p.check(Newline) && !p.check(Semicolon) && !p.check(Equal) && !p.isAtEnd() {
+		// Break if we see a trailing comma
+		if p.check(Colon) || p.check(RightParen) || p.check(RightBracket) || p.check(RightBrace) {
+			break
+		}
+
+		target, err = p.starTarget()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, target)
+
+		// Expect a comma after each target except possibly the last
+		if !p.match(Comma) {
+			break
+		}
+	}
+
+	// Create a tuple expression with the targets
+	return NewTupleExpr(elements, elements[0].Start(), elements[len(elements)-1].End()), nil
+}
+
+// starTargetsListSeq implements the star_targets_list_seq rule from the grammar:
+// star_targets_list_seq: ','.star_target+ [',']
+func (p *Parser) starTargetsListSeq() ([]Expr, error) {
+	// Parse the first star_target
+	target, err := p.starTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	elements := []Expr{target}
+
+	// Parse additional targets separated by commas
+	for p.match(Comma) {
+		// Check for trailing comma
+		if p.check(RightBracket) {
+			break
+		}
+
+		target, err = p.starTarget()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, target)
+	}
+
+	return elements, nil
+}
+
+// starTargetsTupleSeq implements the star_targets_tuple_seq rule from the grammar:
+// star_targets_tuple_seq:
+//
+//	| star_target (',' star_target )+ [',']
+//	| star_target ','
+func (p *Parser) starTargetsTupleSeq() ([]Expr, error) {
+	// Parse the first star_target
+	target, err := p.starTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	elements := []Expr{target}
+
+	// Must have at least one comma
+	if !p.match(Comma) {
+		return nil, p.error(p.peek(), "expected ',' after target in tuple")
+	}
+
+	// Check if it's just a single-element tuple (star_target ',')
+	if p.check(RightParen) {
+		return elements, nil
+	}
+
+	// Parse second and additional targets
+	target, err = p.starTarget()
+	if err != nil {
+		return nil, err
+	}
+	elements = append(elements, target)
+
+	// Parse additional targets separated by commas
+	for p.match(Comma) {
+		// Check for trailing comma
+		if p.check(RightParen) {
+			break
+		}
+
+		target, err = p.starTarget()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, target)
+	}
+
+	return elements, nil
+}
+
+// starAtom parses a star atom as per the grammar:
+//
+// star_atom:
+//
+//	| NAME
+//	| '(' target_with_star_atom ')'
+//	| '(' [star_targets_tuple_seq] ')'
+//	| '[' [star_targets_list_seq] ']'
+func (p *Parser) starAtom() (Expr, error) {
+	startPos := p.peek().Start()
+
+	if p.check(Identifier) {
+		// Handle simple NAME case
+		name := p.advance()
+		return NewName(name, startPos, name.End()), nil
+	} else if p.match(LeftParen) {
+		// Handle parenthesized forms
+		if p.match(RightParen) {
+			// Empty tuple
+			return NewTupleExpr([]Expr{}, startPos, p.previous().End()), nil
+		}
+
+		// Try to parse as target_with_star_atom first
+		nextPos := p.Current
+		target, err := p.targetWithStarAtom()
+
+		if err == nil {
+			// Successfully parsed as target_with_star_atom
+			// Consume the closing parenthesis
+			_, err = p.consume(RightParen, "expected ')' after target")
+			if err != nil {
+				return nil, err
+			}
+			return NewGroupExpr(target, startPos, p.previous().End()), nil
+		}
+
+		// Restore position and try as star_targets_tuple_seq
+		p.Current = nextPos
+
+		elements, err := p.starTargetsTupleSeq()
+		if err != nil {
+			return nil, err
+		}
+
+		// Consume the closing parenthesis
+		_, err = p.consume(RightParen, "expected ')' after tuple targets")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewTupleExpr(elements, startPos, p.previous().End()), nil
+	} else if p.match(LeftBracket) {
+		// Handle list form
+		if p.match(RightBracket) {
+			// Empty list
+			return NewListExpr([]Expr{}, startPos, p.previous().End()), nil
+		}
+
+		elements, err := p.starTargetsListSeq()
+		if err != nil {
+			return nil, err
+		}
+
+		// Consume the closing bracket
+		_, err = p.consume(RightBracket, "expected ']' after list targets")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewListExpr(elements, startPos, p.previous().End()), nil
+	}
+
+	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in star atom")
+}
+
+// targetWithStarAtom parses a target with star atom as per the grammar:
+//
+// target_with_star_atom:
+//
+//	| t_primary '.' NAME !t_lookahead
+//	| t_primary '[' slices ']' !t_lookahead
+//	| star_atom
+func (p *Parser) targetWithStarAtom() (Expr, error) {
+	// Try to parse as t_primary if the next token could start a t_primary
+	if p.check(Identifier) || p.check(LeftParen) || p.check(LeftBracket) ||
+		p.check(False) || p.check(True) || p.check(None) ||
+		p.check(Number) || p.check(String) || p.check(Ellipsis) {
+
+		// First, save the current position
+		startPos := p.Current
+
+		// Try to parse a t_primary followed by '.'
+		primary, err := p.tPrimary()
+		if err == nil && p.match(Dot) {
+			// Handle attribute access: t_primary.NAME
+			name, err := p.consume(Identifier, "expected identifier after '.'")
+			if err != nil {
+				return nil, err
+			}
+			result := NewAttribute(primary, name, primary.Start(), name.End())
+
+			// Check negative lookahead - must NOT be followed by another accessor
+			if p.tLookahead() {
+				return nil, p.error(p.peek(), "unexpected accessor after attribute target")
+			}
+
+			return result, nil
+		}
+
+		// Restore position and try t_primary followed by '['
+		p.Current = startPos
+		primary, err = p.tPrimary()
+		if err == nil && p.match(LeftBracket) {
+			// Handle subscript access: t_primary[slices]
+			indices, err := p.slices()
+			if err != nil {
+				return nil, err
+			}
+
+			right, err := p.consume(RightBracket, "expected ']' after index")
+			if err != nil {
+				return nil, err
+			}
+			result := NewSubscript(primary, indices, primary.Start(), right.End())
+
+			// Check negative lookahead - must NOT be followed by another accessor
+			if p.tLookahead() {
+				return nil, p.error(p.peek(), "unexpected accessor after subscript target")
+			}
+
+			return result, nil
+		}
+
+		// Reset position if we couldn't match t_primary with an accessor
+		p.Current = startPos
+	}
+
+	// If we couldn't parse as t_primary with an accessor, try as star_atom
+	return p.starAtom()
+}
+
+// delTarget parses a target for the del statement as per the grammar:
+// del_target:
+//
+//	| t_primary '.' NAME !t_lookahead
+//	| t_primary '[' slices ']' !t_lookahead
+//	| del_t_atom
+func (p *Parser) delTarget() (Expr, error) {
+	// Try to parse as t_primary if the next token could start a t_primary
+	if p.check(Identifier) || p.check(LeftParen) || p.check(LeftBracket) ||
+		p.check(False) || p.check(True) || p.check(None) ||
+		p.check(Number) || p.check(String) || p.check(Ellipsis) {
+
+		// First, save the current position
+		startPos := p.Current
+
+		// Try to parse a t_primary followed by '.'
+		primary, err := p.tPrimary()
+		if err == nil && p.match(Dot) {
+			// Handle attribute access: t_primary.NAME
+			name, err := p.consume(Identifier, "expected identifier after '.'")
+			if err != nil {
+				return nil, err
+			}
+			result := NewAttribute(primary, name, primary.Start(), name.End())
+
+			// Check negative lookahead - must NOT be followed by another accessor
+			if p.tLookahead() {
+				return nil, p.error(p.peek(), "unexpected accessor after attribute in del target")
+			}
+
+			return result, nil
+		}
+
+		// Restore position and try t_primary followed by '['
+		p.Current = startPos
+		primary, err = p.tPrimary()
+		if err == nil && p.match(LeftBracket) {
+			// Handle subscript access: t_primary[slices]
+			indices, err := p.slices()
+			if err != nil {
+				return nil, err
+			}
+
+			right, err := p.consume(RightBracket, "expected ']' after index")
+			if err != nil {
+				return nil, err
+			}
+			result := NewSubscript(primary, indices, primary.Start(), right.End())
+
+			// Check negative lookahead - must NOT be followed by another accessor
+			if p.tLookahead() {
+				return nil, p.error(p.peek(), "unexpected accessor after subscript in del target")
+			}
+
+			return result, nil
+		}
+
+		// Reset position if we couldn't match t_primary with an accessor
+		p.Current = startPos
+	}
+
+	// If we couldn't parse as t_primary with an accessor, try as del_t_atom
+	return p.delTAtom()
+}
+
+// delTAtom parses a del_t_atom as per the grammar:
+// del_t_atom:
+//
+//	| NAME
+//	| '(' del_target ')'
+//	| '(' [del_targets] ')'
+//	| '[' [del_targets] ']'
+func (p *Parser) delTAtom() (Expr, error) {
+	startPos := p.peek().Start()
+
+	if p.check(Identifier) {
+		// Handle simple NAME case
+		name := p.advance()
+		return NewName(name, startPos, name.End()), nil
+	} else if p.match(LeftParen) {
+		// Handle parenthesized forms
+		if p.match(RightParen) {
+			// Empty tuple
+			return NewTupleExpr([]Expr{}, startPos, p.previous().End()), nil
+		}
+
+		// Try to parse as single del_target first
+		nextPos := p.Current
+		target, err := p.delTarget()
+
+		if err == nil {
+			// Check if there's a comma after, which means it's a tuple
+			if p.match(Comma) {
+				// Start a tuple with the first target
+				elements := []Expr{target}
+
+				// Check for empty rest of tuple
+				if p.match(RightParen) {
+					return NewTupleExpr(elements, startPos, p.previous().End()), nil
+				}
+
+				// Parse rest of del_targets
+				for !p.check(RightParen) {
+					target, err = p.delTarget()
+					if err != nil {
+						return nil, err
+					}
+					elements = append(elements, target)
+
+					if !p.match(Comma) {
+						break
+					}
+				}
+
+				// Consume closing parenthesis
+				_, err = p.consume(RightParen, "expected ')' after del targets")
+				if err != nil {
+					return nil, err
+				}
+
+				return NewTupleExpr(elements, startPos, p.previous().End()), nil
+			}
+
+			// No comma, so it's a grouped expression
+			_, err = p.consume(RightParen, "expected ')' after target")
+			if err != nil {
+				return nil, err
+			}
+			return NewGroupExpr(target, startPos, p.previous().End()), nil
+		}
+
+		// Restore position and try as del_targets (tuple)
+		p.Current = nextPos
+
+		// Parse del_targets as a sequence
+		var elements []Expr
+		for !p.check(RightParen) {
+			target, err := p.delTarget()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, target)
+
+			if !p.match(Comma) {
+				break
+			}
+
+			// Allow trailing comma
+			if p.check(RightParen) {
+				break
+			}
+		}
+
+		// Consume the closing parenthesis
+		_, err = p.consume(RightParen, "expected ')' after tuple targets")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewTupleExpr(elements, startPos, p.previous().End()), nil
+	} else if p.match(LeftBracket) {
+		// Handle list form
+		if p.match(RightBracket) {
+			// Empty list
+			return NewListExpr([]Expr{}, startPos, p.previous().End()), nil
+		}
+
+		// Parse del_targets as a sequence
+		var elements []Expr
+		for !p.check(RightBracket) {
+			target, err := p.delTarget()
+			if err != nil {
+				return nil, err
+			}
+			elements = append(elements, target)
+
+			if !p.match(Comma) {
+				break
+			}
+
+			// Allow trailing comma
+			if p.check(RightBracket) {
+				break
+			}
+		}
+
+		// Consume the closing bracket
+		_, err := p.consume(RightBracket, "expected ']' after list targets")
+		if err != nil {
+			return nil, err
+		}
+
+		return NewListExpr(elements, startPos, p.previous().End()), nil
+	}
+
+	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in del target atom")
+}
+
+// delTargets parses del targets as per the grammar:
+// del_targets: ','.del_target+ [',']
+func (p *Parser) delTargets() (Expr, error) {
+	// Parse the first del_target
+	target, err := p.delTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	// If there's no comma, return the single target
+	if !p.match(Comma) {
+		return target, nil
+	}
+
+	// We have a comma, so this is a tuple of targets
+	elements := []Expr{target}
+
+	// Parse additional targets if any
+	for !p.check(Newline) && !p.check(Semicolon) && !p.isAtEnd() {
+		// Allow trailing comma
+		if p.check(Newline) || p.check(Semicolon) || p.isAtEnd() {
+			break
+		}
+
+		target, err = p.delTarget()
+		if err != nil {
+			return nil, err
+		}
+		elements = append(elements, target)
+
+		// Expect a comma after each target except possibly the last
+		if !p.match(Comma) {
+			break
+		}
+	}
+
+	// Create a tuple expression with the targets
+	return NewTupleExpr(elements, elements[0].Start(), elements[len(elements)-1].End()), nil
+}
+
+// annotatedRhs parses the right-hand side of an annotated assignment:
+// annotated_rhs: yield_expr | star_expressions
+func (p *Parser) annotatedRhs() (Expr, error) {
+	if p.check(Yield) {
+		return p.yieldExpression()
+	}
+	return p.starExpressions()
+}
+
+// augassign parses an augmented assignment operator:
+// augassign:
+//
+//	| '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//='
+func (p *Parser) augassign() (Token, error) {
+	if p.match(PlusEqual, MinusEqual, StarEqual, AtEqual, SlashEqual, PercentEqual,
+		AmpEqual, PipeEqual, CaretEqual, LessLessEqual, GreaterGreaterEqual,
+		StarStarEqual, SlashSlashEqual) {
+		return p.previous(), nil
+	}
+	return Token{}, p.error(p.peek(), "expected augmented assignment operator")
+}
+
+// assignment parses an assignment statement as per the grammar:
+// assignment:
+//
+//	| NAME ':' expression ['=' annotated_rhs]
+//	| ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
+//	| (star_targets '=' )+ (yield_expr | star_expressions) !'=' [TYPE_COMMENT]
+//	| single_target augassign ~ (yield_expr | star_expressions)
+func (p *Parser) assignment() (Stmt, error) {
+	startPos := p.peek().Start()
+
+	// Try to parse the first form: NAME ':' expression ['=' annotated_rhs]
+	if p.check(Identifier) && p.checkNext(Colon) {
+		name := p.advance()                                   // Consume the NAME
+		_, err := p.consume(Colon, "expected ':' after name") // Consume the ':'
+		if err != nil {
+			return nil, err
+		}
+
+		// Parse type expression
+		typeExpr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+
+		// Check for optional assignment
+		var valueExpr Expr = nil
+		hasValue := false
+		if p.match(Equal) {
+			hasValue = true
+			valueExpr, err = p.annotatedRhs()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		endPos := typeExpr.End()
+		if valueExpr != nil {
+			endPos = valueExpr.End()
+		}
+
+		// Create a variable annotation statement
+		nameExpr := NewName(name, name.Start(), name.End())
+		return NewAnnotationStmt(nameExpr, typeExpr, valueExpr, hasValue, startPos, endPos), nil
+	}
+
+	// Try to parse the second form: ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
+	if p.check(LeftParen) || p.check(Identifier) {
+		// Save the current position
+		currentPos := p.Current
+
+		// Try to parse as '(' single_target ')'
+		var target Expr = nil
+		var err error = nil
+
+		if p.match(LeftParen) {
+			target, err = p.singleTarget()
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.consume(RightParen, "expected ')' after target")
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// Try to parse as single_subscript_attribute_target
+			target, err = p.singleSubscriptAttributeTarget()
+			if err != nil {
+				// Restore the position and continue to the third form
+				p.Current = currentPos
+				return p.tryThirdForm(startPos)
+			}
+		}
+
+		// If we get here, we've parsed either '(' single_target ')' or single_subscript_attribute_target
+		// Now expect a colon
+		_, err = p.consume(Colon, "expected ':' after target")
+		if err != nil {
+			// Restore the position and continue to the third form
+			p.Current = currentPos
+			return p.tryThirdForm(startPos)
+		}
+
+		// Parse type expression
+		typeExpr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+
+		// Check for optional assignment
+		var valueExpr Expr = nil
+		hasValue := false
+		if p.match(Equal) {
+			hasValue = true
+			valueExpr, err = p.annotatedRhs()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		endPos := typeExpr.End()
+		if valueExpr != nil {
+			endPos = valueExpr.End()
+		}
+
+		// Create a complex target annotation statement
+		return NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, startPos, endPos), nil
+	}
+
+	// Not the first or second form, try the third form
+	return p.tryThirdForm(startPos)
+}
+
+// tryThirdForm attempts to parse the third form of assignment
+// (star_targets '=' )+ (yield_expr | star_expressions) !'=' [TYPE_COMMENT]
+func (p *Parser) tryThirdForm(startPos Position) (Stmt, error) {
+	// Declare variables at the beginning to avoid goto issues
+	var targets []Expr
+	var err error
+
+	// Try to parse a star_targets
+	target, err := p.starTargets()
+	if err != nil {
+		// Failed to parse as star_targets, try the fourth form
+		return p.tryFourthForm(startPos)
+	}
+
+	// Start collecting targets with the first one
+	allTargets := [][]Expr{{target}}
+
+	// Check for '='
+	if !p.match(Equal) {
+		// Not the third form, try the fourth form
+		return p.tryFourthForm(startPos)
+	}
+
+	// Parse additional star_targets '=' pairs
+	for {
+		// Parse the next target if there's another equals sign
+		if p.match(Equal) {
+			target, err = p.starTargets()
+			if err != nil {
+				return nil, err
+			}
+			allTargets = append(allTargets, []Expr{target})
+		} else {
+			break
+		}
+	}
+
+	// Parse the right-hand side expression
+	var rhs Expr
+	if p.check(Yield) {
+		rhs, err = p.yieldExpression()
+	} else {
+		rhs, err = p.starExpressions()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure '=' doesn't follow (used in the grammar to disambiguate)
+	if p.check(Equal) {
+		return nil, p.error(p.peek(), "unexpected '=' in assignment")
+	}
+
+	// Optional TYPE_COMMENT - ignore for now
+	// Type comments are not currently implemented in the token types
+
+	// For chain assignments (a = b = c), we create multiple AssignStmt nodes
+	// Each node except the last one gets the next target as its value
+
+	// Start from the last target set and work backwards
+	lastValue := rhs
+	endPos := rhs.End()
+	var lastStmt Stmt = nil
+
+	for i := len(allTargets) - 1; i >= 0; i-- {
+		targets = allTargets[i]
+		stmt := NewAssignStmt(targets, lastValue, startPos, endPos)
+
+		if i == len(allTargets)-1 {
+			// Save the last (innermost) assignment statement
+			lastStmt = stmt
+		}
+
+		// For the next iteration, the value becomes this target
+		if i > 0 {
+			// For multi-target assignments (a, b = c, d), we need to create a tuple
+			if len(targets) > 1 {
+				lastValue = NewTupleExpr(targets, targets[0].Start(), targets[len(targets)-1].End())
+			} else {
+				lastValue = targets[0]
+			}
+		}
+	}
+
+	// Return the last (innermost) assignment statement
+	return lastStmt, nil
+}
+
+// tryFourthForm attempts to parse the fourth form of assignment
+// single_target augassign ~ (yield_expr | star_expressions)
+func (p *Parser) tryFourthForm(startPos Position) (Stmt, error) {
+	// Reset the position to the beginning of the statement
+	p.Current = 0 // Start at the beginning
+	p.advance()   // Move to the first token
+
+	// Parse single_target
+	target, err := p.singleTarget()
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse augassign
+	op, err := p.augassign()
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the right-hand side expression
+	var value Expr
+	if p.check(Yield) {
+		value, err = p.yieldExpression()
+	} else {
+		value, err = p.starExpressions()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Create and return an AugAssignStmt node
+	return NewAugAssignStmt(target, op, value, startPos, value.End()), nil
 }

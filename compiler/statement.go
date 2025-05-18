@@ -21,6 +21,9 @@ type StmtVisitor interface {
 	VisitNonlocalStmt(n *NonlocalStmt) Visitor
 	VisitImportStmt(i *ImportStmt) Visitor
 	VisitImportFromStmt(i *ImportFromStmt) Visitor
+	VisitAssignStmt(a *AssignStmt) Visitor
+	VisitAugAssignStmt(a *AugAssignStmt) Visitor
+	VisitAnnotationStmt(a *AnnotationStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -485,4 +488,104 @@ func (i *ImportFromStmt) String() string {
 		names[j] = name.String()
 	}
 	return fmt.Sprintf("ImportFromStmt(%s, [%s])", module, strings.Join(names, ", "))
+}
+
+// AssignStmt represents an assignment statement like 'x = y' or 'a, b = c, d'.
+type AssignStmt struct {
+	BaseNode
+	Targets []Expr // Left-hand side targets (can be multiple for unpacking)
+	Value   Expr   // Right-hand side expression
+}
+
+// NewAssignStmt creates a new assignment statement.
+func NewAssignStmt(targets []Expr, value Expr, startPos Position, endPos Position) *AssignStmt {
+	return &AssignStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Targets: targets,
+		Value:   value,
+	}
+}
+
+func (a *AssignStmt) isStmt() {}
+
+func (a *AssignStmt) Accept(visitor Visitor) {
+	visitor.VisitAssignStmt(a)
+}
+
+func (a *AssignStmt) String() string {
+	var targetStrs []string
+	for _, target := range a.Targets {
+		targetStrs = append(targetStrs, target.String())
+	}
+	return fmt.Sprintf("AssignStmt(%s = %s)", strings.Join(targetStrs, ", "), a.Value)
+}
+
+// AugAssignStmt represents an augmented assignment statement like 'x += y'.
+type AugAssignStmt struct {
+	BaseNode
+	Target   Expr  // Left-hand side target
+	Operator Token // The augmented assignment operator
+	Value    Expr  // Right-hand side expression
+}
+
+// NewAugAssignStmt creates a new augmented assignment statement.
+func NewAugAssignStmt(target Expr, operator Token, value Expr, startPos Position, endPos Position) *AugAssignStmt {
+	return &AugAssignStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Target:   target,
+		Operator: operator,
+		Value:    value,
+	}
+}
+
+func (a *AugAssignStmt) isStmt() {}
+
+func (a *AugAssignStmt) Accept(visitor Visitor) {
+	visitor.VisitAugAssignStmt(a)
+}
+
+func (a *AugAssignStmt) String() string {
+	return fmt.Sprintf("AugAssignStmt(%s %s %s)", a.Target, a.Operator.Lexeme, a.Value)
+}
+
+// AnnotationStmt represents a variable annotation like 'x: int' or 'x: int = 5'.
+type AnnotationStmt struct {
+	BaseNode
+	Target   Expr // The variable or target being annotated
+	Type     Expr // The type annotation expression
+	Value    Expr // Optional initializer value (can be nil)
+	HasValue bool // Whether an initializer value is present
+}
+
+// NewAnnotationStmt creates a new annotation statement.
+func NewAnnotationStmt(target Expr, typeExpr Expr, value Expr, hasValue bool, startPos Position, endPos Position) *AnnotationStmt {
+	return &AnnotationStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Target:   target,
+		Type:     typeExpr,
+		Value:    value,
+		HasValue: hasValue,
+	}
+}
+
+func (a *AnnotationStmt) isStmt() {}
+
+func (a *AnnotationStmt) Accept(visitor Visitor) {
+	visitor.VisitAnnotationStmt(a)
+}
+
+func (a *AnnotationStmt) String() string {
+	if a.HasValue {
+		return fmt.Sprintf("AnnotationStmt(%s: %s = %s)", a.Target, a.Type, a.Value)
+	}
+	return fmt.Sprintf("AnnotationStmt(%s: %s)", a.Target, a.Type)
 }
