@@ -6,6 +6,7 @@ import "fmt"
 type StmtVisitor interface {
 	VisitModule(m *Module) Visitor
 	VisitExprStmt(e *ExprStmt) Visitor
+	VisitTypeAlias(t *TypeAlias) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -60,4 +61,35 @@ func (e *ExprStmt) Accept(visitor Visitor) {
 
 func (e *ExprStmt) String() string {
 	return fmt.Sprintf("ExprStmt(%s)", e.Value)
+}
+
+// TypeAlias represents a 'type' statement.
+type TypeAlias struct {
+	BaseNode
+	Name   Token
+	Params []Expr // Type parameters as expressions
+	Value  Expr   // The type value expression
+}
+
+func NewTypeAlias(name Token, params []Expr, value Expr, startPos Position, endPos Position) *TypeAlias {
+	return &TypeAlias{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Name:   name,
+		Params: params,
+		Value:  value,
+	}
+}
+
+func (t *TypeAlias) isStmt() {}
+
+// Accept calls the VisitTypeAlias method on the visitor
+func (t *TypeAlias) Accept(visitor Visitor) {
+	visitor.VisitTypeAlias(t)
+}
+
+func (t *TypeAlias) String() string {
+	return fmt.Sprintf("TypeAlias(%s)", t.Name.Lexeme)
 }

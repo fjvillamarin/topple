@@ -443,3 +443,85 @@ func (p *ASTPrinter) VisitGroupExpr(node *GroupExpr) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitTypeParamExpr handles TypeParamExpr nodes
+func (p *ASTPrinter) VisitTypeParamExpr(node *TypeParamExpr) Visitor {
+	p.printNodeStart("TypeParamExpr", node)
+
+	// Format the type parameter
+	var paramStr string
+	if node.IsStar {
+		paramStr = "*"
+	} else if node.IsDoubleStar {
+		paramStr = "**"
+	}
+	paramStr += node.Name.Lexeme
+
+	p.result.WriteString(fmt.Sprintf(" (%s)", paramStr))
+
+	if node.Bound != nil || node.Default != nil {
+		p.result.WriteString(" (\n")
+	} else {
+		p.result.WriteString("\n")
+	}
+
+	p.indentLevel++
+
+	// Display parameter bound if present
+	if node.Bound != nil {
+		p.result.WriteString(fmt.Sprintf("%sbound:\n", p.indent()))
+		p.indentLevel++
+		node.Bound.Accept(p)
+		p.indentLevel--
+	}
+
+	// Display parameter default if present
+	if node.Default != nil {
+		p.result.WriteString(fmt.Sprintf("%sdefault:\n", p.indent()))
+		p.indentLevel++
+		node.Default.Accept(p)
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	if node.Bound != nil || node.Default != nil {
+		p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	}
+	return p
+}
+
+// VisitTypeAlias handles TypeAlias nodes
+func (p *ASTPrinter) VisitTypeAlias(node *TypeAlias) Visitor {
+	p.printNodeStart("TypeAlias", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Display the type name
+	p.result.WriteString(fmt.Sprintf("%sname: %s\n", p.indent(), node.Name.Lexeme))
+
+	// Display type parameters if any
+	if len(node.Params) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sparameters:\n", p.indent()))
+		p.indentLevel++
+		for i, param := range node.Params {
+			p.result.WriteString(fmt.Sprintf("%sparam %d:\n", p.indent(), i))
+			p.indentLevel++
+			param.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Visit the value expression
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

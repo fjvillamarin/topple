@@ -21,6 +21,7 @@ type ExprVisitor interface {
 	VisitSetExpr(s *SetExpr) Visitor
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
+	VisitTypeParamExpr(t *TypeParamExpr) Visitor
 }
 
 // Name represents an identifier expression.
@@ -451,4 +452,46 @@ func (g *GroupExpr) String() string {
 // Accept calls the VisitGroupExpr method on the visitor
 func (g *GroupExpr) Accept(visitor Visitor) {
 	visitor.VisitGroupExpr(g)
+}
+
+// TypeParamExpr represents a type parameter expression
+type TypeParamExpr struct {
+	BaseNode
+	Name         Token
+	Bound        Expr // Optional bound (: expression)
+	Default      Expr // Optional default (= expression)
+	IsStar       bool // Whether this is a *NAME parameter
+	IsDoubleStar bool // Whether this is a **NAME parameter
+}
+
+func NewTypeParamExpr(name Token, bound Expr, defaultValue Expr, isStar bool, isDoubleStar bool,
+	startPos Position, endPos Position) *TypeParamExpr {
+	return &TypeParamExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Name:         name,
+		Bound:        bound,
+		Default:      defaultValue,
+		IsStar:       isStar,
+		IsDoubleStar: isDoubleStar,
+	}
+}
+
+func (t *TypeParamExpr) isExpr() {}
+
+// Accept calls the VisitTypeParamExpr method on the visitor
+func (t *TypeParamExpr) Accept(visitor Visitor) {
+	visitor.VisitTypeParamExpr(t)
+}
+
+func (t *TypeParamExpr) String() string {
+	prefix := ""
+	if t.IsStar {
+		prefix = "*"
+	} else if t.IsDoubleStar {
+		prefix = "**"
+	}
+	return fmt.Sprintf("%s%s", prefix, t.Name.Lexeme)
 }

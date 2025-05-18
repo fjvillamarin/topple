@@ -55,33 +55,219 @@ func (p *Parser) Parse() (*Module, []error) {
 
 // statement parses a single statement.
 func (p *Parser) statement() (Stmt, error) {
-	return p.expressionStatement()
+	return p.simpleStatement()
 }
 
-// expressionStatement parses an expression statement.
-func (p *Parser) expressionStatement() (Stmt, error) {
-	expr, err := p.expression()
-	if err != nil {
-		return nil, err
+// simpleStatement parses an expression statement.
+func (p *Parser) simpleStatement() (Stmt, error) {
+	// Check for keywords first
+	switch p.peek().Type {
+	case Type:
+		return p.typeAlias()
+	case Return:
+		return p.returnStatement()
+	case Import, From:
+		return p.importStatement()
+	case Raise:
+		return p.raiseStatement()
+	case Pass:
+		return p.passStatement()
+	case Del:
+		return p.delStatement()
+	case Yield:
+		return p.yieldStatement()
+	case Assert:
+		return p.assertStatement()
+	case Break:
+		return p.breakStatement()
+	case Continue:
+		return p.continueStatement()
+	case Global:
+		return p.globalStatement()
+	case Nonlocal:
+		return p.nonlocalStatement()
 	}
 
-	// Consume semicolon if it's there (optional)
-	if p.check(Semicolon) {
-		p.advance()
-	}
+	// TODO: Check for assignment
 
-	// If we're at the end of the file, we're done
-	if p.isAtEnd() {
-		return NewExprStmt(expr, expr.Start(), expr.End()), nil
-	}
-
-	// Consume the newline
-	_, err = p.consume(Newline, "expected newline after expression")
+	expr, err := p.starExpressions()
 	if err != nil {
 		return nil, err
 	}
 
 	return NewExprStmt(expr, expr.Start(), expr.End()), nil
+}
+
+// typeAlias parses a type alias statement as per the grammar:
+// type_alias: "type" NAME [type_params] '=' expression
+func (p *Parser) typeAlias() (Stmt, error) {
+	// Consume the 'type' keyword
+	typeToken, err := p.consume(Type, "expected 'type'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the type name
+	name, err := p.consume(Identifier, "expected type name")
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for '[' to parse type parameters
+	var params []Expr = nil
+	if p.match(LeftBracket) {
+		// Parse the type parameters
+		params, err = p.typeParams()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Consume the '='
+	_, err = p.consume(Equal, "expected '='")
+	if err != nil {
+		return nil, err
+	}
+
+	expr, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTypeAlias(name, params, expr, typeToken.Start(), expr.End()), nil
+}
+
+// typeParams parses type parameters as per the grammar:
+// type_params: '[' type_param_seq ']'
+// type_param_seq: ','.type_param+ [',']
+func (p *Parser) typeParams() ([]Expr, error) {
+	params := []Expr{}
+
+	// Parse type parameters until we hit a closing bracket
+	for !p.check(RightBracket) && !p.isAtEnd() {
+		// Parse a single type parameter
+		param, err := p.typeParam()
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, param)
+
+		// If no comma, we're done with the parameter list
+		if !p.match(Comma) {
+			break
+		}
+	}
+
+	// Consume the closing bracket
+	_, err := p.consume(RightBracket, "expected ']' after type parameters")
+	if err != nil {
+		return nil, err
+	}
+
+	return params, nil
+}
+
+// typeParam parses a single type parameter as per the grammar:
+// type_param:
+//
+//	| NAME [type_param_bound] [type_param_default]
+//	| '*' NAME [type_param_starred_default]
+//	| '**' NAME [type_param_default]
+func (p *Parser) typeParam() (Expr, error) {
+	startPos := p.peek().Start()
+	isStar := false
+	isDoubleStar := false
+
+	// Check for star parameters
+	if p.match(Star) {
+		isStar = true
+	} else if p.match(StarStar) {
+		isDoubleStar = true
+	}
+
+	// Parse the parameter name
+	name, err := p.consume(Identifier, "expected parameter name")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse optional bound (: expression)
+	var bound Expr = nil
+	if !isStar && !isDoubleStar && p.match(Colon) {
+		bound, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Parse optional default
+	var defaultValue Expr = nil
+	if p.match(Equal) {
+		if isStar {
+			// For star parameters, the default is a star_expression
+			defaultValue, err = p.starExpression()
+		} else {
+			// For regular and double-star parameters, the default is a regular expression
+			defaultValue, err = p.expression()
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	endPos := p.previous().End()
+	if defaultValue != nil {
+		endPos = defaultValue.End()
+	} else if bound != nil {
+		endPos = bound.End()
+	}
+
+	return NewTypeParamExpr(name, bound, defaultValue, isStar, isDoubleStar, startPos, endPos), nil
+}
+
+func (p *Parser) returnStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) importStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) raiseStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) passStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) delStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) yieldStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) assertStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) breakStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) continueStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) globalStatement() (Stmt, error) {
+	return nil, nil
+}
+
+func (p *Parser) nonlocalStatement() (Stmt, error) {
+	return nil, nil
 }
 
 // ----------------------------------------------------------------------------
