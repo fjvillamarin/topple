@@ -530,26 +530,56 @@ func (p *ASTPrinter) VisitTypeAlias(node *TypeAlias) Visitor {
 func (p *ASTPrinter) VisitReturnStmt(node *ReturnStmt) Visitor {
 	p.printNodeStart("ReturnStmt", node)
 
-	if node.Value != nil {
-		p.result.WriteString(" (\n")
-	} else {
+	if node.Value == nil {
 		p.result.WriteString("\n")
+		return p
 	}
+
+	p.result.WriteString(" (\n")
 
 	p.indentLevel++
 	// Visit the return expression
 	if node.Value != nil {
 		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
 		p.indentLevel++
-		if node.Value != nil {
-			node.Value.Accept(p)
-		}
+		node.Value.Accept(p)
 		p.indentLevel--
 	}
 	p.indentLevel--
 
-	if node.Value != nil {
-		p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitRaiseStmt handles RaiseStmt nodes
+func (p *ASTPrinter) VisitRaiseStmt(node *RaiseStmt) Visitor {
+	p.printNodeStart("RaiseStmt", node)
+
+	if !node.HasException {
+		p.result.WriteString("\n")
+		return p
 	}
+
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the exception expression
+	if node.Exception != nil {
+		p.result.WriteString(fmt.Sprintf("%sexception:\n", p.indent()))
+		p.indentLevel++
+		node.Exception.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the from expression if it exists
+	if node.HasFrom && node.FromExpr != nil {
+		p.result.WriteString(fmt.Sprintf("%sfrom:\n", p.indent()))
+		p.indentLevel++
+		node.FromExpr.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }

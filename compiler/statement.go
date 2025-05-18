@@ -8,6 +8,7 @@ type StmtVisitor interface {
 	VisitExprStmt(e *ExprStmt) Visitor
 	VisitTypeAlias(t *TypeAlias) Visitor
 	VisitReturnStmt(r *ReturnStmt) Visitor
+	VisitRaiseStmt(r *RaiseStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -119,4 +120,42 @@ func (r *ReturnStmt) Accept(visitor Visitor) {
 
 func (r *ReturnStmt) String() string {
 	return fmt.Sprintf("ReturnStmt(%s)", r.Value)
+}
+
+// RaiseStmt represents a 'raise' statement.
+type RaiseStmt struct {
+	BaseNode
+	Exception    Expr
+	FromExpr     Expr
+	HasException bool
+	HasFrom      bool
+}
+
+func NewRaiseStmt(exception Expr, fromExpr Expr, hasException bool, hasFrom bool, startPos Position, endPos Position) *RaiseStmt {
+	return &RaiseStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Exception:    exception,
+		FromExpr:     fromExpr,
+		HasException: hasException,
+		HasFrom:      hasFrom,
+	}
+}
+
+func (r *RaiseStmt) isStmt() {}
+
+func (r *RaiseStmt) Accept(visitor Visitor) {
+	visitor.VisitRaiseStmt(r)
+}
+
+func (r *RaiseStmt) String() string {
+	if r.HasException {
+		if r.HasFrom {
+			return fmt.Sprintf("RaiseStmt(%s from %s)", r.Exception, r.FromExpr)
+		}
+		return fmt.Sprintf("RaiseStmt(%s)", r.Exception)
+	}
+	return "RaiseStmt()"
 }

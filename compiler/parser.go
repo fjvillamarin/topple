@@ -253,7 +253,41 @@ func (p *Parser) importStatement() (Stmt, error) {
 }
 
 func (p *Parser) raiseStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'raise' keyword
+	raiseToken, err := p.consume(Raise, "expected 'raise'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if there's an expression after 'raise'
+	if p.isAtEnd() || p.check(Newline) || p.check(Semicolon) {
+		// Just a 'raise' with no exception
+		endPos := raiseToken.End()
+		return NewRaiseStmt(nil, nil, false, false, raiseToken.Start(), endPos), nil
+	}
+
+	// Parse the exception expression
+	exception, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if there's a 'from' clause
+	hasFrom := false
+	var fromExpr Expr = nil
+	endPos := exception.End()
+
+	if p.match(From) {
+		hasFrom = true
+		// Parse the 'from' expression
+		fromExpr, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+		endPos = fromExpr.End()
+	}
+
+	return NewRaiseStmt(exception, fromExpr, true, hasFrom, raiseToken.Start(), endPos), nil
 }
 
 func (p *Parser) passStatement() (Stmt, error) {
