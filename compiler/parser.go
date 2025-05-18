@@ -301,7 +301,11 @@ func (p *Parser) delStatement() (Stmt, error) {
 }
 
 func (p *Parser) yieldStatement() (Stmt, error) {
-	return nil, nil
+	expr, err := p.yieldExpression()
+	if err != nil {
+		return nil, err
+	}
+	return NewYieldStmt(expr, expr.Start(), expr.End()), nil
 }
 
 func (p *Parser) assertStatement() (Stmt, error) {

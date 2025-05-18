@@ -12,6 +12,7 @@ type StmtVisitor interface {
 	VisitPassStmt(p *PassStmt) Visitor
 	VisitBreakStmt(b *BreakStmt) Visitor
 	VisitContinueStmt(c *ContinueStmt) Visitor
+	VisitYieldStmt(y *YieldStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -233,4 +234,30 @@ func (c *ContinueStmt) Accept(visitor Visitor) {
 
 func (c *ContinueStmt) String() string {
 	return "ContinueStmt()"
+}
+
+// YieldStmt represents a 'yield' statement.
+type YieldStmt struct {
+	BaseNode
+	Value Expr
+}
+
+func NewYieldStmt(value Expr, startPos Position, endPos Position) *YieldStmt {
+	return &YieldStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Value: value,
+	}
+}
+
+func (y *YieldStmt) isStmt() {}
+
+func (y *YieldStmt) Accept(visitor Visitor) {
+	visitor.VisitYieldStmt(y)
+}
+
+func (y *YieldStmt) String() string {
+	return fmt.Sprintf("YieldStmt(%s)", y.Value)
 }

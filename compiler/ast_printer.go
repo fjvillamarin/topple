@@ -604,3 +604,22 @@ func (p *ASTPrinter) VisitContinueStmt(node *ContinueStmt) Visitor {
 	p.result.WriteString("\n")
 	return p
 }
+
+// VisitYieldStmt handles YieldStmt nodes
+func (p *ASTPrinter) VisitYieldStmt(node *YieldStmt) Visitor {
+	p.printNodeStart("YieldStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the yield expression
+	if node.Value != nil {
+		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+		p.indentLevel++
+		node.Value.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
