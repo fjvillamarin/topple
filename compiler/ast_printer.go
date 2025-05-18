@@ -847,3 +847,21 @@ func (p *ASTPrinter) VisitSlice(node *Slice) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitAwaitExpr handles AwaitExpr nodes
+func (p *ASTPrinter) VisitAwaitExpr(node *AwaitExpr) Visitor {
+	p.printNodeStart("AwaitExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the expression
+	p.result.WriteString(fmt.Sprintf("%sexpr:\n", p.indent()))
+	p.indentLevel++
+	node.Expr.Accept(p)
+	p.indentLevel--
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

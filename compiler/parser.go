@@ -950,7 +950,7 @@ func (p *Parser) factor() (Expr, error) {
 
 // power parses a power expression.
 func (p *Parser) power() (Expr, error) {
-	expr, err := p.primary()
+	expr, err := p.await()
 	if err != nil {
 		return nil, err
 	}
@@ -965,6 +965,20 @@ func (p *Parser) power() (Expr, error) {
 	}
 
 	return expr, nil
+}
+
+func (p *Parser) await() (Expr, error) {
+	// Check if the current token is an await keyword
+	if p.match(Await) {
+		awaitToken := p.previous()
+		expr, err := p.primary()
+		if err != nil {
+			return nil, err
+		}
+		return NewAwaitExpr(expr, awaitToken.Start(), expr.End()), nil
+	}
+
+	return p.primary()
 }
 
 // primary parses a primary expression.

@@ -23,6 +23,7 @@ type ExprVisitor interface {
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitTypeParamExpr(t *TypeParamExpr) Visitor
 	VisitSlice(s *Slice) Visitor
+	VisitAwaitExpr(a *AwaitExpr) Visitor
 }
 
 // Name represents an identifier expression.
@@ -546,4 +547,31 @@ func (s *Slice) End() Position {
 // Accept calls the VisitSlice method on the visitor
 func (s *Slice) Accept(visitor Visitor) {
 	visitor.VisitSlice(s)
+}
+
+// AwaitExpr represents an await expression (await expr)
+type AwaitExpr struct {
+	BaseNode
+	Expr Expr
+}
+
+func NewAwaitExpr(expr Expr, startPos Position, endPos Position) *AwaitExpr {
+	return &AwaitExpr{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Expr: expr,
+	}
+}
+
+func (a *AwaitExpr) isExpr() {}
+
+func (a *AwaitExpr) String() string {
+	return fmt.Sprintf("await %v", a.Expr)
+}
+
+// Accept calls the VisitAwaitExpr method on the visitor
+func (a *AwaitExpr) Accept(visitor Visitor) {
+	visitor.VisitAwaitExpr(a)
 }
