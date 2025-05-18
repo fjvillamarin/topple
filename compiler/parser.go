@@ -291,7 +291,9 @@ func (p *Parser) raiseStatement() (Stmt, error) {
 }
 
 func (p *Parser) passStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'pass' keyword
+	passToken := p.advance()
+	return NewPassStmt(passToken.Start(), passToken.End()), nil
 }
 
 func (p *Parser) delStatement() (Stmt, error) {
@@ -307,11 +309,15 @@ func (p *Parser) assertStatement() (Stmt, error) {
 }
 
 func (p *Parser) breakStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'break' keyword
+	breakToken := p.advance()
+	return NewBreakStmt(breakToken.Start(), breakToken.End()), nil
 }
 
 func (p *Parser) continueStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'continue' keyword
+	continueToken := p.advance()
+	return NewContinueStmt(continueToken.Start(), continueToken.End()), nil
 }
 
 func (p *Parser) globalStatement() (Stmt, error) {

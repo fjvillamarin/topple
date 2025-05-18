@@ -583,3 +583,24 @@ func (p *ASTPrinter) VisitRaiseStmt(node *RaiseStmt) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitPassStmt handles PassStmt nodes
+func (p *ASTPrinter) VisitPassStmt(node *PassStmt) Visitor {
+	p.printNodeStart("PassStmt", node)
+	p.result.WriteString("\n")
+	return p
+}
+
+// VisitBreakStmt handles BreakStmt nodes
+func (p *ASTPrinter) VisitBreakStmt(node *BreakStmt) Visitor {
+	p.printNodeStart("BreakStmt", node)
+	p.result.WriteString("\n")
+	return p
+}
+
+// VisitContinueStmt handles ContinueStmt nodes
+func (p *ASTPrinter) VisitContinueStmt(node *ContinueStmt) Visitor {
+	p.printNodeStart("ContinueStmt", node)
+	p.result.WriteString("\n")
+	return p
+}

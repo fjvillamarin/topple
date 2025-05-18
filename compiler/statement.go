@@ -9,6 +9,9 @@ type StmtVisitor interface {
 	VisitTypeAlias(t *TypeAlias) Visitor
 	VisitReturnStmt(r *ReturnStmt) Visitor
 	VisitRaiseStmt(r *RaiseStmt) Visitor
+	VisitPassStmt(p *PassStmt) Visitor
+	VisitBreakStmt(b *BreakStmt) Visitor
+	VisitContinueStmt(c *ContinueStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -158,4 +161,76 @@ func (r *RaiseStmt) String() string {
 		return fmt.Sprintf("RaiseStmt(%s)", r.Exception)
 	}
 	return "RaiseStmt()"
+}
+
+// PassStmt represents a 'pass' statement, which is a no-op.
+type PassStmt struct {
+	BaseNode
+}
+
+func NewPassStmt(startPos Position, endPos Position) *PassStmt {
+	return &PassStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+	}
+}
+
+func (p *PassStmt) isStmt() {}
+
+func (p *PassStmt) Accept(visitor Visitor) {
+	visitor.VisitPassStmt(p)
+}
+
+func (p *PassStmt) String() string {
+	return "PassStmt()"
+}
+
+// BreakStmt represents a 'break' statement.
+type BreakStmt struct {
+	BaseNode
+}
+
+func NewBreakStmt(startPos Position, endPos Position) *BreakStmt {
+	return &BreakStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+	}
+}
+
+func (b *BreakStmt) isStmt() {}
+
+func (b *BreakStmt) Accept(visitor Visitor) {
+	visitor.VisitBreakStmt(b)
+}
+
+func (b *BreakStmt) String() string {
+	return "BreakStmt()"
+}
+
+// ContinueStmt represents a 'continue' statement.
+type ContinueStmt struct {
+	BaseNode
+}
+
+func NewContinueStmt(startPos Position, endPos Position) *ContinueStmt {
+	return &ContinueStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+	}
+}
+
+func (c *ContinueStmt) isStmt() {}
+
+func (c *ContinueStmt) Accept(visitor Visitor) {
+	visitor.VisitContinueStmt(c)
+}
+
+func (c *ContinueStmt) String() string {
+	return "ContinueStmt()"
 }
