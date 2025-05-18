@@ -1,6 +1,9 @@
 package compiler
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // StmtVisitor is the interface for visitors that traverse statements.
 type StmtVisitor interface {
@@ -14,6 +17,8 @@ type StmtVisitor interface {
 	VisitContinueStmt(c *ContinueStmt) Visitor
 	VisitYieldStmt(y *YieldStmt) Visitor
 	VisitAssertStmt(a *AssertStmt) Visitor
+	VisitGlobalStmt(g *GlobalStmt) Visitor
+	VisitNonlocalStmt(n *NonlocalStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -292,4 +297,64 @@ func (a *AssertStmt) String() string {
 		return fmt.Sprintf("AssertStmt(%s, %s)", a.Test, a.Message)
 	}
 	return fmt.Sprintf("AssertStmt(%s)", a.Test)
+}
+
+// GlobalStmt represents a 'global' statement.
+type GlobalStmt struct {
+	BaseNode
+	Names []*Name // The identifiers declared as global
+}
+
+func NewGlobalStmt(names []*Name, startPos Position, endPos Position) *GlobalStmt {
+	return &GlobalStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Names: names,
+	}
+}
+
+func (g *GlobalStmt) isStmt() {}
+
+func (g *GlobalStmt) Accept(visitor Visitor) {
+	visitor.VisitGlobalStmt(g)
+}
+
+func (g *GlobalStmt) String() string {
+	names := make([]string, len(g.Names))
+	for i, name := range g.Names {
+		names[i] = name.String()
+	}
+	return fmt.Sprintf("GlobalStmt(%s)", strings.Join(names, ", "))
+}
+
+// NonlocalStmt represents a 'nonlocal' statement.
+type NonlocalStmt struct {
+	BaseNode
+	Names []*Name // The identifiers declared as nonlocal
+}
+
+func NewNonlocalStmt(names []*Name, startPos Position, endPos Position) *NonlocalStmt {
+	return &NonlocalStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Names: names,
+	}
+}
+
+func (n *NonlocalStmt) isStmt() {}
+
+func (n *NonlocalStmt) Accept(visitor Visitor) {
+	visitor.VisitNonlocalStmt(n)
+}
+
+func (n *NonlocalStmt) String() string {
+	names := make([]string, len(n.Names))
+	for i, name := range n.Names {
+		names[i] = name.String()
+	}
+	return fmt.Sprintf("NonlocalStmt(%s)", strings.Join(names, ", "))
 }

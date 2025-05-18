@@ -350,11 +350,76 @@ func (p *Parser) continueStatement() (Stmt, error) {
 }
 
 func (p *Parser) globalStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'global' keyword
+	globalToken, err := p.consume(Global, "expected 'global'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse at least one identifier
+	names, err := p.parseNameList()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(names) == 0 {
+		return nil, p.error(p.previous(), "expected at least one identifier after 'global'")
+	}
+
+	// Get the end position from the last name
+	endPos := names[len(names)-1].End()
+	return NewGlobalStmt(names, globalToken.Start(), endPos), nil
 }
 
 func (p *Parser) nonlocalStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'nonlocal' keyword
+	nonlocalToken, err := p.consume(Nonlocal, "expected 'nonlocal'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse at least one identifier
+	names, err := p.parseNameList()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(names) == 0 {
+		return nil, p.error(p.previous(), "expected at least one identifier after 'nonlocal'")
+	}
+
+	// Get the end position from the last name
+	endPos := names[len(names)-1].End()
+	return NewNonlocalStmt(names, nonlocalToken.Start(), endPos), nil
+}
+
+// parseNameList is a helper function to parse a comma-separated list of identifiers
+func (p *Parser) parseNameList() ([]*Name, error) {
+	names := []*Name{}
+
+	// Parse first identifier
+	nameToken, err := p.consume(Identifier, "expected identifier")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a Name node from the token
+	name := NewName(nameToken, nameToken.Start(), nameToken.End())
+	names = append(names, name)
+
+	// Parse additional identifiers separated by commas
+	for p.match(Comma) {
+		nameToken, err = p.consume(Identifier, "expected identifier after ','")
+		if err != nil {
+			return nil, err
+		}
+
+		// Create a Name node from the token
+		name = NewName(nameToken, nameToken.Start(), nameToken.End())
+		names = append(names, name)
+	}
+
+	return names, nil
 }
 
 // ----------------------------------------------------------------------------

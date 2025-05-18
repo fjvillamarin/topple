@@ -648,3 +648,59 @@ func (p *ASTPrinter) VisitAssertStmt(node *AssertStmt) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitGlobalStmt handles GlobalStmt nodes
+func (p *ASTPrinter) VisitGlobalStmt(node *GlobalStmt) Visitor {
+	p.printNodeStart("GlobalStmt", node)
+
+	if len(node.Names) == 0 {
+		p.result.WriteString("\n")
+		return p
+	}
+
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Print the names
+	p.result.WriteString(fmt.Sprintf("%snames:\n", p.indent()))
+	p.indentLevel++
+	for i, name := range node.Names {
+		p.result.WriteString(fmt.Sprintf("%s%d:\n", p.indent(), i))
+		p.indentLevel++
+		name.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitNonlocalStmt handles NonlocalStmt nodes
+func (p *ASTPrinter) VisitNonlocalStmt(node *NonlocalStmt) Visitor {
+	p.printNodeStart("NonlocalStmt", node)
+
+	if len(node.Names) == 0 {
+		p.result.WriteString("\n")
+		return p
+	}
+
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Print the names
+	p.result.WriteString(fmt.Sprintf("%snames:\n", p.indent()))
+	p.indentLevel++
+	for i, name := range node.Names {
+		p.result.WriteString(fmt.Sprintf("%s%d:\n", p.indent(), i))
+		p.indentLevel++
+		name.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
