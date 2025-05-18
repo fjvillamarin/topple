@@ -623,3 +623,28 @@ func (p *ASTPrinter) VisitYieldStmt(node *YieldStmt) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitAssertStmt handles AssertStmt nodes
+func (p *ASTPrinter) VisitAssertStmt(node *AssertStmt) Visitor {
+	p.printNodeStart("AssertStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the test expression
+	p.result.WriteString(fmt.Sprintf("%stest:\n", p.indent()))
+	p.indentLevel++
+	node.Test.Accept(p)
+	p.indentLevel--
+
+	// Visit the message expression if present
+	if node.Message != nil {
+		p.result.WriteString(fmt.Sprintf("%smessage:\n", p.indent()))
+		p.indentLevel++
+		node.Message.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

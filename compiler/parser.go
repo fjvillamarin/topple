@@ -309,7 +309,32 @@ func (p *Parser) yieldStatement() (Stmt, error) {
 }
 
 func (p *Parser) assertStatement() (Stmt, error) {
-	return nil, nil
+	// Consume the 'assert' keyword
+	assertToken, err := p.consume(Assert, "expected 'assert'")
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the test expression
+	test, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for optional message expression
+	var message Expr = nil
+	endPos := test.End()
+
+	if p.match(Comma) {
+		// Parse the message expression
+		message, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+		endPos = message.End()
+	}
+
+	return NewAssertStmt(test, message, assertToken.Start(), endPos), nil
 }
 
 func (p *Parser) breakStatement() (Stmt, error) {

@@ -13,6 +13,7 @@ type StmtVisitor interface {
 	VisitBreakStmt(b *BreakStmt) Visitor
 	VisitContinueStmt(c *ContinueStmt) Visitor
 	VisitYieldStmt(y *YieldStmt) Visitor
+	VisitAssertStmt(a *AssertStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -260,4 +261,35 @@ func (y *YieldStmt) Accept(visitor Visitor) {
 
 func (y *YieldStmt) String() string {
 	return fmt.Sprintf("YieldStmt(%s)", y.Value)
+}
+
+// AssertStmt represents an 'assert' statement.
+type AssertStmt struct {
+	BaseNode
+	Test    Expr
+	Message Expr // Optional error message
+}
+
+func NewAssertStmt(test Expr, message Expr, startPos Position, endPos Position) *AssertStmt {
+	return &AssertStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Test:    test,
+		Message: message,
+	}
+}
+
+func (a *AssertStmt) isStmt() {}
+
+func (a *AssertStmt) Accept(visitor Visitor) {
+	visitor.VisitAssertStmt(a)
+}
+
+func (a *AssertStmt) String() string {
+	if a.Message != nil {
+		return fmt.Sprintf("AssertStmt(%s, %s)", a.Test, a.Message)
+	}
+	return fmt.Sprintf("AssertStmt(%s)", a.Test)
 }
