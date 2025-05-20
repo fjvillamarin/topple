@@ -964,3 +964,11 @@ func (p *ASTPrinter) VisitAnnotationStmt(node *AnnotationStmt) Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitMultiStmt handles MultiStmt nodes
+func (p *ASTPrinter) VisitMultiStmt(node *MultiStmt) Visitor {
+	for _, stmt := range node.Stmts {
+		stmt.Accept(p)
+	}
+	return p
+}

@@ -24,6 +24,7 @@ type StmtVisitor interface {
 	VisitAssignStmt(a *AssignStmt) Visitor
 	VisitAugAssignStmt(a *AugAssignStmt) Visitor
 	VisitAnnotationStmt(a *AnnotationStmt) Visitor
+	VisitMultiStmt(m *MultiStmt) Visitor
 }
 
 // Module is the root node of a program, containing a list of statements.
@@ -588,4 +589,31 @@ func (a *AnnotationStmt) String() string {
 		return fmt.Sprintf("AnnotationStmt(%s: %s = %s)", a.Target, a.Type, a.Value)
 	}
 	return fmt.Sprintf("AnnotationStmt(%s: %s)", a.Target, a.Type)
+}
+
+// MultiStmt represents a list of statements.
+// It doesn't have semantic meaning, it's just a container for a list of statements.
+type MultiStmt struct {
+	BaseNode
+	Stmts []Stmt
+}
+
+func NewMultiStmt(stmts []Stmt, startPos Position, endPos Position) *MultiStmt {
+	return &MultiStmt{
+		BaseNode: BaseNode{
+			StartPos: startPos,
+			EndPos:   endPos,
+		},
+		Stmts: stmts,
+	}
+}
+
+func (m *MultiStmt) isStmt() {}
+
+func (m *MultiStmt) Accept(visitor Visitor) {
+	visitor.VisitMultiStmt(m)
+}
+
+func (m *MultiStmt) String() string {
+	return fmt.Sprintf("MultiStmt(%d stmts)", len(m.Stmts))
 }

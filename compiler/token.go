@@ -176,6 +176,7 @@ var tokenTypeNames = [...]string{
 	"LessEqual",
 	"Greater",
 	"GreaterEqual",
+	"Walrus",
 	"IsNot",
 	"NotIn",
 
