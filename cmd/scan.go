@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"biscuit/compiler"
+	"biscuit/compiler/lexer"
 	"biscuit/internal/filesystem"
 )
 
@@ -89,7 +89,7 @@ func scanFile(fs filesystem.FileSystem, path, outputDir string, writeTokens bool
 		return fmt.Errorf("error reading file %s: %w", path, err)
 	}
 
-	scanner := compiler.NewScanner(content)
+	scanner := lexer.NewScanner(content)
 	tokens := scanner.ScanTokens()
 
 	// Format tokens into a string

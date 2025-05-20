@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"biscuit/compiler"
+	"biscuit/compiler/ast"
 	"biscuit/internal/filesystem"
 )
 
@@ -97,7 +98,7 @@ func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, 
 	output.WriteString(fmt.Sprintf("=== %s ===\n\n", filename))
 
 	if program != nil {
-		printer := compiler.NewASTPrinter("  ")
+		printer := ast.NewASTPrinter("  ")
 		output.WriteString(printer.Print(program))
 		output.WriteString("\n")
 	}

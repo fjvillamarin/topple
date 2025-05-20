@@ -1,4 +1,4 @@
-package compiler
+package lexer
 
 // scanner.go
 //

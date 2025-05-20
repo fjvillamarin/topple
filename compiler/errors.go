@@ -1,56 +1,13 @@
 package compiler
 
-import "fmt"
-
-// ScannerError is an error that occurs in the scanner.
-// Line and Column use the same indexing system as configured in the Scanner.
-type ScannerError struct {
-	Message string
-	Line    int
-	Column  int
-}
-
-func (e *ScannerError) Error() string {
-	return fmt.Sprintf("Error: %s at position %s", e.Message, e.Span())
-}
-
-// Span returns a string representation of the error's position.
-func (e *ScannerError) Span() string {
-	return fmt.Sprintf("L%d:%d", e.Line, e.Column)
-}
-
-// NewScannerError creates a new ScannerError.
-func NewScannerError(message string, line int, column int) *ScannerError {
-	return &ScannerError{Message: message, Line: line, Column: column}
-}
-
-// ParseError is an error that occurs in the parser.
-type ParseError struct {
-	Token   Token
-	Message string
-}
-
-// Error returns a string representation of the ParseError.
-func (e *ParseError) Error() string {
-	if e.Token.Type == EOF {
-		return fmt.Sprintf("at end: %s (position %s)", e.Message, e.Span())
-	}
-	return fmt.Sprintf("at '%s': %s (position %s)", e.Token.Lexeme, e.Message, e.Span())
-}
-
-// Span returns the span of the token that caused the error.
-func (e *ParseError) Span() string {
-	return e.Token.Span()
-}
-
-// NewParseError creates a new ParseError.
-func NewParseError(token Token, message string) *ParseError {
-	return &ParseError{Token: token, Message: message}
-}
+import (
+	"biscuit/compiler/lexer"
+	"fmt"
+)
 
 // RuntimeError is an error that occurs in the runtime.
 type RuntimeError struct {
-	Token   Token
+	Token   lexer.Token
 	Message string
 }
 
@@ -65,7 +22,7 @@ func (e *RuntimeError) Span() string {
 }
 
 // NewRuntimeError creates a new RuntimeError.
-func NewRuntimeError(token Token, message string) *RuntimeError {
+func NewRuntimeError(token lexer.Token, message string) *RuntimeError {
 	return &RuntimeError{Token: token, Message: message}
 }
 

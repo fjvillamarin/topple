@@ -8,7 +8,7 @@
 // All keywords are recognised here so the parser can rely on distinct
 // TokenType values instead of string comparisons.
 
-package compiler
+package lexer
 
 import "fmt"
 
@@ -253,6 +253,16 @@ type Position struct {
 
 func (p Position) String() string {
 	return fmt.Sprintf("L%d:%d", p.Line, p.Column)
+}
+
+// Span is a helper type for representing a span of text in a file.
+type Span struct {
+	Start Position
+	End   Position
+}
+
+func (s *Span) String() string {
+	return fmt.Sprintf("%s-%s", s.Start, s.End)
 }
 
 // Token carries full positional information so the analyzer can

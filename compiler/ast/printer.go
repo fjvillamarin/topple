@@ -1,12 +1,17 @@
-package compiler
+package ast
 
 import (
 	"fmt"
 	"strings"
+
+	nodes "biscuit/compiler/ast/nodes"
+	"biscuit/compiler/lexer"
 )
 
 // ASTPrinter implements a visitor that prints the AST in a tree-sitter-like format.
 type ASTPrinter struct {
+	nodes.Visitor
+
 	result      strings.Builder
 	indentLevel int
 	indentStr   string
@@ -25,12 +30,12 @@ func (p *ASTPrinter) indent() string {
 }
 
 // printNodeStart prints the common start of a node representation
-func (p *ASTPrinter) printNodeStart(nodeType string, node Node) {
+func (p *ASTPrinter) printNodeStart(nodeType string, node nodes.Node) {
 	p.result.WriteString(fmt.Sprintf("%s%s [%s]", p.indent(), nodeType, node.Span()))
 }
 
 // Visit implements the visitor pattern entry point
-func (p *ASTPrinter) Visit(node Node) Visitor {
+func (p *ASTPrinter) Visit(node nodes.Node) nodes.Visitor {
 	if node == nil {
 		return nil
 	}
@@ -41,7 +46,7 @@ func (p *ASTPrinter) Visit(node Node) Visitor {
 }
 
 // VisitModule handles Module nodes
-func (p *ASTPrinter) VisitModule(node *Module) Visitor {
+func (p *ASTPrinter) VisitModule(node *nodes.Module) nodes.Visitor {
 	p.printNodeStart("Module", node)
 	p.result.WriteString(" (\n")
 
@@ -59,7 +64,7 @@ func (p *ASTPrinter) VisitModule(node *Module) Visitor {
 }
 
 // VisitExprStmt handles ExprStmt nodes
-func (p *ASTPrinter) VisitExprStmt(node *ExprStmt) Visitor {
+func (p *ASTPrinter) VisitExprStmt(node *nodes.ExprStmt) nodes.Visitor {
 	p.printNodeStart("ExprStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -75,19 +80,19 @@ func (p *ASTPrinter) VisitExprStmt(node *ExprStmt) Visitor {
 }
 
 // VisitName handles Name nodes
-func (p *ASTPrinter) VisitName(node *Name) Visitor {
+func (p *ASTPrinter) VisitName(node *nodes.Name) nodes.Visitor {
 	p.printNodeStart("Name", node)
 	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.String()))
 	return p
 }
 
 // VisitLiteral handles Literal nodes
-func (p *ASTPrinter) VisitLiteral(node *Literal) Visitor {
+func (p *ASTPrinter) VisitLiteral(node *nodes.Literal) nodes.Visitor {
 	var typeStr string
 	switch node.Token.Type {
-	case String:
+	case lexer.String:
 		typeStr = "String"
-	case Number:
+	case lexer.Number:
 		typeStr = "Number"
 	default:
 		typeStr = "Literal"
@@ -99,7 +104,7 @@ func (p *ASTPrinter) VisitLiteral(node *Literal) Visitor {
 }
 
 // VisitAttribute handles Attribute nodes
-func (p *ASTPrinter) VisitAttribute(node *Attribute) Visitor {
+func (p *ASTPrinter) VisitAttribute(node *nodes.Attribute) nodes.Visitor {
 	p.printNodeStart("Attribute", node)
 	p.result.WriteString(" (\n")
 
@@ -121,7 +126,7 @@ func (p *ASTPrinter) VisitAttribute(node *Attribute) Visitor {
 }
 
 // VisitCall handles Call nodes
-func (p *ASTPrinter) VisitCall(node *Call) Visitor {
+func (p *ASTPrinter) VisitCall(node *nodes.Call) nodes.Visitor {
 	p.printNodeStart("Call", node)
 	p.result.WriteString(" (\n")
 
@@ -155,7 +160,7 @@ func (p *ASTPrinter) VisitCall(node *Call) Visitor {
 }
 
 // VisitSubscript handles Subscript nodes
-func (p *ASTPrinter) VisitSubscript(node *Subscript) Visitor {
+func (p *ASTPrinter) VisitSubscript(node *nodes.Subscript) nodes.Visitor {
 	p.printNodeStart("Subscript", node)
 	p.result.WriteString(" (\n")
 
@@ -189,7 +194,7 @@ func (p *ASTPrinter) VisitSubscript(node *Subscript) Visitor {
 }
 
 // VisitBinary handles Binary nodes
-func (p *ASTPrinter) VisitBinary(node *Binary) Visitor {
+func (p *ASTPrinter) VisitBinary(node *nodes.Binary) nodes.Visitor {
 	p.printNodeStart("Binary", node)
 	p.result.WriteString(" (\n")
 
@@ -219,7 +224,7 @@ func (p *ASTPrinter) VisitBinary(node *Binary) Visitor {
 }
 
 // VisitUnary handles Unary nodes
-func (p *ASTPrinter) VisitUnary(node *Unary) Visitor {
+func (p *ASTPrinter) VisitUnary(node *nodes.Unary) nodes.Visitor {
 	p.printNodeStart("Unary", node)
 	p.result.WriteString(" (\n")
 
@@ -241,7 +246,7 @@ func (p *ASTPrinter) VisitUnary(node *Unary) Visitor {
 }
 
 // Print visits the AST starting from the given node and returns the string representation.
-func (p *ASTPrinter) Print(node Node) string {
+func (p *ASTPrinter) Print(node nodes.Node) string {
 	p.result.Reset()
 	p.indentLevel = 0
 
@@ -252,7 +257,7 @@ func (p *ASTPrinter) Print(node Node) string {
 }
 
 // VisitAssignExpr handles AssignExpr nodes
-func (p *ASTPrinter) VisitAssignExpr(node *AssignExpr) Visitor {
+func (p *ASTPrinter) VisitAssignExpr(node *nodes.AssignExpr) nodes.Visitor {
 	p.printNodeStart("AssignExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -279,7 +284,7 @@ func (p *ASTPrinter) VisitAssignExpr(node *AssignExpr) Visitor {
 }
 
 // VisitStarExpr handles StarExpr nodes
-func (p *ASTPrinter) VisitStarExpr(node *StarExpr) Visitor {
+func (p *ASTPrinter) VisitStarExpr(node *nodes.StarExpr) nodes.Visitor {
 	p.printNodeStart("StarExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -298,7 +303,7 @@ func (p *ASTPrinter) VisitStarExpr(node *StarExpr) Visitor {
 }
 
 // VisitTernaryExpr handles TernaryExpr nodes
-func (p *ASTPrinter) VisitTernaryExpr(node *TernaryExpr) Visitor {
+func (p *ASTPrinter) VisitTernaryExpr(node *nodes.TernaryExpr) nodes.Visitor {
 	p.printNodeStart("TernaryExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -333,7 +338,7 @@ func (p *ASTPrinter) VisitTernaryExpr(node *TernaryExpr) Visitor {
 }
 
 // VisitListExpr handles ListExpr nodes
-func (p *ASTPrinter) VisitListExpr(node *ListExpr) Visitor {
+func (p *ASTPrinter) VisitListExpr(node *nodes.ListExpr) nodes.Visitor {
 	p.printNodeStart("ListExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -359,7 +364,7 @@ func (p *ASTPrinter) VisitListExpr(node *ListExpr) Visitor {
 }
 
 // VisitTupleExpr handles TupleExpr nodes
-func (p *ASTPrinter) VisitTupleExpr(node *TupleExpr) Visitor {
+func (p *ASTPrinter) VisitTupleExpr(node *nodes.TupleExpr) nodes.Visitor {
 	p.printNodeStart("TupleExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -385,7 +390,7 @@ func (p *ASTPrinter) VisitTupleExpr(node *TupleExpr) Visitor {
 }
 
 // VisitSetExpr handles SetExpr nodes
-func (p *ASTPrinter) VisitSetExpr(node *SetExpr) Visitor {
+func (p *ASTPrinter) VisitSetExpr(node *nodes.SetExpr) nodes.Visitor {
 	p.printNodeStart("SetExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -411,7 +416,7 @@ func (p *ASTPrinter) VisitSetExpr(node *SetExpr) Visitor {
 }
 
 // VisitYieldExpr handles YieldExpr nodes
-func (p *ASTPrinter) VisitYieldExpr(node *YieldExpr) Visitor {
+func (p *ASTPrinter) VisitYieldExpr(node *nodes.YieldExpr) nodes.Visitor {
 	p.printNodeStart("YieldExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -433,7 +438,7 @@ func (p *ASTPrinter) VisitYieldExpr(node *YieldExpr) Visitor {
 }
 
 // VisitGroupExpr handles GroupExpr nodes
-func (p *ASTPrinter) VisitGroupExpr(node *GroupExpr) Visitor {
+func (p *ASTPrinter) VisitGroupExpr(node *nodes.GroupExpr) nodes.Visitor {
 	p.printNodeStart("GroupExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -452,7 +457,7 @@ func (p *ASTPrinter) VisitGroupExpr(node *GroupExpr) Visitor {
 }
 
 // VisitTypeParamExpr handles TypeParamExpr nodes
-func (p *ASTPrinter) VisitTypeParamExpr(node *TypeParamExpr) Visitor {
+func (p *ASTPrinter) VisitTypeParamExpr(node *nodes.TypeParamExpr) nodes.Visitor {
 	p.printNodeStart("TypeParamExpr", node)
 
 	// Format the type parameter
@@ -499,7 +504,7 @@ func (p *ASTPrinter) VisitTypeParamExpr(node *TypeParamExpr) Visitor {
 }
 
 // VisitTypeAlias handles TypeAlias nodes
-func (p *ASTPrinter) VisitTypeAlias(node *TypeAlias) Visitor {
+func (p *ASTPrinter) VisitTypeAlias(node *nodes.TypeAlias) nodes.Visitor {
 	p.printNodeStart("TypeAlias", node)
 	p.result.WriteString(" (\n")
 
@@ -534,7 +539,7 @@ func (p *ASTPrinter) VisitTypeAlias(node *TypeAlias) Visitor {
 }
 
 // VisitReturnStmt handles ReturnStmt nodes
-func (p *ASTPrinter) VisitReturnStmt(node *ReturnStmt) Visitor {
+func (p *ASTPrinter) VisitReturnStmt(node *nodes.ReturnStmt) nodes.Visitor {
 	p.printNodeStart("ReturnStmt", node)
 
 	if node.Value == nil {
@@ -559,7 +564,7 @@ func (p *ASTPrinter) VisitReturnStmt(node *ReturnStmt) Visitor {
 }
 
 // VisitRaiseStmt handles RaiseStmt nodes
-func (p *ASTPrinter) VisitRaiseStmt(node *RaiseStmt) Visitor {
+func (p *ASTPrinter) VisitRaiseStmt(node *nodes.RaiseStmt) nodes.Visitor {
 	p.printNodeStart("RaiseStmt", node)
 
 	if !node.HasException {
@@ -592,28 +597,28 @@ func (p *ASTPrinter) VisitRaiseStmt(node *RaiseStmt) Visitor {
 }
 
 // VisitPassStmt handles PassStmt nodes
-func (p *ASTPrinter) VisitPassStmt(node *PassStmt) Visitor {
+func (p *ASTPrinter) VisitPassStmt(node *nodes.PassStmt) nodes.Visitor {
 	p.printNodeStart("PassStmt", node)
 	p.result.WriteString("\n")
 	return p
 }
 
 // VisitBreakStmt handles BreakStmt nodes
-func (p *ASTPrinter) VisitBreakStmt(node *BreakStmt) Visitor {
+func (p *ASTPrinter) VisitBreakStmt(node *nodes.BreakStmt) nodes.Visitor {
 	p.printNodeStart("BreakStmt", node)
 	p.result.WriteString("\n")
 	return p
 }
 
 // VisitContinueStmt handles ContinueStmt nodes
-func (p *ASTPrinter) VisitContinueStmt(node *ContinueStmt) Visitor {
+func (p *ASTPrinter) VisitContinueStmt(node *nodes.ContinueStmt) nodes.Visitor {
 	p.printNodeStart("ContinueStmt", node)
 	p.result.WriteString("\n")
 	return p
 }
 
 // VisitYieldStmt handles YieldStmt nodes
-func (p *ASTPrinter) VisitYieldStmt(node *YieldStmt) Visitor {
+func (p *ASTPrinter) VisitYieldStmt(node *nodes.YieldStmt) nodes.Visitor {
 	p.printNodeStart("YieldStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -632,7 +637,7 @@ func (p *ASTPrinter) VisitYieldStmt(node *YieldStmt) Visitor {
 }
 
 // VisitAssertStmt handles AssertStmt nodes
-func (p *ASTPrinter) VisitAssertStmt(node *AssertStmt) Visitor {
+func (p *ASTPrinter) VisitAssertStmt(node *nodes.AssertStmt) nodes.Visitor {
 	p.printNodeStart("AssertStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -657,7 +662,7 @@ func (p *ASTPrinter) VisitAssertStmt(node *AssertStmt) Visitor {
 }
 
 // VisitGlobalStmt handles GlobalStmt nodes
-func (p *ASTPrinter) VisitGlobalStmt(node *GlobalStmt) Visitor {
+func (p *ASTPrinter) VisitGlobalStmt(node *nodes.GlobalStmt) nodes.Visitor {
 	p.printNodeStart("GlobalStmt", node)
 
 	if len(node.Names) == 0 {
@@ -685,7 +690,7 @@ func (p *ASTPrinter) VisitGlobalStmt(node *GlobalStmt) Visitor {
 }
 
 // VisitNonlocalStmt handles NonlocalStmt nodes
-func (p *ASTPrinter) VisitNonlocalStmt(node *NonlocalStmt) Visitor {
+func (p *ASTPrinter) VisitNonlocalStmt(node *nodes.NonlocalStmt) nodes.Visitor {
 	p.printNodeStart("NonlocalStmt", node)
 
 	if len(node.Names) == 0 {
@@ -713,7 +718,7 @@ func (p *ASTPrinter) VisitNonlocalStmt(node *NonlocalStmt) Visitor {
 }
 
 // VisitImportStmt handles ImportStmt nodes
-func (p *ASTPrinter) VisitImportStmt(node *ImportStmt) Visitor {
+func (p *ASTPrinter) VisitImportStmt(node *nodes.ImportStmt) nodes.Visitor {
 	p.printNodeStart("ImportStmt", node)
 
 	if len(node.Names) == 0 {
@@ -741,7 +746,7 @@ func (p *ASTPrinter) VisitImportStmt(node *ImportStmt) Visitor {
 }
 
 // VisitImportFromStmt handles ImportFromStmt nodes
-func (p *ASTPrinter) VisitImportFromStmt(node *ImportFromStmt) Visitor {
+func (p *ASTPrinter) VisitImportFromStmt(node *nodes.ImportFromStmt) nodes.Visitor {
 	p.printNodeStart("ImportFromStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -789,7 +794,7 @@ func (p *ASTPrinter) VisitImportFromStmt(node *ImportFromStmt) Visitor {
 }
 
 // Helper method to visit an ImportName
-func (p *ASTPrinter) visitImportName(node *ImportName) {
+func (p *ASTPrinter) visitImportName(node *nodes.ImportName) {
 	// Print the module name
 	p.result.WriteString(fmt.Sprintf("%sname: ", p.indent()))
 	p.visitDottedName(node.DottedName)
@@ -805,7 +810,7 @@ func (p *ASTPrinter) visitImportName(node *ImportName) {
 }
 
 // Helper method to visit a DottedName
-func (p *ASTPrinter) visitDottedName(node *DottedName) {
+func (p *ASTPrinter) visitDottedName(node *nodes.DottedName) {
 	parts := make([]string, len(node.Names))
 	for i, name := range node.Names {
 		parts[i] = name.Token.Lexeme
@@ -814,7 +819,7 @@ func (p *ASTPrinter) visitDottedName(node *DottedName) {
 }
 
 // VisitSlice handles Slice nodes
-func (p *ASTPrinter) VisitSlice(node *Slice) Visitor {
+func (p *ASTPrinter) VisitSlice(node *nodes.Slice) nodes.Visitor {
 	p.printNodeStart("Slice", node)
 	p.result.WriteString(" (\n")
 
@@ -849,7 +854,7 @@ func (p *ASTPrinter) VisitSlice(node *Slice) Visitor {
 }
 
 // VisitAwaitExpr handles AwaitExpr nodes
-func (p *ASTPrinter) VisitAwaitExpr(node *AwaitExpr) Visitor {
+func (p *ASTPrinter) VisitAwaitExpr(node *nodes.AwaitExpr) nodes.Visitor {
 	p.printNodeStart("AwaitExpr", node)
 	p.result.WriteString(" (\n")
 
@@ -867,7 +872,7 @@ func (p *ASTPrinter) VisitAwaitExpr(node *AwaitExpr) Visitor {
 }
 
 // VisitAssignStmt handles AssignStmt nodes
-func (p *ASTPrinter) VisitAssignStmt(node *AssignStmt) Visitor {
+func (p *ASTPrinter) VisitAssignStmt(node *nodes.AssignStmt) nodes.Visitor {
 	p.printNodeStart("AssignStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -901,7 +906,7 @@ func (p *ASTPrinter) VisitAssignStmt(node *AssignStmt) Visitor {
 }
 
 // VisitAugAssignStmt handles AugAssignStmt nodes
-func (p *ASTPrinter) VisitAugAssignStmt(node *AugAssignStmt) Visitor {
+func (p *ASTPrinter) VisitAugAssignStmt(node *nodes.AugAssignStmt) nodes.Visitor {
 	p.printNodeStart("AugAssignStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -931,7 +936,7 @@ func (p *ASTPrinter) VisitAugAssignStmt(node *AugAssignStmt) Visitor {
 }
 
 // VisitAnnotationStmt handles AnnotationStmt nodes
-func (p *ASTPrinter) VisitAnnotationStmt(node *AnnotationStmt) Visitor {
+func (p *ASTPrinter) VisitAnnotationStmt(node *nodes.AnnotationStmt) nodes.Visitor {
 	p.printNodeStart("AnnotationStmt", node)
 	p.result.WriteString(" (\n")
 
@@ -966,7 +971,7 @@ func (p *ASTPrinter) VisitAnnotationStmt(node *AnnotationStmt) Visitor {
 }
 
 // VisitMultiStmt handles MultiStmt nodes
-func (p *ASTPrinter) VisitMultiStmt(node *MultiStmt) Visitor {
+func (p *ASTPrinter) VisitMultiStmt(node *nodes.MultiStmt) nodes.Visitor {
 	for _, stmt := range node.Stmts {
 		stmt.Accept(p)
 	}
