@@ -10,7 +10,7 @@ watch:
 
 .PHONY: scan
 scan:
-	go run ./cmd/... scan examples/python/ -d -w -r
+	go run ./cmd/... scan examples/python/01_hello_world/01_hello_world.py -d -w -r
 
 .PHONY: parse
 parse:
