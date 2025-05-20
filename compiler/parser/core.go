@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"biscuit/compiler/ast/nodes"
+	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
 	"fmt"
 )
@@ -26,8 +26,8 @@ func NewParser(tokens []lexer.Token) *Parser {
 
 // Parse parses the tokens and returns a list of statements.
 // It will attempt to recover from errors and return all encountered errors.
-func (p *Parser) Parse() (*nodes.Module, []error) {
-	stmts := []nodes.Stmt{}
+func (p *Parser) Parse() (*ast.Module, []error) {
+	stmts := []ast.Stmt{}
 
 	for !p.isAtEnd() {
 		// Skip over any blank lines between statements. A blank line is just a
@@ -52,7 +52,7 @@ func (p *Parser) Parse() (*nodes.Module, []error) {
 		stmts = append(stmts, stmt)
 	}
 
-	return &nodes.Module{Body: stmts}, p.Errors
+	return &ast.Module{Body: stmts}, p.Errors
 }
 
 // ParseError is an error that occurs in the parser.

@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"biscuit/compiler/ast/nodes"
+	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
 )
 
@@ -10,12 +10,12 @@ import (
 // ----------------------------------------------------------------------------
 
 // statement parses a single statement.
-func (p *Parser) statement() (nodes.Stmt, error) {
+func (p *Parser) statement() (ast.Stmt, error) {
 	return p.simpleStatement()
 }
 
 // simpleStatement parses an expression statement.
-func (p *Parser) simpleStatement() (nodes.Stmt, error) {
+func (p *Parser) simpleStatement() (ast.Stmt, error) {
 	// Check for keywords first
 	switch p.peek().Type {
 	case lexer.Type:
@@ -64,12 +64,12 @@ func (p *Parser) simpleStatement() (nodes.Stmt, error) {
 		return nil, err
 	}
 
-	return nodes.NewExprStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
+	return ast.NewExprStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
 }
 
 // typeAlias parses a type alias statement as per the grammar:
 // type_alias: "type" NAME [type_params] '=' expression
-func (p *Parser) typeAlias() (nodes.Stmt, error) {
+func (p *Parser) typeAlias() (ast.Stmt, error) {
 	// Consume the 'type' keyword
 	typeToken, err := p.consume(lexer.Type, "expected 'type'")
 	if err != nil {
@@ -83,7 +83,7 @@ func (p *Parser) typeAlias() (nodes.Stmt, error) {
 	}
 
 	// Check for '[' to parse type parameters
-	var params []nodes.Expr = nil
+	var params []ast.Expr = nil
 	if p.match(lexer.LeftBracket) {
 		// Parse the type parameters
 		params, err = p.typeParams()
@@ -103,14 +103,14 @@ func (p *Parser) typeAlias() (nodes.Stmt, error) {
 		return nil, err
 	}
 
-	return nodes.NewTypeAlias(name, params, expr, lexer.Span{Start: typeToken.Start(), End: expr.Span().End}), nil
+	return ast.NewTypeAlias(name, params, expr, lexer.Span{Start: typeToken.Start(), End: expr.Span().End}), nil
 }
 
 // typeParams parses type parameters as per the grammar:
 // type_params: '[' type_param_seq ']'
 // type_param_seq: ','.type_param+ [',']
-func (p *Parser) typeParams() ([]nodes.Expr, error) {
-	params := []nodes.Expr{}
+func (p *Parser) typeParams() ([]ast.Expr, error) {
+	params := []ast.Expr{}
 
 	// Parse type parameters until we hit a closing bracket
 	for !p.check(lexer.RightBracket) && !p.isAtEnd() {
@@ -142,7 +142,7 @@ func (p *Parser) typeParams() ([]nodes.Expr, error) {
 //	| NAME [type_param_bound] [type_param_default]
 //	| '*' NAME [type_param_starred_default]
 //	| '**' NAME [type_param_default]
-func (p *Parser) typeParam() (nodes.Expr, error) {
+func (p *Parser) typeParam() (ast.Expr, error) {
 	startPos := p.peek().Start()
 	isStar := false
 	isDoubleStar := false
@@ -161,7 +161,7 @@ func (p *Parser) typeParam() (nodes.Expr, error) {
 	}
 
 	// Parse optional bound (: expression)
-	var bound nodes.Expr = nil
+	var bound ast.Expr = nil
 	if !isStar && !isDoubleStar && p.match(lexer.Colon) {
 		bound, err = p.expression()
 		if err != nil {
@@ -170,7 +170,7 @@ func (p *Parser) typeParam() (nodes.Expr, error) {
 	}
 
 	// Parse optional default
-	var defaultValue nodes.Expr = nil
+	var defaultValue ast.Expr = nil
 	if p.match(lexer.Equal) {
 		if isStar {
 			// For star parameters, the default is a star_expression
@@ -192,10 +192,10 @@ func (p *Parser) typeParam() (nodes.Expr, error) {
 		endPos = bound.Span().End
 	}
 
-	return nodes.NewTypeParamExpr(name, bound, defaultValue, isStar, isDoubleStar, lexer.Span{Start: startPos, End: endPos}), nil
+	return ast.NewTypeParamExpr(name, bound, defaultValue, isStar, isDoubleStar, lexer.Span{Start: startPos, End: endPos}), nil
 }
 
-func (p *Parser) returnStatement() (nodes.Stmt, error) {
+func (p *Parser) returnStatement() (ast.Stmt, error) {
 	// Consume the 'return' keyword
 	returnToken, err := p.consume(lexer.Return, "expected 'return'")
 	if err != nil {
@@ -205,7 +205,7 @@ func (p *Parser) returnStatement() (nodes.Stmt, error) {
 	// Exit early if there's no return expression
 	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) {
 		p.advance()
-		return nodes.NewReturnStmt(nil, lexer.Span{Start: returnToken.Start(), End: returnToken.End()}), nil
+		return ast.NewReturnStmt(nil, lexer.Span{Start: returnToken.Start(), End: returnToken.End()}), nil
 	}
 
 	// Parse the return expression
@@ -214,10 +214,10 @@ func (p *Parser) returnStatement() (nodes.Stmt, error) {
 		return nil, err
 	}
 
-	return nodes.NewReturnStmt(expr, lexer.Span{Start: returnToken.Start(), End: expr.Span().End}), nil
+	return ast.NewReturnStmt(expr, lexer.Span{Start: returnToken.Start(), End: expr.Span().End}), nil
 }
 
-func (p *Parser) importStatement() (nodes.Stmt, error) {
+func (p *Parser) importStatement() (ast.Stmt, error) {
 	startToken := p.peek()
 
 	// Check which type of import statement this is
@@ -231,7 +231,7 @@ func (p *Parser) importStatement() (nodes.Stmt, error) {
 }
 
 // importName handles: import_name: 'import' dotted_as_names
-func (p *Parser) importName() (nodes.Stmt, error) {
+func (p *Parser) importName() (ast.Stmt, error) {
 	// Consume the 'import' keyword
 	importToken, err := p.consume(lexer.Import, "expected 'import'")
 	if err != nil {
@@ -250,7 +250,7 @@ func (p *Parser) importName() (nodes.Stmt, error) {
 
 	// Use the end position of the last name
 	endPos := names[len(names)-1].Span().End
-	return nodes.NewImportStmt(names, lexer.Span{Start: importToken.Start(), End: endPos}), nil
+	return ast.NewImportStmt(names, lexer.Span{Start: importToken.Start(), End: endPos}), nil
 }
 
 // importFrom handles:
@@ -258,7 +258,7 @@ func (p *Parser) importName() (nodes.Stmt, error) {
 //
 //	| 'from' ('.' | '...')* dotted_name 'import' import_from_targets
 //	| 'from' ('.' | '...')+ 'import' import_from_targets
-func (p *Parser) importFrom() (nodes.Stmt, error) {
+func (p *Parser) importFrom() (ast.Stmt, error) {
 	// Consume the 'from' keyword
 	fromToken, err := p.consume(lexer.From, "expected 'from'")
 	if err != nil {
@@ -277,7 +277,7 @@ func (p *Parser) importFrom() (nodes.Stmt, error) {
 	}
 
 	// Parse dotted_name if present (not present for relative-only imports)
-	var dottedName *nodes.DottedName = nil
+	var dottedName *ast.DottedName = nil
 	if dotCount == 0 || !p.check(lexer.Import) {
 		dottedName, err = p.parseDottedName()
 		if err != nil {
@@ -293,12 +293,12 @@ func (p *Parser) importFrom() (nodes.Stmt, error) {
 
 	// Parse import_from_targets
 	isWildcard := false
-	var names []*nodes.ImportName
+	var names []*ast.ImportName
 
 	// Check for '*'
 	if p.match(lexer.Star) {
 		isWildcard = true
-		names = []*nodes.ImportName{}
+		names = []*ast.ImportName{}
 	} else if p.match(lexer.LeftParen) {
 		// '(' import_from_as_names [','] ')'
 		names, err = p.parseImportFromAsNames()
@@ -332,12 +332,12 @@ func (p *Parser) importFrom() (nodes.Stmt, error) {
 		return nil, p.error(p.previous(), "expected import target after 'import'")
 	}
 
-	return nodes.NewImportFromStmt(dottedName, dotCount, names, isWildcard, lexer.Span{Start: fromToken.Start(), End: endPos}), nil
+	return ast.NewImportFromStmt(dottedName, dotCount, names, isWildcard, lexer.Span{Start: fromToken.Start(), End: endPos}), nil
 }
 
 // parseDottedAsNames handles: dotted_as_names: ','.dotted_as_name+
-func (p *Parser) parseDottedAsNames() ([]*nodes.ImportName, error) {
-	var names []*nodes.ImportName
+func (p *Parser) parseDottedAsNames() ([]*ast.ImportName, error) {
+	var names []*ast.ImportName
 
 	// Parse first dotted_as_name
 	name, err := p.parseDottedAsName()
@@ -359,7 +359,7 @@ func (p *Parser) parseDottedAsNames() ([]*nodes.ImportName, error) {
 }
 
 // parseDottedAsName handles: dotted_as_name: dotted_name ['as' NAME]
-func (p *Parser) parseDottedAsName() (*nodes.ImportName, error) {
+func (p *Parser) parseDottedAsName() (*ast.ImportName, error) {
 	// Start position is the start of the dotted name
 	startPos := p.peek().Start()
 
@@ -370,7 +370,7 @@ func (p *Parser) parseDottedAsName() (*nodes.ImportName, error) {
 	}
 
 	// Check for optional 'as NAME'
-	var asName *nodes.Name = nil
+	var asName *ast.Name = nil
 	endPos := dottedName.Span().End
 
 	if p.match(lexer.As) {
@@ -379,11 +379,11 @@ func (p *Parser) parseDottedAsName() (*nodes.ImportName, error) {
 		if err != nil {
 			return nil, err
 		}
-		asName = nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+		asName = ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
 		endPos = asName.Span().End
 	}
 
-	return nodes.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
+	return ast.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
 }
 
 // parseDottedName handles:
@@ -391,7 +391,7 @@ func (p *Parser) parseDottedAsName() (*nodes.ImportName, error) {
 //
 //	| dotted_name '.' NAME
 //	| NAME
-func (p *Parser) parseDottedName() (*nodes.DottedName, error) {
+func (p *Parser) parseDottedName() (*ast.DottedName, error) {
 	startPos := p.peek().Start()
 
 	// First name
@@ -400,8 +400,8 @@ func (p *Parser) parseDottedName() (*nodes.DottedName, error) {
 		return nil, err
 	}
 
-	name := nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
-	names := []*nodes.Name{name}
+	name := ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+	names := []*ast.Name{name}
 	endPos := name.Span().End
 
 	// Parse additional names with dots
@@ -410,17 +410,17 @@ func (p *Parser) parseDottedName() (*nodes.DottedName, error) {
 		if err != nil {
 			return nil, err
 		}
-		name = nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+		name = ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
 		names = append(names, name)
 		endPos = name.Span().End
 	}
 
-	return nodes.NewDottedName(names, lexer.Span{Start: startPos, End: endPos}), nil
+	return ast.NewDottedName(names, lexer.Span{Start: startPos, End: endPos}), nil
 }
 
 // parseImportFromAsNames handles: import_from_as_names: ','.import_from_as_name+
-func (p *Parser) parseImportFromAsNames() ([]*nodes.ImportName, error) {
-	var names []*nodes.ImportName
+func (p *Parser) parseImportFromAsNames() ([]*ast.ImportName, error) {
+	var names []*ast.ImportName
 
 	// Parse first import_from_as_name
 	name, err := p.parseImportFromAsName()
@@ -447,7 +447,7 @@ func (p *Parser) parseImportFromAsNames() ([]*nodes.ImportName, error) {
 }
 
 // parseImportFromAsName handles: import_from_as_name: NAME ['as' NAME]
-func (p *Parser) parseImportFromAsName() (*nodes.ImportName, error) {
+func (p *Parser) parseImportFromAsName() (*ast.ImportName, error) {
 	startPos := p.peek().Start()
 
 	// Parse the first name
@@ -456,11 +456,11 @@ func (p *Parser) parseImportFromAsName() (*nodes.ImportName, error) {
 		return nil, err
 	}
 
-	name := nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
-	dottedName := nodes.NewDottedName([]*nodes.Name{name}, lexer.Span{Start: name.Span().Start, End: name.Span().End})
+	name := ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+	dottedName := ast.NewDottedName([]*ast.Name{name}, lexer.Span{Start: name.Span().Start, End: name.Span().End})
 
 	// Check for optional 'as NAME'
-	var asName *nodes.Name = nil
+	var asName *ast.Name = nil
 	endPos := dottedName.Span().End
 
 	if p.match(lexer.As) {
@@ -469,14 +469,14 @@ func (p *Parser) parseImportFromAsName() (*nodes.ImportName, error) {
 		if err != nil {
 			return nil, err
 		}
-		asName = nodes.NewName(aliasToken, lexer.Span{Start: aliasToken.Start(), End: aliasToken.End()})
+		asName = ast.NewName(aliasToken, lexer.Span{Start: aliasToken.Start(), End: aliasToken.End()})
 		endPos = asName.Span().End
 	}
 
-	return nodes.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
+	return ast.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
 }
 
-func (p *Parser) raiseStatement() (nodes.Stmt, error) {
+func (p *Parser) raiseStatement() (ast.Stmt, error) {
 	// Consume the 'raise' keyword
 	raiseToken, err := p.consume(lexer.Raise, "expected 'raise'")
 	if err != nil {
@@ -487,7 +487,7 @@ func (p *Parser) raiseStatement() (nodes.Stmt, error) {
 	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) {
 		// Just a 'raise' with no exception
 		endPos := raiseToken.End()
-		return nodes.NewRaiseStmt(nil, nil, false, false, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
+		return ast.NewRaiseStmt(nil, nil, false, false, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
 	}
 
 	// Parse the exception expression
@@ -498,7 +498,7 @@ func (p *Parser) raiseStatement() (nodes.Stmt, error) {
 
 	// Check if there's a 'from' clause
 	hasFrom := false
-	var fromExpr nodes.Expr = nil
+	var fromExpr ast.Expr = nil
 	endPos := exception.Span().End
 
 	if p.match(lexer.From) {
@@ -511,16 +511,16 @@ func (p *Parser) raiseStatement() (nodes.Stmt, error) {
 		endPos = fromExpr.Span().End
 	}
 
-	return nodes.NewRaiseStmt(exception, fromExpr, true, hasFrom, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
+	return ast.NewRaiseStmt(exception, fromExpr, true, hasFrom, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
 }
 
-func (p *Parser) passStatement() (nodes.Stmt, error) {
+func (p *Parser) passStatement() (ast.Stmt, error) {
 	// Consume the 'pass' keyword
 	passToken := p.advance()
-	return nodes.NewPassStmt(lexer.Span{Start: passToken.Start(), End: passToken.End()}), nil
+	return ast.NewPassStmt(lexer.Span{Start: passToken.Start(), End: passToken.End()}), nil
 }
 
-func (p *Parser) delStatement() (nodes.Stmt, error) {
+func (p *Parser) delStatement() (ast.Stmt, error) {
 	// Consume the 'del' keyword
 	delToken, err := p.consume(lexer.Del, "expected 'del'")
 	if err != nil {
@@ -535,18 +535,18 @@ func (p *Parser) delStatement() (nodes.Stmt, error) {
 
 	// TODO: Create and return a DelStmt node
 	// For now, return a placeholder
-	return nodes.NewExprStmt(targets, lexer.Span{Start: delToken.Start(), End: targets.Span().End}), nil
+	return ast.NewExprStmt(targets, lexer.Span{Start: delToken.Start(), End: targets.Span().End}), nil
 }
 
-func (p *Parser) yieldStatement() (nodes.Stmt, error) {
+func (p *Parser) yieldStatement() (ast.Stmt, error) {
 	expr, err := p.yieldExpression()
 	if err != nil {
 		return nil, err
 	}
-	return nodes.NewYieldStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
+	return ast.NewYieldStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
 }
 
-func (p *Parser) assertStatement() (nodes.Stmt, error) {
+func (p *Parser) assertStatement() (ast.Stmt, error) {
 	// Consume the 'assert' keyword
 	assertToken, err := p.consume(lexer.Assert, "expected 'assert'")
 	if err != nil {
@@ -560,7 +560,7 @@ func (p *Parser) assertStatement() (nodes.Stmt, error) {
 	}
 
 	// Check for optional message expression
-	var message nodes.Expr = nil
+	var message ast.Expr = nil
 	endPos := test.Span().End
 
 	if p.match(lexer.Comma) {
@@ -572,22 +572,22 @@ func (p *Parser) assertStatement() (nodes.Stmt, error) {
 		endPos = message.Span().End
 	}
 
-	return nodes.NewAssertStmt(test, message, lexer.Span{Start: assertToken.Start(), End: endPos}), nil
+	return ast.NewAssertStmt(test, message, lexer.Span{Start: assertToken.Start(), End: endPos}), nil
 }
 
-func (p *Parser) breakStatement() (nodes.Stmt, error) {
+func (p *Parser) breakStatement() (ast.Stmt, error) {
 	// Consume the 'break' keyword
 	breakToken := p.advance()
-	return nodes.NewBreakStmt(lexer.Span{Start: breakToken.Start(), End: breakToken.End()}), nil
+	return ast.NewBreakStmt(lexer.Span{Start: breakToken.Start(), End: breakToken.End()}), nil
 }
 
-func (p *Parser) continueStatement() (nodes.Stmt, error) {
+func (p *Parser) continueStatement() (ast.Stmt, error) {
 	// Consume the 'continue' keyword
 	continueToken := p.advance()
-	return nodes.NewContinueStmt(lexer.Span{Start: continueToken.Start(), End: continueToken.End()}), nil
+	return ast.NewContinueStmt(lexer.Span{Start: continueToken.Start(), End: continueToken.End()}), nil
 }
 
-func (p *Parser) globalStatement() (nodes.Stmt, error) {
+func (p *Parser) globalStatement() (ast.Stmt, error) {
 	// Consume the 'global' keyword
 	globalToken, err := p.consume(lexer.Global, "expected 'global'")
 	if err != nil {
@@ -606,10 +606,10 @@ func (p *Parser) globalStatement() (nodes.Stmt, error) {
 
 	// Get the end position from the last name
 	endPos := names[len(names)-1].Span().End
-	return nodes.NewGlobalStmt(names, lexer.Span{Start: globalToken.Start(), End: endPos}), nil
+	return ast.NewGlobalStmt(names, lexer.Span{Start: globalToken.Start(), End: endPos}), nil
 }
 
-func (p *Parser) nonlocalStatement() (nodes.Stmt, error) {
+func (p *Parser) nonlocalStatement() (ast.Stmt, error) {
 	// Consume the 'nonlocal' keyword
 	nonlocalToken, err := p.consume(lexer.Nonlocal, "expected 'nonlocal'")
 	if err != nil {
@@ -628,12 +628,12 @@ func (p *Parser) nonlocalStatement() (nodes.Stmt, error) {
 
 	// Get the end position from the last name
 	endPos := names[len(names)-1].Span().End
-	return nodes.NewNonlocalStmt(names, lexer.Span{Start: nonlocalToken.Start(), End: endPos}), nil
+	return ast.NewNonlocalStmt(names, lexer.Span{Start: nonlocalToken.Start(), End: endPos}), nil
 }
 
 // parseNameList is a helper function to parse a comma-separated list of identifiers
-func (p *Parser) parseNameList() ([]*nodes.Name, error) {
-	names := []*nodes.Name{}
+func (p *Parser) parseNameList() ([]*ast.Name, error) {
+	names := []*ast.Name{}
 
 	// Parse first identifier
 	nameToken, err := p.consume(lexer.Identifier, "expected identifier")
@@ -642,7 +642,7 @@ func (p *Parser) parseNameList() ([]*nodes.Name, error) {
 	}
 
 	// Create a Name node from the token
-	name := nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+	name := ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
 	names = append(names, name)
 
 	// Parse additional identifiers separated by commas
@@ -653,7 +653,7 @@ func (p *Parser) parseNameList() ([]*nodes.Name, error) {
 		}
 
 		// Create a Name node from the token
-		name = nodes.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+		name = ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
 		names = append(names, name)
 	}
 
@@ -665,7 +665,7 @@ func (p *Parser) parseNameList() ([]*nodes.Name, error) {
 // ----------------------------------------------------------------------------
 
 // expression parses an expression.
-func (p *Parser) expression() (nodes.Expr, error) {
+func (p *Parser) expression() (ast.Expr, error) {
 	expr, err := p.disjunction()
 	if err != nil {
 		return nil, err
@@ -684,14 +684,14 @@ func (p *Parser) expression() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewTernaryExpr(condition, expr, elseExpr, lexer.Span{Start: expr.Span().Start, End: elseExpr.Span().End}), nil
+		return ast.NewTernaryExpr(condition, expr, elseExpr, lexer.Span{Start: expr.Span().Start, End: elseExpr.Span().End}), nil
 	}
 
 	return expr, nil
 }
 
 // disjunction parses a disjunction expression.
-func (p *Parser) disjunction() (nodes.Expr, error) {
+func (p *Parser) disjunction() (ast.Expr, error) {
 	expr, err := p.conjunction()
 	if err != nil {
 		return nil, err
@@ -703,14 +703,14 @@ func (p *Parser) disjunction() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // conjunction parses a conjunction expression.
-func (p *Parser) conjunction() (nodes.Expr, error) {
+func (p *Parser) conjunction() (ast.Expr, error) {
 	expr, err := p.inversion()
 	if err != nil {
 		return nil, err
@@ -722,28 +722,28 @@ func (p *Parser) conjunction() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // inversion parses an inversion expression.
-func (p *Parser) inversion() (nodes.Expr, error) {
+func (p *Parser) inversion() (ast.Expr, error) {
 	if p.match(lexer.Not) {
 		operator := p.previous()
 		right, err := p.inversion()
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewUnary(operator, right, lexer.Span{Start: operator.Start(), End: right.Span().End}), nil
+		return ast.NewUnary(operator, right, lexer.Span{Start: operator.Start(), End: right.Span().End}), nil
 	}
 
 	return p.comparison()
 }
 
 // comparison parses a comparison expression.
-func (p *Parser) comparison() (nodes.Expr, error) {
+func (p *Parser) comparison() (ast.Expr, error) {
 	left, err := p.bitwiseOr()
 	if err != nil {
 		return nil, err
@@ -752,7 +752,7 @@ func (p *Parser) comparison() (nodes.Expr, error) {
 	// First check for any comparison operator to start a comparison chain
 	if isComparisonOperator(p.peek().Type) {
 		// We're going to build a chain of comparisons
-		operands := []nodes.Expr{left}
+		operands := []ast.Expr{left}
 		operators := []lexer.Token{}
 
 		// Keep consuming comparison operators and their right operands
@@ -771,13 +771,13 @@ func (p *Parser) comparison() (nodes.Expr, error) {
 
 		// Handle a single comparison (most common case)
 		if len(operands) == 2 {
-			return nodes.NewBinary(operands[0], operators[0], operands[1], lexer.Span{Start: operands[0].Span().Start, End: operands[1].Span().End}), nil
+			return ast.NewBinary(operands[0], operators[0], operands[1], lexer.Span{Start: operands[0].Span().Start, End: operands[1].Span().End}), nil
 		}
 
 		// Handle chained comparisons (a < b < c becomes (a < b) and (b < c))
-		var result nodes.Expr
+		var result ast.Expr
 		for i := 0; i < len(operators); i++ {
-			comparison := nodes.NewBinary(operands[i], operators[i], operands[i+1],
+			comparison := ast.NewBinary(operands[i], operators[i], operands[i+1],
 				lexer.Span{Start: operands[i].Span().Start, End: operands[i+1].Span().End})
 
 			if i == 0 {
@@ -785,7 +785,7 @@ func (p *Parser) comparison() (nodes.Expr, error) {
 			} else {
 				// Create an AND expression linking the comparisons
 				andToken := lexer.Token{Type: lexer.And, Lexeme: "and"}
-				result = nodes.NewBinary(result, andToken, comparison,
+				result = ast.NewBinary(result, andToken, comparison,
 					lexer.Span{Start: result.Span().Start, End: comparison.Span().End})
 			}
 		}
@@ -804,7 +804,7 @@ func isComparisonOperator(tokenType lexer.TokenType) bool {
 }
 
 // bitwise_or parses a bitwise OR expression.
-func (p *Parser) bitwiseOr() (nodes.Expr, error) {
+func (p *Parser) bitwiseOr() (ast.Expr, error) {
 	expr, err := p.bitwiseXor()
 	if err != nil {
 		return nil, err
@@ -816,14 +816,14 @@ func (p *Parser) bitwiseOr() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // bitwiseXor parses a bitwise XOR expression.
-func (p *Parser) bitwiseXor() (nodes.Expr, error) {
+func (p *Parser) bitwiseXor() (ast.Expr, error) {
 	expr, err := p.bitwiseAnd()
 	if err != nil {
 		return nil, err
@@ -835,14 +835,14 @@ func (p *Parser) bitwiseXor() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // bitwiseAnd parses a bitwise AND expression.
-func (p *Parser) bitwiseAnd() (nodes.Expr, error) {
+func (p *Parser) bitwiseAnd() (ast.Expr, error) {
 	expr, err := p.shiftExpr()
 	if err != nil {
 		return nil, err
@@ -854,14 +854,14 @@ func (p *Parser) bitwiseAnd() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // shiftExpr parses a shift expression.
-func (p *Parser) shiftExpr() (nodes.Expr, error) {
+func (p *Parser) shiftExpr() (ast.Expr, error) {
 	expr, err := p.sum()
 	if err != nil {
 		return nil, err
@@ -873,14 +873,14 @@ func (p *Parser) shiftExpr() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // sum parses a sum expression.
-func (p *Parser) sum() (nodes.Expr, error) {
+func (p *Parser) sum() (ast.Expr, error) {
 	expr, err := p.term()
 	if err != nil {
 		return nil, err
@@ -892,14 +892,14 @@ func (p *Parser) sum() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // term parses a term expression.
-func (p *Parser) term() (nodes.Expr, error) {
+func (p *Parser) term() (ast.Expr, error) {
 	expr, err := p.factor()
 	if err != nil {
 		return nil, err
@@ -911,28 +911,28 @@ func (p *Parser) term() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
 	}
 
 	return expr, nil
 }
 
 // factor parses a factor expression.
-func (p *Parser) factor() (nodes.Expr, error) {
+func (p *Parser) factor() (ast.Expr, error) {
 	if p.match(lexer.Plus, lexer.Minus, lexer.Tilde) {
 		operator := p.previous()
 		right, err := p.factor()
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewUnary(operator, right, lexer.Span{Start: operator.Start(), End: right.Span().End}), nil
+		return ast.NewUnary(operator, right, lexer.Span{Start: operator.Start(), End: right.Span().End}), nil
 	}
 
 	return p.power()
 }
 
 // power parses a power expression.
-func (p *Parser) power() (nodes.Expr, error) {
+func (p *Parser) power() (ast.Expr, error) {
 	expr, err := p.await()
 	if err != nil {
 		return nil, err
@@ -944,13 +944,13 @@ func (p *Parser) power() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End}), nil
+		return ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End}), nil
 	}
 
 	return expr, nil
 }
 
-func (p *Parser) await() (nodes.Expr, error) {
+func (p *Parser) await() (ast.Expr, error) {
 	// Check if the current token is an await keyword
 	if p.match(lexer.Await) {
 		awaitToken := p.previous()
@@ -958,14 +958,14 @@ func (p *Parser) await() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewAwaitExpr(expr, lexer.Span{Start: awaitToken.Start(), End: expr.Span().End}), nil
+		return ast.NewAwaitExpr(expr, lexer.Span{Start: awaitToken.Start(), End: expr.Span().End}), nil
 	}
 
 	return p.primary()
 }
 
 // primary parses a primary expression.
-func (p *Parser) primary() (nodes.Expr, error) {
+func (p *Parser) primary() (ast.Expr, error) {
 	// Parse the initial atom
 	expr, err := p.atom()
 	if err != nil {
@@ -980,7 +980,7 @@ func (p *Parser) primary() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = nodes.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+			expr = ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
 		} else if p.match(lexer.LeftParen) {
 			// Handle function call: expr(args)
 			expr, err = p.finishCall(expr)
@@ -998,7 +998,7 @@ func (p *Parser) primary() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = nodes.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+			expr = ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
 		} else {
 			// No more postfix operations
 			break
@@ -1008,8 +1008,8 @@ func (p *Parser) primary() (nodes.Expr, error) {
 	return expr, nil
 }
 
-func (p *Parser) finishCall(callee nodes.Expr) (nodes.Expr, error) {
-	args := []nodes.Expr{}
+func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
+	args := []ast.Expr{}
 	if !p.check(lexer.RightParen) {
 		// Parse first argument
 		arg, err := p.expression()
@@ -1039,33 +1039,33 @@ func (p *Parser) finishCall(callee nodes.Expr) (nodes.Expr, error) {
 		return nil, err
 	}
 
-	return nodes.NewCall(callee, args, lexer.Span{Start: callee.Span().Start, End: right.End()}), nil
+	return ast.NewCall(callee, args, lexer.Span{Start: callee.Span().Start, End: right.End()}), nil
 }
 
 // atom parses an atom.
-func (p *Parser) atom() (nodes.Expr, error) {
+func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.False) {
-		return nodes.NewLiteral(p.previous(), false, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewLiteral(p.previous(), false, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.match(lexer.True) {
-		return nodes.NewLiteral(p.previous(), true, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewLiteral(p.previous(), true, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.match(lexer.None) {
-		return nodes.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.match(lexer.Number, lexer.String) {
-		return nodes.NewLiteral(p.previous(), p.previous().Literal, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewLiteral(p.previous(), p.previous().Literal, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.match(lexer.Ellipsis) {
-		return nodes.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.match(lexer.Identifier) {
-		return nodes.NewName(p.previous(), lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewName(p.previous(), lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	if p.check(lexer.LeftParen) {
@@ -1091,14 +1091,14 @@ func (p *Parser) atom() (nodes.Expr, error) {
 	return nil, p.error(p.peek(), "unexpected token")
 }
 
-func (p *Parser) list() (nodes.Expr, error) {
+func (p *Parser) list() (ast.Expr, error) {
 	// Expect opening bracket
 	leftBracket, err := p.consume(lexer.LeftBracket, "expected '['")
 	if err != nil {
 		return nil, err
 	}
 
-	elements := []nodes.Expr{}
+	elements := []ast.Expr{}
 
 	// Parse elements if the list is not empty
 	if !p.check(lexer.RightBracket) {
@@ -1130,10 +1130,10 @@ func (p *Parser) list() (nodes.Expr, error) {
 		return nil, err
 	}
 
-	return nodes.NewListExpr(elements, lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()}), nil
+	return ast.NewListExpr(elements, lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()}), nil
 }
 
-func (p *Parser) tuple() (nodes.Expr, error) {
+func (p *Parser) tuple() (ast.Expr, error) {
 	// Expect opening parenthesis
 	leftParen, err := p.consume(lexer.LeftParen, "expected '('")
 	if err != nil {
@@ -1146,7 +1146,7 @@ func (p *Parser) tuple() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewTupleExpr([]nodes.Expr{}, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 	}
 
 	// Parse the first expression (could be a star expression or named expression)
@@ -1166,12 +1166,12 @@ func (p *Parser) tuple() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 	}
 
 	// If there's a comma, it's a tuple
 	if p.match(lexer.Comma) {
-		elements := []nodes.Expr{expr}
+		elements := []ast.Expr{expr}
 
 		// Parse additional elements if present
 		if !p.check(lexer.RightParen) {
@@ -1197,11 +1197,11 @@ func (p *Parser) tuple() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewTupleExpr(elements, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return ast.NewTupleExpr(elements, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 	} else {
 		// No comma, so it's a group
 		// Groups can only contain named expressions, not star expressions
-		_, isStarExpr := expr.(*nodes.StarExpr)
+		_, isStarExpr := expr.(*ast.StarExpr)
 		if isStarExpr {
 			return nil, p.error(p.previous(), "starred expression cannot appear in a group")
 		}
@@ -1210,18 +1210,18 @@ func (p *Parser) tuple() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 	}
 }
 
-func (p *Parser) set() (nodes.Expr, error) {
+func (p *Parser) set() (ast.Expr, error) {
 	// Expect opening brace
 	leftBrace, err := p.consume(lexer.LeftBrace, "expected '{'")
 	if err != nil {
 		return nil, err
 	}
 
-	elements := []nodes.Expr{}
+	elements := []ast.Expr{}
 
 	// Parse elements
 	// First element
@@ -1251,10 +1251,10 @@ func (p *Parser) set() (nodes.Expr, error) {
 		return nil, err
 	}
 
-	return nodes.NewSetExpr(elements, lexer.Span{Start: leftBrace.Start(), End: rightBrace.End()}), nil
+	return ast.NewSetExpr(elements, lexer.Span{Start: leftBrace.Start(), End: rightBrace.End()}), nil
 }
 
-func (p *Parser) yieldExpression() (nodes.Expr, error) {
+func (p *Parser) yieldExpression() (ast.Expr, error) {
 	// Expect 'yield' keyword
 	yieldToken, err := p.consume(lexer.Yield, "expected 'yield'")
 	if err != nil {
@@ -1270,13 +1270,13 @@ func (p *Parser) yieldExpression() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nodes.NewYieldExpr(isFrom, expr, lexer.Span{Start: yieldToken.Start(), End: expr.Span().End}), nil
+		return ast.NewYieldExpr(isFrom, expr, lexer.Span{Start: yieldToken.Start(), End: expr.Span().End}), nil
 	}
 
 	// Check if there's an expression after 'yield'
 	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) || p.check(lexer.RightParen) || p.check(lexer.Comma) {
 		// No expression, yield on its own
-		return nodes.NewYieldExpr(false, nil, lexer.Span{Start: yieldToken.Start(), End: yieldToken.End()}), nil
+		return ast.NewYieldExpr(false, nil, lexer.Span{Start: yieldToken.Start(), End: yieldToken.End()}), nil
 	}
 
 	// Parse star expressions after 'yield'
@@ -1284,10 +1284,10 @@ func (p *Parser) yieldExpression() (nodes.Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nodes.NewYieldExpr(false, expr, lexer.Span{Start: yieldToken.Start(), End: expr.Span().End}), nil
+	return ast.NewYieldExpr(false, expr, lexer.Span{Start: yieldToken.Start(), End: expr.Span().End}), nil
 }
 
-func (p *Parser) starExpressions() (nodes.Expr, error) {
+func (p *Parser) starExpressions() (ast.Expr, error) {
 	// Parse the first star expression
 	expr, err := p.starExpression()
 	if err != nil {
@@ -1300,7 +1300,7 @@ func (p *Parser) starExpressions() (nodes.Expr, error) {
 	}
 
 	// We have a comma, so this is a tuple of expressions
-	elements := []nodes.Expr{expr}
+	elements := []ast.Expr{expr}
 
 	// Allow trailing comma with no following expression
 	if !p.check(lexer.Newline) && !p.check(lexer.RightParen) && !p.check(lexer.RightBracket) && !p.check(lexer.RightBrace) && !p.check(lexer.Semicolon) && !p.isAtEnd() {
@@ -1324,10 +1324,10 @@ func (p *Parser) starExpressions() (nodes.Expr, error) {
 	}
 
 	// Create a tuple with the collected expressions
-	return nodes.NewTupleExpr(elements, lexer.Span{Start: elements[0].Span().Start, End: elements[len(elements)-1].Span().End}), nil
+	return ast.NewTupleExpr(elements, lexer.Span{Start: elements[0].Span().Start, End: elements[len(elements)-1].Span().End}), nil
 }
 
-func (p *Parser) group() (nodes.Expr, error) {
+func (p *Parser) group() (ast.Expr, error) {
 	// Expect opening parenthesis
 	leftParen, err := p.consume(lexer.LeftParen, "expected '('")
 	if err != nil {
@@ -1347,7 +1347,7 @@ func (p *Parser) group() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 	}
 
 	// Parse named expression
@@ -1362,10 +1362,10 @@ func (p *Parser) group() (nodes.Expr, error) {
 		return nil, err
 	}
 
-	return nodes.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+	return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
 }
 
-func (p *Parser) starExpression() (nodes.Expr, error) {
+func (p *Parser) starExpression() (ast.Expr, error) {
 	if p.match(lexer.Star) {
 		// This is a starred expression like *args
 		star := p.previous()
@@ -1374,14 +1374,14 @@ func (p *Parser) starExpression() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
+		return ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
 	}
 
 	// Not a star expression, parse as a regular expression
 	return p.expression()
 }
 
-func (p *Parser) namedExpression() (nodes.Expr, error) {
+func (p *Parser) namedExpression() (ast.Expr, error) {
 	// Handle assignment expressions first (the walrus operator)
 	if p.check(lexer.Identifier) && p.checkNext(lexer.Walrus) {
 		name, err := p.consume(lexer.Identifier, "expected identifier") // Consume the identifier
@@ -1398,8 +1398,8 @@ func (p *Parser) namedExpression() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewAssignExpr(
-			nodes.NewName(name, lexer.Span{Start: name.Start(), End: name.End()}),
+		return ast.NewAssignExpr(
+			ast.NewName(name, lexer.Span{Start: name.Start(), End: name.End()}),
 			value,
 			lexer.Span{Start: name.Start(), End: value.Span().End},
 		), nil
@@ -1409,7 +1409,7 @@ func (p *Parser) namedExpression() (nodes.Expr, error) {
 	return p.expression()
 }
 
-func (p *Parser) starNamedExpression() (nodes.Expr, error) {
+func (p *Parser) starNamedExpression() (ast.Expr, error) {
 	if p.match(lexer.Star) {
 		// This is a starred expression like *args
 		star := p.previous()
@@ -1418,7 +1418,7 @@ func (p *Parser) starNamedExpression() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
+		return ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
 	}
 
 	// Not a star expression, parse as a regular expression
@@ -1430,7 +1430,7 @@ func (p *Parser) starNamedExpression() (nodes.Expr, error) {
 //
 //	| [expression] ':' [expression] [':' [expression] ]
 //	| named_expression
-func (p *Parser) slice() (nodes.Expr, error) {
+func (p *Parser) slice() (ast.Expr, error) {
 	// Check if this is a slice notation or just an expression
 	// We need to look ahead to see if there's a colon after the first expression (if any)
 	startPos := p.peek().Start()
@@ -1440,7 +1440,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 		// No start expression, consume the colon
 		p.advance()
 
-		var end nodes.Expr
+		var end ast.Expr
 		var err error
 
 		// Check for end expression after colon
@@ -1452,7 +1452,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 		}
 
 		// Check for step (second colon)
-		var step nodes.Expr
+		var step ast.Expr
 		if p.match(lexer.Colon) {
 			// Parse optional step
 			if !p.check(lexer.RightBracket) && !p.check(lexer.Comma) {
@@ -1470,7 +1470,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 			endPos = end.Span().End
 		}
 
-		return nodes.NewSlice(nil, end, step, lexer.Span{Start: startPos, End: endPos}), nil
+		return ast.NewSlice(nil, end, step, lexer.Span{Start: startPos, End: endPos}), nil
 	}
 
 	// There's an expression before any potential colon
@@ -1485,7 +1485,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 	}
 
 	// We have a slice with a start expression
-	var end nodes.Expr
+	var end ast.Expr
 
 	// Check for end expression after colon
 	if !p.check(lexer.Colon) && !p.check(lexer.RightBracket) && !p.check(lexer.Comma) {
@@ -1496,7 +1496,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 	}
 
 	// Check for step (second colon)
-	var step nodes.Expr
+	var step ast.Expr
 	if p.match(lexer.Colon) {
 		// Parse optional step
 		if !p.check(lexer.RightBracket) && !p.check(lexer.Comma) {
@@ -1516,7 +1516,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 		endPos = expr.Span().End
 	}
 
-	return nodes.NewSlice(expr, end, step, lexer.Span{Start: startPos, End: endPos}), nil
+	return ast.NewSlice(expr, end, step, lexer.Span{Start: startPos, End: endPos}), nil
 }
 
 // slices parses one or more slice elements as per the grammar:
@@ -1524,7 +1524,7 @@ func (p *Parser) slice() (nodes.Expr, error) {
 //
 //	| slice !','
 //	| ','.(slice | starred_expression)+ [',']
-func (p *Parser) slices() ([]nodes.Expr, error) {
+func (p *Parser) slices() ([]ast.Expr, error) {
 	// Parse the first slice
 	first, err := p.slice()
 	if err != nil {
@@ -1532,7 +1532,7 @@ func (p *Parser) slices() ([]nodes.Expr, error) {
 	}
 
 	// Initialize the slice with the first element
-	indices := []nodes.Expr{first}
+	indices := []ast.Expr{first}
 
 	// If there's no comma, it's just a single index/slice
 	if !p.match(lexer.Comma) {
@@ -1549,7 +1549,7 @@ func (p *Parser) slices() ([]nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			indices = append(indices, nodes.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}))
+			indices = append(indices, ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}))
 		} else {
 			// Regular slice expression
 			expr, err := p.slice()
@@ -1648,7 +1648,7 @@ func (p *Parser) previous() lexer.Token {
 //	| t_primary genexp &t_lookahead
 //	| t_primary '(' [arguments] ')' &t_lookahead
 //	| atom &t_lookahead
-func (p *Parser) tPrimary() (nodes.Expr, error) {
+func (p *Parser) tPrimary() (ast.Expr, error) {
 	// Start with the base case: atom &t_lookahead
 	expr, err := p.atom()
 	if err != nil {
@@ -1673,7 +1673,7 @@ func (p *Parser) tPrimary() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = nodes.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+			expr = ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
 		} else if p.match(lexer.LeftParen) {
 			// Rule: t_primary '(' [arguments] ')' &t_lookahead
 			expr, err = p.finishCall(expr)
@@ -1693,7 +1693,7 @@ func (p *Parser) tPrimary() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = nodes.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+			expr = ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
 		} else {
 			// If we didn't consume any accessor, we're done
 			// Either we have atom &t_lookahead or we've finished a chain
@@ -1729,7 +1729,7 @@ func (p *Parser) tLookahead() bool {
 //
 //	| t_primary '.' NAME !t_lookahead
 //	| t_primary '[' slices ']' !t_lookahead
-func (p *Parser) singleSubscriptAttributeTarget() (nodes.Expr, error) {
+func (p *Parser) singleSubscriptAttributeTarget() (ast.Expr, error) {
 	// Parse the t_primary expression
 	expr, err := p.tPrimary()
 	if err != nil {
@@ -1743,7 +1743,7 @@ func (p *Parser) singleSubscriptAttributeTarget() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		result := nodes.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+		result := ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
 
 		// Check negative lookahead - must NOT be followed by another accessor
 		if p.tLookahead() {
@@ -1762,7 +1762,7 @@ func (p *Parser) singleSubscriptAttributeTarget() (nodes.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		result := nodes.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+		result := ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
 
 		// Check negative lookahead - must NOT be followed by another accessor
 		if p.tLookahead() {
@@ -1782,7 +1782,7 @@ func (p *Parser) singleSubscriptAttributeTarget() (nodes.Expr, error) {
 //	| single_subscript_attribute_target
 //	| NAME
 //	| '(' single_target ')'
-func (p *Parser) singleTarget() (nodes.Expr, error) {
+func (p *Parser) singleTarget() (ast.Expr, error) {
 	if p.check(lexer.Identifier) {
 		// Handle the NAME case first
 		// But first check if it might be a single_subscript_attribute_target
@@ -1793,7 +1793,7 @@ func (p *Parser) singleTarget() (nodes.Expr, error) {
 
 		// Just a NAME
 		name := p.advance()
-		return nodes.NewName(name, lexer.Span{Start: name.Start(), End: name.End()}), nil
+		return ast.NewName(name, lexer.Span{Start: name.Start(), End: name.End()}), nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized form: '(' single_target ')'
 		target, err := p.singleTarget()
@@ -1806,7 +1806,7 @@ func (p *Parser) singleTarget() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewGroupExpr(target, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return ast.NewGroupExpr(target, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
 	}
 
 	// Try to parse as single_subscript_attribute_target
@@ -1819,7 +1819,7 @@ func (p *Parser) singleTarget() (nodes.Expr, error) {
 //
 //	| '*' (!'*' star_target)
 //	| target_with_star_atom
-func (p *Parser) starTarget() (nodes.Expr, error) {
+func (p *Parser) starTarget() (ast.Expr, error) {
 	if p.match(lexer.Star) {
 		// Handle starred expression
 		star := p.previous()
@@ -1835,7 +1835,7 @@ func (p *Parser) starTarget() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
+		return ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
 	}
 
 	// Not a starred expression, parse as target_with_star_atom
@@ -1848,14 +1848,14 @@ func (p *Parser) starTarget() (nodes.Expr, error) {
 //
 //	| star_target !','
 //	| star_target (',' star_target)* [',']
-func (p *Parser) starTargets() ([]nodes.Expr, error) {
+func (p *Parser) starTargets() ([]ast.Expr, error) {
 	// Parse the first star_target
 	target, err := p.starTarget()
 	if err != nil {
 		return nil, err
 	}
 
-	targets := []nodes.Expr{target}
+	targets := []ast.Expr{target}
 
 	// If there's no comma, return the single target
 	if !p.match(lexer.Comma) {
@@ -1898,14 +1898,14 @@ func (p *Parser) starTargets() ([]nodes.Expr, error) {
 // parseStarTargetSequence parses a sequence of star targets for either list or tuple contexts
 // isTuple indicates whether tuple rules should be enforced (requiring comma for single element)
 // closingToken specifies the token that would terminate the sequence (RightParen or RightBracket)
-func (p *Parser) parseStarTargetSequence(isTuple bool, closingToken lexer.TokenType) ([]nodes.Expr, error) {
+func (p *Parser) parseStarTargetSequence(isTuple bool, closingToken lexer.TokenType) ([]ast.Expr, error) {
 	// Parse the first star_target
 	target, err := p.starTarget()
 	if err != nil {
 		return nil, err
 	}
 
-	elements := []nodes.Expr{target}
+	elements := []ast.Expr{target}
 
 	// For tuples, a comma is required
 	if isTuple && !p.match(lexer.Comma) {
@@ -1982,18 +1982,18 @@ func (p *Parser) parseStarTargetSequence(isTuple bool, closingToken lexer.TokenT
 //	| '(' target_with_star_atom ')'
 //	| '(' [star_targets_tuple_seq] ')'
 //	| '[' [star_targets_list_seq] ']'
-func (p *Parser) starAtom() (nodes.Expr, error) {
+func (p *Parser) starAtom() (ast.Expr, error) {
 	startPos := p.peek().Start()
 
 	if p.match(lexer.Identifier) {
 		// Handle simple NAME case
 		name := p.previous()
-		return nodes.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
+		return ast.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized forms
 		if p.match(lexer.RightParen) {
 			// Empty tuple
-			return nodes.NewTupleExpr([]nodes.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 		// Try to parse as target_with_star_atom first
@@ -2007,7 +2007,7 @@ func (p *Parser) starAtom() (nodes.Expr, error) {
 			if err != nil {
 				goto tryStartTargetSequence
 			}
-			return nodes.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 	tryStartTargetSequence:
@@ -2025,12 +2025,12 @@ func (p *Parser) starAtom() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 	} else if p.match(lexer.LeftBracket) {
 		// Handle list form
 		if p.match(lexer.RightBracket) {
 			// Empty list
-			return nodes.NewListExpr([]nodes.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewListExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 		elements, err := p.parseStarTargetSequence(false, lexer.RightBracket)
@@ -2044,7 +2044,7 @@ func (p *Parser) starAtom() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return ast.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 	}
 
 	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in star atom")
@@ -2057,7 +2057,7 @@ func (p *Parser) starAtom() (nodes.Expr, error) {
 //	| t_primary '.' NAME !t_lookahead
 //	| t_primary '[' slices ']' !t_lookahead
 //	| star_atom
-func (p *Parser) targetWithStarAtom() (nodes.Expr, error) {
+func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 	// Try to parse as t_primary if the next token could start a t_primary
 	if p.check(lexer.Identifier) || p.check(lexer.LeftParen) || p.check(lexer.LeftBracket) ||
 		p.check(lexer.False) || p.check(lexer.True) || p.check(lexer.None) ||
@@ -2087,7 +2087,7 @@ func (p *Parser) targetWithStarAtom() (nodes.Expr, error) {
 				return nil, p.error(p.peek(), "unexpected accessor after attribute target")
 			}
 
-			return nodes.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()}), nil
+			return ast.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()}), nil
 		}
 
 		// Restore position and try t_primary followed by '['
@@ -2108,7 +2108,7 @@ func (p *Parser) targetWithStarAtom() (nodes.Expr, error) {
 				return nil, p.error(p.peek(), "unexpected accessor after subscript target")
 			}
 
-			return nodes.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()}), nil
+			return ast.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()}), nil
 		}
 
 		// Reset position if we couldn't match t_primary with an accessor
@@ -2126,7 +2126,7 @@ tryStarAtom:
 //	| t_primary '.' NAME !t_lookahead
 //	| t_primary '[' slices ']' !t_lookahead
 //	| del_t_atom
-func (p *Parser) delTarget() (nodes.Expr, error) {
+func (p *Parser) delTarget() (ast.Expr, error) {
 	// Try to parse as t_primary if the next token could start a t_primary
 	if p.check(lexer.Identifier) || p.check(lexer.LeftParen) || p.check(lexer.LeftBracket) ||
 		p.check(lexer.False) || p.check(lexer.True) || p.check(lexer.None) ||
@@ -2143,7 +2143,7 @@ func (p *Parser) delTarget() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			result := nodes.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()})
+			result := ast.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()})
 
 			// Check negative lookahead - must NOT be followed by another accessor
 			if p.tLookahead() {
@@ -2167,7 +2167,7 @@ func (p *Parser) delTarget() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			result := nodes.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()})
+			result := ast.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()})
 
 			// Check negative lookahead - must NOT be followed by another accessor
 			if p.tLookahead() {
@@ -2192,18 +2192,18 @@ func (p *Parser) delTarget() (nodes.Expr, error) {
 //	| '(' del_target ')'
 //	| '(' [del_targets] ')'
 //	| '[' [del_targets] ']'
-func (p *Parser) delTAtom() (nodes.Expr, error) {
+func (p *Parser) delTAtom() (ast.Expr, error) {
 	startPos := p.peek().Start()
 
 	if p.check(lexer.Identifier) {
 		// Handle simple NAME case
 		name := p.advance()
-		return nodes.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
+		return ast.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized forms
 		if p.match(lexer.RightParen) {
 			// Empty tuple
-			return nodes.NewTupleExpr([]nodes.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 		// Try to parse as single del_target first
@@ -2214,11 +2214,11 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 			// Check if there's a comma after, which means it's a tuple
 			if p.match(lexer.Comma) {
 				// Start a tuple with the first target
-				elements := []nodes.Expr{target}
+				elements := []ast.Expr{target}
 
 				// Check for empty rest of tuple
 				if p.match(lexer.RightParen) {
-					return nodes.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+					return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 				}
 
 				// Parse rest of del_targets
@@ -2240,7 +2240,7 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 					return nil, err
 				}
 
-				return nodes.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+				return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 			}
 
 			// No comma, so it's a grouped expression
@@ -2248,14 +2248,14 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			return nodes.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 		// Restore position and try as del_targets (tuple)
 		p.Current = nextPos
 
 		// Parse del_targets as a sequence
-		var elements []nodes.Expr
+		var elements []ast.Expr
 		for !p.check(lexer.RightParen) {
 			target, err := p.delTarget()
 			if err != nil {
@@ -2279,16 +2279,16 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 	} else if p.match(lexer.LeftBracket) {
 		// Handle list form
 		if p.match(lexer.RightBracket) {
 			// Empty list
-			return nodes.NewListExpr([]nodes.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return ast.NewListExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 		}
 
 		// Parse del_targets as a sequence
-		var elements []nodes.Expr
+		var elements []ast.Expr
 		for !p.check(lexer.RightBracket) {
 			target, err := p.delTarget()
 			if err != nil {
@@ -2312,7 +2312,7 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 			return nil, err
 		}
 
-		return nodes.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return ast.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
 	}
 
 	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in del target atom")
@@ -2320,7 +2320,7 @@ func (p *Parser) delTAtom() (nodes.Expr, error) {
 
 // delTargets parses del targets as per the grammar:
 // del_targets: ','.del_target+ [',']
-func (p *Parser) delTargets() (nodes.Expr, error) {
+func (p *Parser) delTargets() (ast.Expr, error) {
 	// Parse the first del_target
 	target, err := p.delTarget()
 	if err != nil {
@@ -2333,7 +2333,7 @@ func (p *Parser) delTargets() (nodes.Expr, error) {
 	}
 
 	// We have a comma, so this is a tuple of targets
-	elements := []nodes.Expr{target}
+	elements := []ast.Expr{target}
 
 	// Parse additional targets if any
 	for !p.check(lexer.Newline) && !p.check(lexer.Semicolon) && !p.isAtEnd() {
@@ -2355,12 +2355,12 @@ func (p *Parser) delTargets() (nodes.Expr, error) {
 	}
 
 	// Create a tuple expression with the targets
-	return nodes.NewTupleExpr(elements, lexer.Span{Start: elements[0].Span().Start, End: elements[len(elements)-1].Span().End}), nil
+	return ast.NewTupleExpr(elements, lexer.Span{Start: elements[0].Span().Start, End: elements[len(elements)-1].Span().End}), nil
 }
 
 // annotatedRhs parses the right-hand side of an annotated assignment:
 // annotated_rhs: yield_expr | star_expressions
-func (p *Parser) annotatedRhs() (nodes.Expr, error) {
+func (p *Parser) annotatedRhs() (ast.Expr, error) {
 	if p.check(lexer.Yield) {
 		return p.yieldExpression()
 	}
@@ -2381,7 +2381,7 @@ func (p *Parser) augassign() (lexer.Token, error) {
 }
 
 // assignment parses an assignment statement.
-func (p *Parser) assignment() (nodes.Stmt, error) {
+func (p *Parser) assignment() (ast.Stmt, error) {
 	startPos := p.peek().Start()
 	originalPos := p.Current
 
@@ -2400,7 +2400,7 @@ func (p *Parser) assignment() (nodes.Stmt, error) {
 		}
 
 		// Check for optional assignment
-		var valueExpr nodes.Expr = nil
+		var valueExpr ast.Expr = nil
 		hasValue := false
 		if p.match(lexer.Equal) {
 			hasValue = true
@@ -2416,8 +2416,8 @@ func (p *Parser) assignment() (nodes.Stmt, error) {
 		}
 
 		// Create a variable annotation statement
-		nameExpr := nodes.NewName(name, lexer.Span{Start: name.Start(), End: name.End()})
-		return nodes.NewAnnotationStmt(nameExpr, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		nameExpr := ast.NewName(name, lexer.Span{Start: name.Start(), End: name.End()})
+		return ast.NewAnnotationStmt(nameExpr, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
 	}
 
 	// ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
@@ -2448,7 +2448,7 @@ func (p *Parser) assignment() (nodes.Stmt, error) {
 		}
 
 		// Check for optional assignment
-		var valueExpr nodes.Expr = nil
+		var valueExpr ast.Expr = nil
 		hasValue := false
 		if p.match(lexer.Equal) {
 			hasValue = true
@@ -2464,7 +2464,7 @@ func (p *Parser) assignment() (nodes.Stmt, error) {
 		}
 
 		// Create annotation statement
-		return nodes.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		return ast.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
 	}
 
 trySingleSubscriptAttributeTarget:
@@ -2486,7 +2486,7 @@ trySingleSubscriptAttributeTarget:
 		}
 
 		// Check for optional assignment
-		var valueExpr nodes.Expr = nil
+		var valueExpr ast.Expr = nil
 		hasValue := false
 		if p.match(lexer.Equal) {
 			hasValue = true
@@ -2502,7 +2502,7 @@ trySingleSubscriptAttributeTarget:
 		}
 
 		// Create annotation statement
-		return nodes.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		return ast.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
 	}
 
 	// Restore position and try form 3: (star_targets '=' )+ (yield_expr | star_expressions) !'=' [TYPE_COMMENT]
@@ -2514,7 +2514,7 @@ trySingleSubscriptAttributeTarget:
 		// We have valid targets, now check for '='
 		if p.check(lexer.Equal) {
 			// Start building the chain of targets
-			var targetChain [][]nodes.Expr
+			var targetChain [][]ast.Expr
 			targetChain = append(targetChain, targets)
 
 			lastPos := p.Current
@@ -2537,7 +2537,7 @@ trySingleSubscriptAttributeTarget:
 			}
 
 			// Parse the right-hand side expression
-			var rhs nodes.Expr
+			var rhs ast.Expr
 			if p.check(lexer.Yield) {
 				rhs, err = p.yieldExpression()
 			} else {
@@ -2556,11 +2556,11 @@ trySingleSubscriptAttributeTarget:
 			// The last one gets the right-hand side expression, and then assign left to right
 			// We iterate over the targetChain, and create an AssignStmt for each target
 			// TODO: we should assign the RHS expression to a temp variable, and then assign the temp variable to the targets
-			var stmts []nodes.Stmt
+			var stmts []ast.Stmt
 			for i := 0; i < len(targetChain); i++ {
-				stmts = append(stmts, nodes.NewAssignStmt(targetChain[i], rhs, lexer.Span{Start: startPos, End: rhs.Span().End}))
+				stmts = append(stmts, ast.NewAssignStmt(targetChain[i], rhs, lexer.Span{Start: startPos, End: rhs.Span().End}))
 			}
-			return nodes.NewMultiStmt(stmts, lexer.Span{Start: startPos, End: rhs.Span().End}), nil
+			return ast.NewMultiStmt(stmts, lexer.Span{Start: startPos, End: rhs.Span().End}), nil
 		}
 	}
 
@@ -2581,7 +2581,7 @@ trySingleSubscriptAttributeTarget:
 		op := p.previous()
 
 		// Parse the right-hand side expression
-		var value nodes.Expr
+		var value ast.Expr
 		if p.check(lexer.Yield) {
 			value, err = p.yieldExpression()
 		} else {
@@ -2592,7 +2592,7 @@ trySingleSubscriptAttributeTarget:
 		}
 
 		// Create and return an AugAssignStmt node
-		return nodes.NewAugAssignStmt(singleTarget, op, value, lexer.Span{Start: startPos, End: value.Span().End}), nil
+		return ast.NewAugAssignStmt(singleTarget, op, value, lexer.Span{Start: startPos, End: value.Span().End}), nil
 	}
 
 	// If we get here, none of the assignment forms matched

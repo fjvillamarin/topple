@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"biscuit/compiler/ast/nodes"
+	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/parser"
 )
@@ -44,7 +44,7 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, erro
 
 // Parse scans a source file and returns a parsed AST.
 // It returns both the AST and a slice of any errors encountered during scanning and parsing.
-func Parse(src []byte) (*nodes.Module, []error) {
+func Parse(src []byte) (*ast.Module, []error) {
 	scanner := lexer.NewScanner(src)
 	tokens := scanner.ScanTokens()
 
