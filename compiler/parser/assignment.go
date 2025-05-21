@@ -203,7 +203,7 @@ trySingleSubscriptAttributeTarget:
 		lexer.AmpEqual, lexer.PipeEqual, lexer.CaretEqual, lexer.LessLessEqual, lexer.GreaterGreaterEqual,
 		lexer.StarStarEqual, lexer.SlashSlashEqual) {
 
-		op := p.previous()
+		operator := p.previous()
 
 		// Parse the right-hand side expression
 		var value ast.Expr
@@ -216,8 +216,10 @@ trySingleSubscriptAttributeTarget:
 			return nil, err
 		}
 
-		// Create and return an AugAssignStmt node
-		return ast.NewAugAssignStmt(singleTarget, op, value, lexer.Span{Start: startPos, End: value.Span().End}), nil
+		// Augmented assignment is syntactic sugar for:
+		// target = target op value
+		rhs := ast.NewBinary(singleTarget, augassignToOperator(operator), value, lexer.Span{Start: singleTarget.Span().Start, End: value.Span().End})
+		return ast.NewAssignStmt([]ast.Expr{singleTarget}, rhs, lexer.Span{Start: singleTarget.Span().Start, End: rhs.Span().End}), nil
 	}
 
 	// If we get here, none of the assignment forms matched
@@ -244,4 +246,102 @@ func (p *Parser) augassign() (lexer.Token, error) {
 		return p.previous(), nil
 	}
 	return lexer.Token{}, p.error(p.peek(), "expected augmented assignment operator")
+}
+
+// augassignToOperator converts an augmented assignment operator to its corresponding binary operator
+func augassignToOperator(augassign lexer.Token) lexer.Token {
+	switch augassign.Type {
+	case lexer.PlusEqual:
+		return lexer.Token{
+			Type:    lexer.Plus,
+			Lexeme:  "+",
+			Literal: "+",
+			Span:    augassign.Span,
+		}
+	case lexer.MinusEqual:
+		return lexer.Token{
+			Type:    lexer.Minus,
+			Lexeme:  "-",
+			Literal: "-",
+			Span:    augassign.Span,
+		}
+	case lexer.StarEqual:
+		return lexer.Token{
+			Type:    lexer.Star,
+			Lexeme:  "*",
+			Literal: "*",
+			Span:    augassign.Span,
+		}
+	case lexer.AtEqual:
+		return lexer.Token{
+			Type:    lexer.At,
+			Lexeme:  "@",
+			Literal: "@",
+			Span:    augassign.Span,
+		}
+	case lexer.SlashEqual:
+		return lexer.Token{
+			Type:    lexer.Slash,
+			Lexeme:  "/",
+			Literal: "/",
+			Span:    augassign.Span,
+		}
+	case lexer.PercentEqual:
+		return lexer.Token{
+			Type:    lexer.Percent,
+			Lexeme:  "%",
+			Literal: "%",
+			Span:    augassign.Span,
+		}
+	case lexer.AmpEqual:
+		return lexer.Token{
+			Type:    lexer.Ampersand,
+			Lexeme:  "&",
+			Literal: "&",
+			Span:    augassign.Span,
+		}
+	case lexer.PipeEqual:
+		return lexer.Token{
+			Type:    lexer.Pipe,
+			Lexeme:  "|",
+			Literal: "|",
+			Span:    augassign.Span,
+		}
+	case lexer.CaretEqual:
+		return lexer.Token{
+			Type:    lexer.Caret,
+			Lexeme:  "^",
+			Literal: "^",
+			Span:    augassign.Span,
+		}
+	case lexer.LessLessEqual:
+		return lexer.Token{
+			Type:    lexer.LessLess,
+			Lexeme:  "<<",
+			Literal: "<<",
+			Span:    augassign.Span,
+		}
+	case lexer.GreaterGreaterEqual:
+		return lexer.Token{
+			Type:    lexer.GreaterGreater,
+			Lexeme:  ">>",
+			Literal: ">>",
+			Span:    augassign.Span,
+		}
+	case lexer.StarStarEqual:
+		return lexer.Token{
+			Type:    lexer.StarStar,
+			Lexeme:  "**",
+			Literal: "**",
+			Span:    augassign.Span,
+		}
+	case lexer.SlashSlashEqual:
+		return lexer.Token{
+			Type:    lexer.SlashSlash,
+			Lexeme:  "//",
+			Literal: "//",
+			Span:    augassign.Span,
+		}
+	}
+	return lexer.Token{}
 }

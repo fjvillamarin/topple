@@ -905,36 +905,6 @@ func (p *ASTPrinter) VisitAssignStmt(node *ast.AssignStmt) ast.Visitor {
 	return p
 }
 
-// VisitAugAssignStmt handles AugAssignStmt nodes
-func (p *ASTPrinter) VisitAugAssignStmt(node *ast.AugAssignStmt) ast.Visitor {
-	p.printNodeStart("AugAssignStmt", node)
-	p.result.WriteString(" (\n")
-
-	p.indentLevel++
-	// Display the operator
-	p.result.WriteString(fmt.Sprintf("%soperator: %s\n", p.indent(), node.Operator.Lexeme))
-
-	// Visit the target
-	if node.Target != nil {
-		p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
-		p.indentLevel++
-		node.Target.Accept(p)
-		p.indentLevel--
-	}
-
-	// Visit the value
-	if node.Value != nil {
-		p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
-		p.indentLevel++
-		node.Value.Accept(p)
-		p.indentLevel--
-	}
-	p.indentLevel--
-
-	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
-	return p
-}
-
 // VisitAnnotationStmt handles AnnotationStmt nodes
 func (p *ASTPrinter) VisitAnnotationStmt(node *ast.AnnotationStmt) ast.Visitor {
 	p.printNodeStart("AnnotationStmt", node)
