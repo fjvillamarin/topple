@@ -77,9 +77,11 @@ func (s *Scanner) ScanTokens() []Token {
 	}
 
 	s.tokens = append(s.tokens, Token{
-		Type:     EOF,
-		StartPos: Position{Line: s.line, Column: s.col},
-		EndPos:   Position{Line: s.line, Column: s.col},
+		Type: EOF,
+		Span: Span{
+			Start: Position{Line: s.line, Column: s.col},
+			End:   Position{Line: s.line, Column: s.col},
+		},
 	})
 
 	// Post-process tokens to detect composite tokens
@@ -103,10 +105,12 @@ func (s *Scanner) processCompositeTokens() {
 			s.tokens[i].Type == Is && s.tokens[i+1].Type == Not {
 			// Create a composite "is not" token
 			isNotToken := Token{
-				Type:     IsNot,
-				Lexeme:   "is not",
-				StartPos: s.tokens[i].StartPos,
-				EndPos:   s.tokens[i+1].EndPos,
+				Type:   IsNot,
+				Lexeme: "is not",
+				Span: Span{
+					Start: s.tokens[i].Start(),
+					End:   s.tokens[i+1].End(),
+				},
 			}
 			processed = append(processed, isNotToken)
 			i += 2 // Skip both tokens
@@ -118,10 +122,12 @@ func (s *Scanner) processCompositeTokens() {
 			s.tokens[i].Type == Not && s.tokens[i+1].Type == In {
 			// Create a composite "not in" token
 			notInToken := Token{
-				Type:     NotIn,
-				Lexeme:   "not in",
-				StartPos: s.tokens[i].StartPos,
-				EndPos:   s.tokens[i+1].EndPos,
+				Type:   NotIn,
+				Lexeme: "not in",
+				Span: Span{
+					Start: s.tokens[i].Start(),
+					End:   s.tokens[i+1].End(),
+				},
 			}
 			processed = append(processed, notInToken)
 			i += 2 // Skip both tokens
@@ -188,19 +194,23 @@ func (s *Scanner) addToken(tt TokenType) {
 	s.tokens = append(s.tokens, Token{
 		Type: tt,
 		// lexeme is *bytes* slice – OK even for UTF-8, we store raw input:
-		Lexeme:   string(s.src[s.start:s.cur]),
-		StartPos: Position{Line: s.lexLine, Column: s.lexCol},
-		EndPos:   Position{Line: s.line, Column: s.col},
+		Lexeme: string(s.src[s.start:s.cur]),
+		Span: Span{
+			Start: Position{Line: s.lexLine, Column: s.lexCol},
+			End:   Position{Line: s.line, Column: s.col},
+		},
 	})
 }
 
 func (s *Scanner) addTokenLit(tt TokenType, lit any) {
 	s.tokens = append(s.tokens, Token{
-		Type:     tt,
-		Lexeme:   string(s.src[s.start:s.cur]),
-		Literal:  lit,
-		StartPos: Position{Line: s.lexLine, Column: s.lexCol},
-		EndPos:   Position{Line: s.line, Column: s.col},
+		Type:    tt,
+		Lexeme:  string(s.src[s.start:s.cur]),
+		Literal: lit,
+		Span: Span{
+			Start: Position{Line: s.lexLine, Column: s.lexCol},
+			End:   Position{Line: s.line, Column: s.col},
+		},
 	})
 }
 

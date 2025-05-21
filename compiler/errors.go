@@ -13,12 +13,12 @@ type RuntimeError struct {
 
 // Error returns a string representation of the RuntimeError.
 func (e *RuntimeError) Error() string {
-	return fmt.Sprintf("Runtime error: %s at position %s", e.Message, e.Token.Span())
+	return fmt.Sprintf("Runtime error: %s at position %s", e.Message, e.Token.Span)
 }
 
 // Span returns the span of the token that caused the error.
-func (e *RuntimeError) Span() string {
-	return e.Token.Span()
+func (e *RuntimeError) Span() lexer.Span {
+	return e.Token.Span
 }
 
 // NewRuntimeError creates a new RuntimeError.

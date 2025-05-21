@@ -70,7 +70,6 @@ type StmtVisitor interface {
 	VisitImportStmt(i *ImportStmt) Visitor
 	VisitImportFromStmt(i *ImportFromStmt) Visitor
 	VisitAssignStmt(a *AssignStmt) Visitor
-	VisitAugAssignStmt(a *AugAssignStmt) Visitor
 	VisitAnnotationStmt(a *AnnotationStmt) Visitor
 	VisitMultiStmt(m *MultiStmt) Visitor
 }

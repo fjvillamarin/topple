@@ -268,27 +268,22 @@ func (s *Span) String() string {
 // Token carries full positional information so the analyzer can
 // implement precise diagnostics.
 type Token struct {
-	Type     TokenType
-	Lexeme   string
-	Literal  any // decoded string/number value, or nil
-	StartPos Position
-	EndPos   Position
+	Type    TokenType
+	Lexeme  string
+	Literal any // decoded string/number value, or nil
+	Span    Span
 }
 
 func (t Token) Start() Position {
-	return t.StartPos
+	return t.Span.Start
 }
 
 func (t Token) End() Position {
-	return t.EndPos
+	return t.Span.End
 }
 
 func (t Token) String() string {
 	return fmt.Sprintf("%s %q %v", t.Type, t.Lexeme, t.Literal)
-}
-
-func (t Token) Span() string {
-	return fmt.Sprintf("%s-%s", t.StartPos, t.EndPos)
 }
 
 // Keywords maps the textual form of each keyword to its TokenType.

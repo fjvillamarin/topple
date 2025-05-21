@@ -70,8 +70,8 @@ func (e *ParseError) Error() string {
 }
 
 // Span returns the span of the token that caused the error.
-func (e *ParseError) Span() string {
-	return e.Token.Span()
+func (e *ParseError) Span() lexer.Span {
+	return e.Token.Span
 }
 
 // NewParseError creates a new ParseError.

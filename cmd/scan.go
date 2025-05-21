@@ -100,7 +100,7 @@ func scanFile(fs filesystem.FileSystem, path, outputDir string, writeTokens bool
 
 	for i, tok := range tokens {
 		output.WriteString(fmt.Sprintf("%d: %s %d %q %v @ %s\n",
-			i, tok.Type, int(tok.Type), tok.Lexeme, tok.Literal, tok.Span()))
+			i, tok.Type, int(tok.Type), tok.Lexeme, tok.Literal, tok.Span.String()))
 	}
 
 	if len(scanner.Errors) > 0 {
