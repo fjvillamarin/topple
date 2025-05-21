@@ -3,7 +3,6 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // statement parses a single statement.
@@ -30,22 +29,16 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 		return []ast.Stmt{stmt}, nil
 	}
 
-	fmt.Println("block")
-
 	// Otherwise expect NEWLINE INDENT statements DEDENT
 	_, err := p.consume(lexer.Newline, "expected newline")
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("newline")
-
 	_, err = p.consume(lexer.Indent, "expected indented block")
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("indent")
 
 	statements := []ast.Stmt{}
 	for !p.isAtEnd() && !p.check(lexer.Dedent) {
@@ -54,16 +47,12 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 			return nil, err
 		}
 
-		fmt.Println("statement", stmt)
-
 		statements = append(statements, stmt)
 
 		if p.check(lexer.Newline) {
 			p.advance()
 		}
 	}
-
-	fmt.Println("dedent")
 
 	_, err = p.consume(lexer.Dedent, "expected dedent at end of block")
 	if err != nil {

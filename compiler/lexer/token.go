@@ -261,7 +261,7 @@ type Span struct {
 	End   Position
 }
 
-func (s *Span) String() string {
+func (s Span) String() string {
 	return fmt.Sprintf("%s-%s", s.Start, s.End)
 }
 

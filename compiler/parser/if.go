@@ -3,7 +3,6 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // ifStatement parses an if statement.
@@ -14,15 +13,11 @@ func (p *Parser) ifStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	fmt.Println("ifStatement")
-
 	// Parse the condition expression
 	condition, err := p.namedExpression()
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("condition", condition)
 
 	// Expect colon
 	_, err = p.consume(lexer.Colon, "expected ':' after if condition")
@@ -30,15 +25,11 @@ func (p *Parser) ifStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	fmt.Println("colon")
-
 	// Parse the body
 	body, err := p.block()
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("body", body)
 
 	// Check for elif
 	if p.match(lexer.Elif) {
