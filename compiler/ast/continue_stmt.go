@@ -6,19 +6,13 @@ import (
 
 // ContinueStmt represents a 'continue' statement.
 type ContinueStmt struct {
-	span lexer.Span
-}
-
-func NewContinueStmt(span lexer.Span) *ContinueStmt {
-	return &ContinueStmt{
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (c *ContinueStmt) isStmt() {}
 
-func (c *ContinueStmt) Span() lexer.Span {
-	return c.span
+func (c *ContinueStmt) GetSpan() lexer.Span {
+	return c.Span
 }
 
 func (c *ContinueStmt) Accept(visitor Visitor) {

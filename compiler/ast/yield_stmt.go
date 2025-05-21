@@ -9,20 +9,13 @@ import (
 type YieldStmt struct {
 	Value Expr
 
-	span lexer.Span
-}
-
-func NewYieldStmt(value Expr, span lexer.Span) *YieldStmt {
-	return &YieldStmt{
-		Value: value,
-		span:  span,
-	}
+	Span lexer.Span
 }
 
 func (y *YieldStmt) isStmt() {}
 
-func (y *YieldStmt) Span() lexer.Span {
-	return y.span
+func (y *YieldStmt) GetSpan() lexer.Span {
+	return y.Span
 }
 
 func (y *YieldStmt) Accept(visitor Visitor) {

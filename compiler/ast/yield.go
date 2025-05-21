@@ -10,22 +10,13 @@ type YieldExpr struct {
 	IsFrom bool
 	Value  Expr
 
-	span lexer.Span
-}
-
-func NewYieldExpr(isFrom bool, value Expr, span lexer.Span) *YieldExpr {
-	return &YieldExpr{
-		IsFrom: isFrom,
-		Value:  value,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (y *YieldExpr) isExpr() {}
 
-func (y *YieldExpr) Span() lexer.Span {
-	return y.span
+func (y *YieldExpr) GetSpan() lexer.Span {
+	return y.Span
 }
 
 func (y *YieldExpr) String() string {

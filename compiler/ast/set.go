@@ -2,32 +2,23 @@ package ast
 
 import (
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // SetExpr represents a set expression {items}
 type SetExpr struct {
 	Elements []Expr
 
-	span lexer.Span
-}
-
-func NewSetExpr(elements []Expr, span lexer.Span) *SetExpr {
-	return &SetExpr{
-		Elements: elements,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (s *SetExpr) isExpr() {}
 
-func (s *SetExpr) Span() lexer.Span {
-	return s.span
+func (s *SetExpr) GetSpan() lexer.Span {
+	return s.Span
 }
 
 func (s *SetExpr) String() string {
-	return fmt.Sprintf("{...}")
+	return "{...}"
 }
 
 // Accept calls the VisitSetExpr method on the visitor

@@ -10,22 +10,13 @@ type AssignExpr struct {
 	Left  Expr
 	Right Expr
 
-	span lexer.Span
-}
-
-func NewAssignExpr(left Expr, right Expr, span lexer.Span) *AssignExpr {
-	return &AssignExpr{
-		Left:  left,
-		Right: right,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (a *AssignExpr) isExpr() {}
 
-func (a *AssignExpr) Span() lexer.Span {
-	return a.span
+func (a *AssignExpr) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *AssignExpr) String() string {

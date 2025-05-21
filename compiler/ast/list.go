@@ -2,32 +2,30 @@ package ast
 
 import (
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // ListExpr represents a list expression [items]
 type ListExpr struct {
 	Elements []Expr
 
-	span lexer.Span
+	Span lexer.Span
 }
 
-func NewListExpr(elements []Expr, span lexer.Span) *ListExpr {
+func NewListExpr(elements []Expr, Span lexer.Span) *ListExpr {
 	return &ListExpr{
 		Elements: elements,
-
-		span: span,
+		Span:     Span,
 	}
 }
 
 func (l *ListExpr) isExpr() {}
 
-func (l *ListExpr) Span() lexer.Span {
-	return l.span
+func (l *ListExpr) GetSpan() lexer.Span {
+	return l.Span
 }
 
 func (l *ListExpr) String() string {
-	return fmt.Sprintf("[...]")
+	return "[...]"
 }
 
 // Accept calls the VisitListExpr method on the visitor

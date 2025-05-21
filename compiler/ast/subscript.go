@@ -10,22 +10,13 @@ type Subscript struct {
 	Object  Expr
 	Indices []Expr // Multiple indices or slices
 
-	span lexer.Span
-}
-
-func NewSubscript(object Expr, indices []Expr, span lexer.Span) *Subscript {
-	return &Subscript{
-		Object:  object,
-		Indices: indices,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (s *Subscript) isExpr() {}
 
-func (s *Subscript) Span() lexer.Span {
-	return s.span
+func (s *Subscript) GetSpan() lexer.Span {
+	return s.Span
 }
 
 func (s *Subscript) String() string {

@@ -31,7 +31,7 @@ func (p *ASTPrinter) indent() string {
 
 // printNodeStart prints the common start of a node representation
 func (p *ASTPrinter) printNodeStart(nodeType string, node ast.Node) {
-	p.result.WriteString(fmt.Sprintf("%s%s [%s]", p.indent(), nodeType, node.Span()))
+	p.result.WriteString(fmt.Sprintf("%s%s [%s]", p.indent(), nodeType, node.GetSpan()))
 }
 
 // Visit implements the visitor pattern entry point
@@ -70,8 +70,8 @@ func (p *ASTPrinter) VisitExprStmt(node *ast.ExprStmt) ast.Visitor {
 
 	p.indentLevel++
 	// Visit the expression inside this statement
-	if node.Value != nil {
-		node.Value.Accept(p)
+	if node.Expr != nil {
+		node.Expr.Accept(p)
 	}
 	p.indentLevel--
 

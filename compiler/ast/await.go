@@ -9,21 +9,13 @@ import (
 type AwaitExpr struct {
 	Expr Expr
 
-	span lexer.Span
-}
-
-func NewAwaitExpr(expr Expr, span lexer.Span) *AwaitExpr {
-	return &AwaitExpr{
-		Expr: expr,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (a *AwaitExpr) isExpr() {}
 
-func (a *AwaitExpr) Span() lexer.Span {
-	return a.span
+func (a *AwaitExpr) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *AwaitExpr) String() string {

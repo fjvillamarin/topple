@@ -13,23 +13,13 @@ type ImportFromStmt struct {
 	Names      []*ImportName // List of imported names with optional aliases
 	IsWildcard bool          // True if importing '*'
 
-	span lexer.Span
-}
-
-func NewImportFromStmt(dottedName *DottedName, dotCount int, names []*ImportName, isWildcard bool, span lexer.Span) *ImportFromStmt {
-	return &ImportFromStmt{
-		DottedName: dottedName,
-		DotCount:   dotCount,
-		Names:      names,
-		IsWildcard: isWildcard,
-		span:       span,
-	}
+	Span lexer.Span
 }
 
 func (i *ImportFromStmt) isStmt() {}
 
-func (i *ImportFromStmt) Span() lexer.Span {
-	return i.span
+func (i *ImportFromStmt) GetSpan() lexer.Span {
+	return i.Span
 }
 
 func (i *ImportFromStmt) Accept(visitor Visitor) {

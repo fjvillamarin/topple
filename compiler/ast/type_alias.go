@@ -11,22 +11,13 @@ type TypeAlias struct {
 	Params []Expr // Type parameters as expressions
 	Value  Expr   // The type value expression
 
-	span lexer.Span
-}
-
-func NewTypeAlias(name lexer.Token, params []Expr, value Expr, span lexer.Span) *TypeAlias {
-	return &TypeAlias{
-		Name:   name,
-		Params: params,
-		Value:  value,
-		span:   span,
-	}
+	Span lexer.Span
 }
 
 func (t *TypeAlias) isStmt() {}
 
-func (t *TypeAlias) Span() lexer.Span {
-	return t.span
+func (t *TypeAlias) GetSpan() lexer.Span {
+	return t.Span
 }
 
 // Accept calls the VisitTypeAlias method on the visitor

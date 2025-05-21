@@ -10,20 +10,13 @@ import (
 type ImportStmt struct {
 	Names []*ImportName // List of imported modules with optional aliases
 
-	span lexer.Span
-}
-
-func NewImportStmt(names []*ImportName, span lexer.Span) *ImportStmt {
-	return &ImportStmt{
-		Names: names,
-		span:  span,
-	}
+	Span lexer.Span
 }
 
 func (i *ImportStmt) isStmt() {}
 
-func (i *ImportStmt) Span() lexer.Span {
-	return i.span
+func (i *ImportStmt) GetSpan() lexer.Span {
+	return i.Span
 }
 
 func (i *ImportStmt) Accept(visitor Visitor) {
@@ -43,19 +36,19 @@ type ImportName struct {
 	DottedName *DottedName // The module path
 	AsName     *Name       // Optional alias name
 
-	span lexer.Span
+	Span lexer.Span
 }
 
-func NewImportName(dottedName *DottedName, asName *Name, span lexer.Span) *ImportName {
+func NewImportName(dottedName *DottedName, asName *Name, Span lexer.Span) *ImportName {
 	return &ImportName{
 		DottedName: dottedName,
 		AsName:     asName,
-		span:       span,
+		Span:       Span,
 	}
 }
 
-func (i *ImportName) Span() lexer.Span {
-	return i.span
+func (i *ImportName) GetSpan() lexer.Span {
+	return i.Span
 }
 
 func (i *ImportName) String() string {
@@ -69,18 +62,11 @@ func (i *ImportName) String() string {
 type DottedName struct {
 	Names []*Name // Parts of the dotted path
 
-	span lexer.Span
+	Span lexer.Span
 }
 
-func NewDottedName(names []*Name, span lexer.Span) *DottedName {
-	return &DottedName{
-		Names: names,
-		span:  span,
-	}
-}
-
-func (d *DottedName) Span() lexer.Span {
-	return d.span
+func (d *DottedName) GetSpan() lexer.Span {
+	return d.Span
 }
 
 func (d *DottedName) String() string {
@@ -89,4 +75,11 @@ func (d *DottedName) String() string {
 		parts[i] = name.String()
 	}
 	return strings.Join(parts, ".")
+}
+
+func NewDottedName(names []*Name, Span lexer.Span) *DottedName {
+	return &DottedName{
+		Names: names,
+		Span:  Span,
+	}
 }

@@ -13,26 +13,13 @@ type TypeParamExpr struct {
 	IsStar       bool // Whether this is a *NAME parameter
 	IsDoubleStar bool // Whether this is a **NAME parameter
 
-	span lexer.Span
-}
-
-func NewTypeParamExpr(name lexer.Token, bound Expr, defaultValue Expr, isStar bool, isDoubleStar bool,
-	span lexer.Span) *TypeParamExpr {
-	return &TypeParamExpr{
-		Name:         name,
-		Bound:        bound,
-		Default:      defaultValue,
-		IsStar:       isStar,
-		IsDoubleStar: isDoubleStar,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (t *TypeParamExpr) isExpr() {}
 
-func (t *TypeParamExpr) Span() lexer.Span {
-	return t.span
+func (t *TypeParamExpr) GetSpan() lexer.Span {
+	return t.Span
 }
 
 func (t *TypeParamExpr) String() string {

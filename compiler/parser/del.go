@@ -20,7 +20,11 @@ func (p *Parser) delStatement() (ast.Stmt, error) {
 
 	// TODO: Create and return a DelStmt node
 	// For now, return a placeholder
-	return ast.NewExprStmt(targets, lexer.Span{Start: delToken.Start(), End: targets.Span().End}), nil
+	return &ast.ExprStmt{
+		Expr: targets,
+
+		Span: lexer.Span{Start: delToken.Start(), End: targets.GetSpan().End},
+	}, nil
 }
 
 // delTarget parses a target for the del statement as per the grammar:
@@ -46,7 +50,12 @@ func (p *Parser) delTarget() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			result := ast.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()})
+			result := &ast.Attribute{
+				Object: primary,
+				Name:   name,
+
+				Span: lexer.Span{Start: primary.GetSpan().Start, End: name.End()},
+			}
 
 			// Check negative lookahead - must NOT be followed by another accessor
 			if p.tLookahead() {
@@ -70,7 +79,12 @@ func (p *Parser) delTarget() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			result := ast.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()})
+			result := &ast.Subscript{
+				Object:  primary,
+				Indices: indices,
+
+				Span: lexer.Span{Start: primary.GetSpan().Start, End: right.End()},
+			}
 
 			// Check negative lookahead - must NOT be followed by another accessor
 			if p.tLookahead() {
@@ -101,12 +115,20 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 	if p.check(lexer.Identifier) {
 		// Handle simple NAME case
 		name := p.advance()
-		return ast.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
+		return &ast.Name{
+			Token: name,
+
+			Span: lexer.Span{Start: startPos, End: name.End()},
+		}, nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized forms
 		if p.match(lexer.RightParen) {
 			// Empty tuple
-			return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.TupleExpr{
+				Elements: []ast.Expr{},
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 		// Try to parse as single del_target first
@@ -121,7 +143,11 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 
 				// Check for empty rest of tuple
 				if p.match(lexer.RightParen) {
-					return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+					return &ast.TupleExpr{
+						Elements: elements,
+
+						Span: lexer.Span{Start: startPos, End: p.previous().End()},
+					}, nil
 				}
 
 				// Parse rest of del_targets
@@ -143,7 +169,11 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 					return nil, err
 				}
 
-				return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+				return &ast.TupleExpr{
+					Elements: elements,
+
+					Span: lexer.Span{Start: startPos, End: p.previous().End()},
+				}, nil
 			}
 
 			// No comma, so it's a grouped expression
@@ -151,7 +181,11 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			return ast.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.GroupExpr{
+				Expression: target,
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 		// Restore position and try as del_targets (tuple)
@@ -182,12 +216,20 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return &ast.TupleExpr{
+			Elements: elements,
+
+			Span: lexer.Span{Start: startPos, End: p.previous().End()},
+		}, nil
 	} else if p.match(lexer.LeftBracket) {
 		// Handle list form
 		if p.match(lexer.RightBracket) {
 			// Empty list
-			return ast.NewListExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.ListExpr{
+				Elements: []ast.Expr{},
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 		// Parse del_targets as a sequence
@@ -215,7 +257,11 @@ func (p *Parser) delTAtom() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return &ast.ListExpr{
+			Elements: elements,
+
+			Span: lexer.Span{Start: startPos, End: p.previous().End()},
+		}, nil
 	}
 
 	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in del target atom")
@@ -258,5 +304,12 @@ func (p *Parser) delTargets() (ast.Expr, error) {
 	}
 
 	// Create a tuple expression with the targets
-	return ast.NewTupleExpr(elements, lexer.Span{Start: elements[0].Span().Start, End: elements[len(elements)-1].Span().End}), nil
+	return &ast.TupleExpr{
+		Elements: elements,
+
+		Span: lexer.Span{
+			Start: elements[0].GetSpan().Start,
+			End:   elements[len(elements)-1].GetSpan().End,
+		},
+	}, nil
 }

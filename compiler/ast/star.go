@@ -9,21 +9,13 @@ import (
 type StarExpr struct {
 	Expr Expr
 
-	span lexer.Span
-}
-
-func NewStarExpr(expr Expr, span lexer.Span) *StarExpr {
-	return &StarExpr{
-		Expr: expr,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (s *StarExpr) isExpr() {}
 
-func (s *StarExpr) Span() lexer.Span {
-	return s.span
+func (s *StarExpr) GetSpan() lexer.Span {
+	return s.Span
 }
 
 func (s *StarExpr) String() string {

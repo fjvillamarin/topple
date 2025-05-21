@@ -8,7 +8,7 @@ import (
 type Node interface {
 	Accept(visitor Visitor)
 
-	Span() lexer.Span
+	GetSpan() lexer.Span
 	String() string
 }
 

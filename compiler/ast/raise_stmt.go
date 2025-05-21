@@ -12,24 +12,13 @@ type RaiseStmt struct {
 	HasException bool
 	HasFrom      bool
 
-	span lexer.Span
-}
-
-func NewRaiseStmt(exception Expr, fromExpr Expr, hasException bool, hasFrom bool, span lexer.Span) *RaiseStmt {
-	return &RaiseStmt{
-		Exception:    exception,
-		FromExpr:     fromExpr,
-		HasException: hasException,
-		HasFrom:      hasFrom,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (r *RaiseStmt) isStmt() {}
 
-func (r *RaiseStmt) Span() lexer.Span {
-	return r.span
+func (r *RaiseStmt) GetSpan() lexer.Span {
+	return r.Span
 }
 
 func (r *RaiseStmt) Accept(visitor Visitor) {

@@ -10,21 +10,13 @@ type AssertStmt struct {
 	Test    Expr
 	Message Expr // Optional error message
 
-	span lexer.Span
-}
-
-func NewAssertStmt(test Expr, message Expr, span lexer.Span) *AssertStmt {
-	return &AssertStmt{
-		Test:    test,
-		Message: message,
-		span:    span,
-	}
+	Span lexer.Span
 }
 
 func (a *AssertStmt) isStmt() {}
 
-func (a *AssertStmt) Span() lexer.Span {
-	return a.span
+func (a *AssertStmt) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *AssertStmt) Accept(visitor Visitor) {

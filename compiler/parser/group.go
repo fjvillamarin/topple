@@ -25,7 +25,11 @@ func (p *Parser) group() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return &ast.GroupExpr{
+			Expression: expr,
+
+			Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+		}, nil
 	}
 
 	// Parse named expression
@@ -40,5 +44,9 @@ func (p *Parser) group() (ast.Expr, error) {
 		return nil, err
 	}
 
-	return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+	return &ast.GroupExpr{
+		Expression: expr,
+
+		Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+	}, nil
 }

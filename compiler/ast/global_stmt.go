@@ -10,20 +10,13 @@ import (
 type GlobalStmt struct {
 	Names []*Name // The identifiers declared as global
 
-	span lexer.Span
-}
-
-func NewGlobalStmt(names []*Name, span lexer.Span) *GlobalStmt {
-	return &GlobalStmt{
-		Names: names,
-		span:  span,
-	}
+	Span lexer.Span
 }
 
 func (g *GlobalStmt) isStmt() {}
 
-func (g *GlobalStmt) Span() lexer.Span {
-	return g.span
+func (g *GlobalStmt) GetSpan() lexer.Span {
+	return g.Span
 }
 
 func (g *GlobalStmt) Accept(visitor Visitor) {

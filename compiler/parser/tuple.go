@@ -18,7 +18,11 @@ func (p *Parser) tuple() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return &ast.TupleExpr{
+			Elements: []ast.Expr{},
+
+			Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+		}, nil
 	}
 
 	// Parse the first expression (could be a star expression or named expression)
@@ -38,7 +42,11 @@ func (p *Parser) tuple() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return &ast.GroupExpr{
+			Expression: expr,
+
+			Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+		}, nil
 	}
 
 	// If there's a comma, it's a tuple
@@ -69,7 +77,11 @@ func (p *Parser) tuple() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewTupleExpr(elements, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return &ast.TupleExpr{
+			Elements: elements,
+
+			Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+		}, nil
 	} else {
 		// No comma, so it's a group
 		// Groups can only contain named expressions, not star expressions
@@ -82,6 +94,10 @@ func (p *Parser) tuple() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewGroupExpr(expr, lexer.Span{Start: leftParen.Start(), End: rightParen.End()}), nil
+		return &ast.GroupExpr{
+			Expression: expr,
+
+			Span: lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+		}, nil
 	}
 }

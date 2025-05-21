@@ -9,21 +9,13 @@ import (
 type Module struct {
 	Body []Stmt
 
-	span lexer.Span
-}
-
-func NewModule(body []Stmt, span lexer.Span) *Module {
-	return &Module{
-		Body: body,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (m *Module) isStmt() {}
 
-func (m *Module) Span() lexer.Span {
-	return m.span
+func (m *Module) GetSpan() lexer.Span {
+	return m.Span
 }
 
 // Accept calls the VisitModule method on the visitor

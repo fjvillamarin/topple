@@ -11,23 +11,13 @@ type TernaryExpr struct {
 	TrueExpr  Expr
 	FalseExpr Expr
 
-	span lexer.Span
-}
-
-func NewTernaryExpr(condition Expr, trueExpr Expr, falseExpr Expr, span lexer.Span) *TernaryExpr {
-	return &TernaryExpr{
-		Condition: condition,
-		TrueExpr:  trueExpr,
-		FalseExpr: falseExpr,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (t *TernaryExpr) isExpr() {}
 
-func (t *TernaryExpr) Span() lexer.Span {
-	return t.span
+func (t *TernaryExpr) GetSpan() lexer.Span {
+	return t.Span
 }
 
 func (t *TernaryExpr) String() string {

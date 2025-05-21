@@ -6,19 +6,13 @@ import (
 
 // PassStmt represents a 'pass' statement, which is a no-op.
 type PassStmt struct {
-	span lexer.Span
-}
-
-func NewPassStmt(span lexer.Span) *PassStmt {
-	return &PassStmt{
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (p *PassStmt) isStmt() {}
 
-func (p *PassStmt) Span() lexer.Span {
-	return p.span
+func (p *PassStmt) GetSpan() lexer.Span {
+	return p.Span
 }
 
 func (p *PassStmt) Accept(visitor Visitor) {

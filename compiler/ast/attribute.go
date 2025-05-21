@@ -10,22 +10,13 @@ type Attribute struct {
 	Object Expr
 	Name   lexer.Token
 
-	span lexer.Span
-}
-
-func NewAttribute(object Expr, name lexer.Token, span lexer.Span) *Attribute {
-	return &Attribute{
-		Object: object,
-		Name:   name,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (a *Attribute) isExpr() {}
 
-func (a *Attribute) Span() lexer.Span {
-	return a.span
+func (a *Attribute) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *Attribute) String() string {

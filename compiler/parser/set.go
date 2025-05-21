@@ -42,5 +42,9 @@ func (p *Parser) set() (ast.Expr, error) {
 		return nil, err
 	}
 
-	return ast.NewSetExpr(elements, lexer.Span{Start: leftBrace.Start(), End: rightBrace.End()}), nil
+	return &ast.SetExpr{
+		Elements: elements,
+
+		Span: lexer.Span{Start: leftBrace.Start(), End: rightBrace.End()},
+	}, nil
 }

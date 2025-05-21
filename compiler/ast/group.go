@@ -9,21 +9,13 @@ import (
 type GroupExpr struct {
 	Expression Expr
 
-	span lexer.Span
-}
-
-func NewGroupExpr(expression Expr, span lexer.Span) *GroupExpr {
-	return &GroupExpr{
-		Expression: expression,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (g *GroupExpr) isExpr() {}
 
-func (g *GroupExpr) Span() lexer.Span {
-	return g.span
+func (g *GroupExpr) GetSpan() lexer.Span {
+	return g.Span
 }
 
 func (g *GroupExpr) String() string {

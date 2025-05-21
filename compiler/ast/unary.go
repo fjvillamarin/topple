@@ -10,22 +10,13 @@ type Unary struct {
 	Operator lexer.Token
 	Right    Expr
 
-	span lexer.Span
-}
-
-func NewUnary(operator lexer.Token, right Expr, span lexer.Span) *Unary {
-	return &Unary{
-		Operator: operator,
-		Right:    right,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (u *Unary) isExpr() {}
 
-func (u *Unary) Span() lexer.Span {
-	return u.span
+func (u *Unary) GetSpan() lexer.Span {
+	return u.Span
 }
 
 func (u *Unary) String() string {

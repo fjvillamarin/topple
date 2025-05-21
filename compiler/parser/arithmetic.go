@@ -7,7 +7,7 @@ import (
 
 // sum parses a sum expression.
 func (p *Parser) sum() (ast.Expr, error) {
-	expr, err := p.term()
+	left, err := p.term()
 	if err != nil {
 		return nil, err
 	}
@@ -18,15 +18,24 @@ func (p *Parser) sum() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		left = &ast.Binary{
+			Left:     left,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: left.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
 	}
 
-	return expr, nil
+	return left, nil
 }
 
 // term parses a term expression.
 func (p *Parser) term() (ast.Expr, error) {
-	expr, err := p.factor()
+	left, err := p.factor()
 	if err != nil {
 		return nil, err
 	}
@@ -37,10 +46,18 @@ func (p *Parser) term() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
-	}
+		left = &ast.Binary{
+			Left:     left,
+			Operator: operator,
+			Right:    right,
 
-	return expr, nil
+			Span: lexer.Span{
+				Start: left.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
+	}
+	return left, nil
 }
 
 // factor parses a factor expression.
@@ -51,15 +68,22 @@ func (p *Parser) factor() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewUnary(operator, right, lexer.Span{Start: operator.Start(), End: right.Span().End}), nil
-	}
+		return &ast.Unary{
+			Operator: operator,
+			Right:    right,
 
+			Span: lexer.Span{
+				Start: operator.Start(),
+				End:   right.GetSpan().End,
+			},
+		}, nil
+	}
 	return p.power()
 }
 
 // power parses a power expression.
 func (p *Parser) power() (ast.Expr, error) {
-	expr, err := p.await()
+	left, err := p.await()
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +94,17 @@ func (p *Parser) power() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End}), nil
+		return &ast.Binary{
+			Left:     left,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: left.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}, nil
 	}
 
-	return expr, nil
+	return left, nil
 }

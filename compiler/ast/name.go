@@ -8,21 +8,13 @@ import (
 type Name struct {
 	Token lexer.Token
 
-	span lexer.Span
-}
-
-func NewName(token lexer.Token, span lexer.Span) *Name {
-	return &Name{
-		Token: token,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (n *Name) isExpr() {}
 
-func (n *Name) Span() lexer.Span {
-	return n.span
+func (n *Name) GetSpan() lexer.Span {
+	return n.Span
 }
 
 func (n *Name) String() string {

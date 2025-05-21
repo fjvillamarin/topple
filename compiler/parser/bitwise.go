@@ -18,7 +18,16 @@ func (p *Parser) bitwiseOr() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = &ast.Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: expr.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
 	}
 
 	return expr, nil
@@ -37,7 +46,16 @@ func (p *Parser) bitwiseXor() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = &ast.Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: expr.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
 	}
 
 	return expr, nil
@@ -56,7 +74,16 @@ func (p *Parser) bitwiseAnd() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = &ast.Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: expr.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
 	}
 
 	return expr, nil
@@ -75,7 +102,16 @@ func (p *Parser) shiftExpr() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		expr = ast.NewBinary(expr, operator, right, lexer.Span{Start: expr.Span().Start, End: right.Span().End})
+		expr = &ast.Binary{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+
+			Span: lexer.Span{
+				Start: expr.GetSpan().Start,
+				End:   right.GetSpan().End,
+			},
+		}
 	}
 
 	return expr, nil

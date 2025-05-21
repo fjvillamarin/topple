@@ -9,21 +9,13 @@ import (
 type ReturnStmt struct {
 	Value Expr
 
-	span lexer.Span
-}
-
-func NewReturnStmt(value Expr, span lexer.Span) *ReturnStmt {
-	return &ReturnStmt{
-		Value: value,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (r *ReturnStmt) isStmt() {}
 
-func (r *ReturnStmt) Span() lexer.Span {
-	return r.span
+func (r *ReturnStmt) GetSpan() lexer.Span {
+	return r.Span
 }
 
 func (r *ReturnStmt) Accept(visitor Visitor) {

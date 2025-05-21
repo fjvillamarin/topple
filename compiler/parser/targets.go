@@ -41,7 +41,12 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+			expr = &ast.Attribute{
+				Object: expr,
+				Name:   name,
+
+				Span: lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
+			}
 		} else if p.match(lexer.LeftParen) {
 			// Rule: t_primary '(' [arguments] ')' &t_lookahead
 			expr, err = p.finishCall(expr)
@@ -61,7 +66,12 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+			expr = &ast.Subscript{
+				Object:  expr,
+				Indices: indices,
+
+				Span: lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
+			}
 		} else {
 			// If we didn't consume any accessor, we're done
 			// Either we have atom &t_lookahead or we've finished a chain
@@ -111,7 +121,12 @@ func (p *Parser) singleSubscriptAttributeTarget() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		result := ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+		result := &ast.Attribute{
+			Object: expr,
+			Name:   name,
+
+			Span: lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
+		}
 
 		// Check negative lookahead - must NOT be followed by another accessor
 		if p.tLookahead() {
@@ -130,7 +145,12 @@ func (p *Parser) singleSubscriptAttributeTarget() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		result := ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+		result := &ast.Subscript{
+			Object:  expr,
+			Indices: indices,
+
+			Span: lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
+		}
 
 		// Check negative lookahead - must NOT be followed by another accessor
 		if p.tLookahead() {
@@ -161,7 +181,11 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 
 		// Just a NAME
 		name := p.advance()
-		return ast.NewName(name, lexer.Span{Start: name.Start(), End: name.End()}), nil
+		return &ast.Name{
+			Token: name,
+
+			Span: lexer.Span{Start: name.Start(), End: name.End()},
+		}, nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized form: '(' single_target ')'
 		target, err := p.singleTarget()
@@ -174,7 +198,11 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewGroupExpr(target, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.GroupExpr{
+			Expression: target,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	// Try to parse as single_subscript_attribute_target
@@ -203,7 +231,11 @@ func (p *Parser) starTarget() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}), nil
+		return &ast.StarExpr{
+			Expr: expr,
+
+			Span: lexer.Span{Start: star.Start(), End: expr.GetSpan().End},
+		}, nil
 	}
 
 	// Not a starred expression, parse as target_with_star_atom
@@ -356,12 +388,20 @@ func (p *Parser) starAtom() (ast.Expr, error) {
 	if p.match(lexer.Identifier) {
 		// Handle simple NAME case
 		name := p.previous()
-		return ast.NewName(name, lexer.Span{Start: startPos, End: name.End()}), nil
+		return &ast.Name{
+			Token: name,
+
+			Span: lexer.Span{Start: startPos, End: name.End()},
+		}, nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized forms
 		if p.match(lexer.RightParen) {
 			// Empty tuple
-			return ast.NewTupleExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.TupleExpr{
+				Elements: []ast.Expr{},
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 		// Try to parse as target_with_star_atom first
@@ -375,7 +415,11 @@ func (p *Parser) starAtom() (ast.Expr, error) {
 			if err != nil {
 				goto tryStartTargetSequence
 			}
-			return ast.NewGroupExpr(target, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.GroupExpr{
+				Expression: target,
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 	tryStartTargetSequence:
@@ -393,12 +437,20 @@ func (p *Parser) starAtom() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewTupleExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return &ast.TupleExpr{
+			Elements: elements,
+
+			Span: lexer.Span{Start: startPos, End: p.previous().End()},
+		}, nil
 	} else if p.match(lexer.LeftBracket) {
 		// Handle list form
 		if p.match(lexer.RightBracket) {
 			// Empty list
-			return ast.NewListExpr([]ast.Expr{}, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+			return &ast.ListExpr{
+				Elements: []ast.Expr{},
+
+				Span: lexer.Span{Start: startPos, End: p.previous().End()},
+			}, nil
 		}
 
 		elements, err := p.parseStarTargetSequence(false, lexer.RightBracket)
@@ -412,7 +464,11 @@ func (p *Parser) starAtom() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return ast.NewListExpr(elements, lexer.Span{Start: startPos, End: p.previous().End()}), nil
+		return &ast.ListExpr{
+			Elements: elements,
+
+			Span: lexer.Span{Start: startPos, End: p.previous().End()},
+		}, nil
 	}
 
 	return nil, p.error(p.peek(), "expected NAME, '(' or '[' in star atom")
@@ -455,7 +511,12 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 				return nil, p.error(p.peek(), "unexpected accessor after attribute target")
 			}
 
-			return ast.NewAttribute(primary, name, lexer.Span{Start: primary.Span().Start, End: name.End()}), nil
+			return &ast.Attribute{
+				Object: primary,
+				Name:   name,
+
+				Span: lexer.Span{Start: primary.GetSpan().Start, End: name.End()},
+			}, nil
 		}
 
 		// Restore position and try t_primary followed by '['
@@ -476,7 +537,12 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 				return nil, p.error(p.peek(), "unexpected accessor after subscript target")
 			}
 
-			return ast.NewSubscript(primary, indices, lexer.Span{Start: primary.Span().Start, End: right.End()}), nil
+			return &ast.Subscript{
+				Object:  primary,
+				Indices: indices,
+
+				Span: lexer.Span{Start: primary.GetSpan().Start, End: right.End()},
+			}, nil
 		}
 
 		// Reset position if we couldn't match t_primary with an accessor

@@ -6,19 +6,13 @@ import (
 
 // BreakStmt represents a 'break' statement.
 type BreakStmt struct {
-	span lexer.Span
-}
-
-func NewBreakStmt(span lexer.Span) *BreakStmt {
-	return &BreakStmt{
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (b *BreakStmt) isStmt() {}
 
-func (b *BreakStmt) Span() lexer.Span {
-	return b.span
+func (b *BreakStmt) GetSpan() lexer.Span {
+	return b.Span
 }
 
 func (b *BreakStmt) Accept(visitor Visitor) {

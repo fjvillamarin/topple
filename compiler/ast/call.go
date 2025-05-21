@@ -10,22 +10,13 @@ type Call struct {
 	Callee    Expr
 	Arguments []Expr
 
-	span lexer.Span
-}
-
-func NewCall(callee Expr, arguments []Expr, span lexer.Span) *Call {
-	return &Call{
-		Callee:    callee,
-		Arguments: arguments,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (c *Call) isExpr() {}
 
-func (c *Call) Span() lexer.Span {
-	return c.span
+func (c *Call) GetSpan() lexer.Span {
+	return c.Span
 }
 
 func (c *Call) String() string {

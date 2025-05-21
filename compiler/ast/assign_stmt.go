@@ -11,22 +11,13 @@ type AssignStmt struct {
 	Targets []Expr // Left-hand side targets (can be multiple for unpacking)
 	Value   Expr   // Right-hand side expression
 
-	span lexer.Span
-}
-
-// NewAssignStmt creates a new assignment statement.
-func NewAssignStmt(targets []Expr, value Expr, span lexer.Span) *AssignStmt {
-	return &AssignStmt{
-		Targets: targets,
-		Value:   value,
-		span:    span,
-	}
+	Span lexer.Span
 }
 
 func (a *AssignStmt) isStmt() {}
 
-func (a *AssignStmt) Span() lexer.Span {
-	return a.span
+func (a *AssignStmt) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *AssignStmt) Accept(visitor Visitor) {

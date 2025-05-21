@@ -41,7 +41,13 @@ func (p *Parser) typeAlias() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return ast.NewTypeAlias(name, params, expr, lexer.Span{Start: typeToken.Start(), End: expr.Span().End}), nil
+	return &ast.TypeAlias{
+		Name:   name,
+		Params: params,
+		Value:  expr,
+
+		Span: lexer.Span{Start: typeToken.Start(), End: expr.GetSpan().End},
+	}, nil
 }
 
 // typeParams parses type parameters as per the grammar:
@@ -125,10 +131,18 @@ func (p *Parser) typeParam() (ast.Expr, error) {
 
 	endPos := p.previous().End()
 	if defaultValue != nil {
-		endPos = defaultValue.Span().End
+		endPos = defaultValue.GetSpan().End
 	} else if bound != nil {
-		endPos = bound.Span().End
+		endPos = bound.GetSpan().End
 	}
 
-	return ast.NewTypeParamExpr(name, bound, defaultValue, isStar, isDoubleStar, lexer.Span{Start: startPos, End: endPos}), nil
+	return &ast.TypeParamExpr{
+		Name:         name,
+		Bound:        bound,
+		Default:      defaultValue,
+		IsStar:       isStar,
+		IsDoubleStar: isDoubleStar,
+
+		Span: lexer.Span{Start: startPos, End: endPos},
+	}, nil
 }

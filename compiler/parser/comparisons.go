@@ -34,22 +34,38 @@ func (p *Parser) comparison() (ast.Expr, error) {
 
 		// Handle a single comparison (most common case)
 		if len(operands) == 2 {
-			return ast.NewBinary(operands[0], operators[0], operands[1], lexer.Span{Start: operands[0].Span().Start, End: operands[1].Span().End}), nil
+			return &ast.Binary{
+				Left:     operands[0],
+				Operator: operators[0],
+				Right:    operands[1],
+
+				Span: lexer.Span{Start: operands[0].GetSpan().Start, End: operands[1].GetSpan().End},
+			}, nil
 		}
 
 		// Handle chained comparisons (a < b < c becomes (a < b) and (b < c))
 		var result ast.Expr
 		for i := 0; i < len(operators); i++ {
-			comparison := ast.NewBinary(operands[i], operators[i], operands[i+1],
-				lexer.Span{Start: operands[i].Span().Start, End: operands[i+1].Span().End})
+			comparison := &ast.Binary{
+				Left:     operands[i],
+				Operator: operators[i],
+				Right:    operands[i+1],
+
+				Span: lexer.Span{Start: operands[i].GetSpan().Start, End: operands[i+1].GetSpan().End},
+			}
 
 			if i == 0 {
 				result = comparison
 			} else {
 				// Create an AND expression linking the comparisons
 				andToken := lexer.Token{Type: lexer.And, Lexeme: "and"}
-				result = ast.NewBinary(result, andToken, comparison,
-					lexer.Span{Start: result.Span().Start, End: comparison.Span().End})
+				result = &ast.Binary{
+					Left:     result,
+					Operator: andToken,
+					Right:    comparison,
+
+					Span: lexer.Span{Start: result.GetSpan().Start, End: comparison.GetSpan().End},
+				}
 			}
 		}
 		return result, nil

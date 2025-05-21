@@ -13,7 +13,11 @@ func (p *Parser) await() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return ast.NewAwaitExpr(expr, lexer.Span{Start: awaitToken.Start(), End: expr.Span().End}), nil
+		return &ast.AwaitExpr{
+			Expr: expr,
+
+			Span: lexer.Span{Start: awaitToken.Start(), End: expr.GetSpan().End},
+		}, nil
 	}
 
 	return p.primary()
@@ -35,7 +39,12 @@ func (p *Parser) primary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = ast.NewAttribute(expr, name, lexer.Span{Start: expr.Span().Start, End: name.End()})
+			expr = &ast.Attribute{
+				Object: expr,
+				Name:   name,
+
+				Span: lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
+			}
 		} else if p.match(lexer.LeftParen) {
 			// Handle function call: expr(args)
 			expr, err = p.finishCall(expr)
@@ -53,7 +62,12 @@ func (p *Parser) primary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			expr = ast.NewSubscript(expr, indices, lexer.Span{Start: expr.Span().Start, End: right.End()})
+			expr = &ast.Subscript{
+				Object:  expr,
+				Indices: indices,
+
+				Span: lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
+			}
 		} else {
 			// No more postfix operations
 			break
@@ -94,33 +108,62 @@ func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
 		return nil, err
 	}
 
-	return ast.NewCall(callee, args, lexer.Span{Start: callee.Span().Start, End: right.End()}), nil
+	return &ast.Call{
+		Callee:    callee,
+		Arguments: args,
+
+		Span: lexer.Span{Start: callee.GetSpan().Start, End: right.End()},
+	}, nil
 }
 
 // atom parses an atom.
 func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.False) {
-		return ast.NewLiteral(p.previous(), false, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Literal{
+			Value: false,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.match(lexer.True) {
-		return ast.NewLiteral(p.previous(), true, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Literal{
+			Value: true,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.match(lexer.None) {
-		return ast.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Literal{
+			Value: nil,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.match(lexer.Number, lexer.String) {
-		return ast.NewLiteral(p.previous(), p.previous().Literal, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Literal{
+			Value: p.previous().Literal,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.match(lexer.Ellipsis) {
-		return ast.NewLiteral(p.previous(), nil, lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Literal{
+			Value: nil,
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.match(lexer.Identifier) {
-		return ast.NewName(p.previous(), lexer.Span{Start: p.previous().Start(), End: p.previous().End()}), nil
+		return &ast.Name{
+			Token: p.previous(),
+
+			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+		}, nil
 	}
 
 	if p.check(lexer.LeftParen) {

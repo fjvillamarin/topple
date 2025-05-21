@@ -10,20 +10,13 @@ import (
 type MultiStmt struct {
 	Stmts []Stmt
 
-	span lexer.Span
-}
-
-func NewMultiStmt(stmts []Stmt, span lexer.Span) *MultiStmt {
-	return &MultiStmt{
-		Stmts: stmts,
-		span:  span,
-	}
+	Span lexer.Span
 }
 
 func (m *MultiStmt) isStmt() {}
 
-func (m *MultiStmt) Span() lexer.Span {
-	return m.span
+func (m *MultiStmt) GetSpan() lexer.Span {
+	return m.Span
 }
 
 func (m *MultiStmt) Accept(visitor Visitor) {

@@ -1,6 +1,8 @@
 package parser
 
-import "biscuit/compiler/lexer"
+import (
+	"biscuit/compiler/lexer"
+)
 
 func (p *Parser) consume(t lexer.TokenType, message string) (lexer.Token, error) {
 	if p.check(t) {

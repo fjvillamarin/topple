@@ -12,24 +12,13 @@ type AnnotationStmt struct {
 	Value    Expr // Optional initializer value (can be nil)
 	HasValue bool // Whether an initializer value is present
 
-	span lexer.Span
-}
-
-// NewAnnotationStmt creates a new annotation statement.
-func NewAnnotationStmt(target Expr, typeExpr Expr, value Expr, hasValue bool, span lexer.Span) *AnnotationStmt {
-	return &AnnotationStmt{
-		Target:   target,
-		Type:     typeExpr,
-		Value:    value,
-		HasValue: hasValue,
-		span:     span,
-	}
+	Span lexer.Span
 }
 
 func (a *AnnotationStmt) isStmt() {}
 
-func (a *AnnotationStmt) Span() lexer.Span {
-	return a.span
+func (a *AnnotationStmt) GetSpan() lexer.Span {
+	return a.Span
 }
 
 func (a *AnnotationStmt) Accept(visitor Visitor) {

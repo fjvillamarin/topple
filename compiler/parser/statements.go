@@ -60,7 +60,11 @@ func (p *Parser) simpleStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return ast.NewExprStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
+	return &ast.ExprStmt{
+		Expr: expr,
+
+		Span: lexer.Span{Start: expr.GetSpan().Start, End: expr.GetSpan().End},
+	}, nil
 }
 
 // returnStatement parses a return statement.
@@ -74,7 +78,11 @@ func (p *Parser) returnStatement() (ast.Stmt, error) {
 	// Exit early if there's no return expression
 	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) {
 		p.advance()
-		return ast.NewReturnStmt(nil, lexer.Span{Start: returnToken.Start(), End: returnToken.End()}), nil
+		return &ast.ReturnStmt{
+			Value: nil,
+
+			Span: lexer.Span{Start: returnToken.Start(), End: returnToken.End()},
+		}, nil
 	}
 
 	// Parse the return expression
@@ -83,7 +91,11 @@ func (p *Parser) returnStatement() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return ast.NewReturnStmt(expr, lexer.Span{Start: returnToken.Start(), End: expr.Span().End}), nil
+	return &ast.ReturnStmt{
+		Value: expr,
+
+		Span: lexer.Span{Start: returnToken.Start(), End: expr.GetSpan().End},
+	}, nil
 }
 
 func (p *Parser) raiseStatement() (ast.Stmt, error) {
@@ -97,7 +109,14 @@ func (p *Parser) raiseStatement() (ast.Stmt, error) {
 	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) {
 		// Just a 'raise' with no exception
 		endPos := raiseToken.End()
-		return ast.NewRaiseStmt(nil, nil, false, false, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
+		return &ast.RaiseStmt{
+			Exception:    nil,
+			FromExpr:     nil,
+			HasFrom:      false,
+			HasException: false,
+
+			Span: lexer.Span{Start: raiseToken.Start(), End: endPos},
+		}, nil
 	}
 
 	// Parse the exception expression
@@ -109,7 +128,7 @@ func (p *Parser) raiseStatement() (ast.Stmt, error) {
 	// Check if there's a 'from' clause
 	hasFrom := false
 	var fromExpr ast.Expr = nil
-	endPos := exception.Span().End
+	endPos := exception.GetSpan().End
 
 	if p.match(lexer.From) {
 		hasFrom = true
@@ -118,16 +137,25 @@ func (p *Parser) raiseStatement() (ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		endPos = fromExpr.Span().End
+		endPos = fromExpr.GetSpan().End
 	}
 
-	return ast.NewRaiseStmt(exception, fromExpr, true, hasFrom, lexer.Span{Start: raiseToken.Start(), End: endPos}), nil
+	return &ast.RaiseStmt{
+		Exception:    exception,
+		FromExpr:     fromExpr,
+		HasFrom:      hasFrom,
+		HasException: true,
+
+		Span: lexer.Span{Start: raiseToken.Start(), End: endPos},
+	}, nil
 }
 
 func (p *Parser) passStatement() (ast.Stmt, error) {
 	// Consume the 'pass' keyword
 	passToken := p.advance()
-	return ast.NewPassStmt(lexer.Span{Start: passToken.Start(), End: passToken.End()}), nil
+	return &ast.PassStmt{
+		Span: lexer.Span{Start: passToken.Start(), End: passToken.End()},
+	}, nil
 }
 
 func (p *Parser) yieldStatement() (ast.Stmt, error) {
@@ -135,7 +163,11 @@ func (p *Parser) yieldStatement() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ast.NewYieldStmt(expr, lexer.Span{Start: expr.Span().Start, End: expr.Span().End}), nil
+	return &ast.YieldStmt{
+		Value: expr,
+
+		Span: lexer.Span{Start: expr.GetSpan().Start, End: expr.GetSpan().End},
+	}, nil
 }
 
 func (p *Parser) assertStatement() (ast.Stmt, error) {
@@ -153,7 +185,7 @@ func (p *Parser) assertStatement() (ast.Stmt, error) {
 
 	// Check for optional message expression
 	var message ast.Expr = nil
-	endPos := test.Span().End
+	endPos := test.GetSpan().End
 
 	if p.match(lexer.Comma) {
 		// Parse the message expression
@@ -161,22 +193,31 @@ func (p *Parser) assertStatement() (ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		endPos = message.Span().End
+		endPos = message.GetSpan().End
 	}
 
-	return ast.NewAssertStmt(test, message, lexer.Span{Start: assertToken.Start(), End: endPos}), nil
+	return &ast.AssertStmt{
+		Test:    test,
+		Message: message,
+
+		Span: lexer.Span{Start: assertToken.Start(), End: endPos},
+	}, nil
 }
 
 func (p *Parser) breakStatement() (ast.Stmt, error) {
 	// Consume the 'break' keyword
 	breakToken := p.advance()
-	return ast.NewBreakStmt(lexer.Span{Start: breakToken.Start(), End: breakToken.End()}), nil
+	return &ast.BreakStmt{
+		Span: lexer.Span{Start: breakToken.Start(), End: breakToken.End()},
+	}, nil
 }
 
 func (p *Parser) continueStatement() (ast.Stmt, error) {
 	// Consume the 'continue' keyword
 	continueToken := p.advance()
-	return ast.NewContinueStmt(lexer.Span{Start: continueToken.Start(), End: continueToken.End()}), nil
+	return &ast.ContinueStmt{
+		Span: lexer.Span{Start: continueToken.Start(), End: continueToken.End()},
+	}, nil
 }
 
 func (p *Parser) globalStatement() (ast.Stmt, error) {
@@ -197,8 +238,12 @@ func (p *Parser) globalStatement() (ast.Stmt, error) {
 	}
 
 	// Get the end position from the last name
-	endPos := names[len(names)-1].Span().End
-	return ast.NewGlobalStmt(names, lexer.Span{Start: globalToken.Start(), End: endPos}), nil
+	endPos := names[len(names)-1].GetSpan().End
+	return &ast.GlobalStmt{
+		Names: names,
+
+		Span: lexer.Span{Start: globalToken.Start(), End: endPos},
+	}, nil
 }
 
 func (p *Parser) nonlocalStatement() (ast.Stmt, error) {
@@ -219,6 +264,10 @@ func (p *Parser) nonlocalStatement() (ast.Stmt, error) {
 	}
 
 	// Get the end position from the last name
-	endPos := names[len(names)-1].Span().End
-	return ast.NewNonlocalStmt(names, lexer.Span{Start: nonlocalToken.Start(), End: endPos}), nil
+	endPos := names[len(names)-1].GetSpan().End
+	return &ast.NonlocalStmt{
+		Names: names,
+
+		Span: lexer.Span{Start: nonlocalToken.Start(), End: endPos},
+	}, nil
 }

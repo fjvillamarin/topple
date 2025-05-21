@@ -11,23 +11,13 @@ type Slice struct {
 	EndIndex   Expr // Optional end index
 	Step       Expr // Optional step
 
-	span lexer.Span
-}
-
-func NewSlice(start Expr, end Expr, step Expr, span lexer.Span) *Slice {
-	return &Slice{
-		StartIndex: start,
-		EndIndex:   end,
-		Step:       step,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (s *Slice) isExpr() {}
 
-func (s *Slice) Span() lexer.Span {
-	return s.span
+func (s *Slice) GetSpan() lexer.Span {
+	return s.Span
 }
 
 func (s *Slice) String() string {

@@ -45,12 +45,18 @@ func (p *Parser) slice() (ast.Expr, error) {
 
 		endPos := p.previous().End()
 		if step != nil {
-			endPos = step.Span().End
+			endPos = step.GetSpan().End
 		} else if end != nil {
-			endPos = end.Span().End
+			endPos = end.GetSpan().End
 		}
 
-		return ast.NewSlice(nil, end, step, lexer.Span{Start: startPos, End: endPos}), nil
+		return &ast.Slice{
+			StartIndex: nil,
+			EndIndex:   end,
+			Step:       step,
+
+			Span: lexer.Span{Start: startPos, End: endPos},
+		}, nil
 	}
 
 	// There's an expression before any potential colon
@@ -89,14 +95,20 @@ func (p *Parser) slice() (ast.Expr, error) {
 
 	endPos := p.previous().End()
 	if step != nil {
-		endPos = step.Span().End
+		endPos = step.GetSpan().End
 	} else if end != nil {
-		endPos = end.Span().End
+		endPos = end.GetSpan().End
 	} else {
-		endPos = expr.Span().End
+		endPos = expr.GetSpan().End
 	}
 
-	return ast.NewSlice(expr, end, step, lexer.Span{Start: startPos, End: endPos}), nil
+	return &ast.Slice{
+		StartIndex: expr,
+		EndIndex:   end,
+		Step:       step,
+
+		Span: lexer.Span{Start: startPos, End: endPos},
+	}, nil
 }
 
 // slices parses one or more slice elements as per the grammar:
@@ -129,7 +141,11 @@ func (p *Parser) slices() ([]ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			indices = append(indices, ast.NewStarExpr(expr, lexer.Span{Start: star.Start(), End: expr.Span().End}))
+			indices = append(indices, &ast.StarExpr{
+				Expr: expr,
+
+				Span: lexer.Span{Start: star.Start(), End: expr.GetSpan().End},
+			})
 		} else {
 			// Regular slice expression
 			expr, err := p.slice()

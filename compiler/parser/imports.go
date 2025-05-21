@@ -38,8 +38,11 @@ func (p *Parser) importName() (ast.Stmt, error) {
 	}
 
 	// Use the end position of the last name
-	endPos := names[len(names)-1].Span().End
-	return ast.NewImportStmt(names, lexer.Span{Start: importToken.Start(), End: endPos}), nil
+	endPos := names[len(names)-1].GetSpan().End
+	return &ast.ImportStmt{
+		Names: names,
+		Span:  lexer.Span{Start: importToken.Start(), End: endPos},
+	}, nil
 }
 
 // importFrom handles:
@@ -116,12 +119,19 @@ func (p *Parser) importFrom() (ast.Stmt, error) {
 	if isWildcard {
 		endPos = p.previous().End()
 	} else if len(names) > 0 {
-		endPos = names[len(names)-1].Span().End
+		endPos = names[len(names)-1].GetSpan().End
 	} else {
 		return nil, p.error(p.previous(), "expected import target after 'import'")
 	}
 
-	return ast.NewImportFromStmt(dottedName, dotCount, names, isWildcard, lexer.Span{Start: fromToken.Start(), End: endPos}), nil
+	return &ast.ImportFromStmt{
+		DottedName: dottedName,
+		DotCount:   dotCount,
+		Names:      names,
+		IsWildcard: isWildcard,
+
+		Span: lexer.Span{Start: fromToken.Start(), End: endPos},
+	}, nil
 }
 
 // parseDottedAsNames handles: dotted_as_names: ','.dotted_as_name+
@@ -160,7 +170,7 @@ func (p *Parser) parseDottedAsName() (*ast.ImportName, error) {
 
 	// Check for optional 'as NAME'
 	var asName *ast.Name = nil
-	endPos := dottedName.Span().End
+	endPos := dottedName.GetSpan().End
 
 	if p.match(lexer.As) {
 		// Parse the alias name
@@ -168,11 +178,20 @@ func (p *Parser) parseDottedAsName() (*ast.ImportName, error) {
 		if err != nil {
 			return nil, err
 		}
-		asName = ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
-		endPos = asName.Span().End
+		asName = &ast.Name{
+			Token: nameToken,
+
+			Span: lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+		}
+		endPos = asName.GetSpan().End
 	}
 
-	return ast.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
+	return &ast.ImportName{
+		DottedName: dottedName,
+		AsName:     asName,
+
+		Span: lexer.Span{Start: startPos, End: endPos},
+	}, nil
 }
 
 // parseDottedName handles:
@@ -189,9 +208,13 @@ func (p *Parser) parseDottedName() (*ast.DottedName, error) {
 		return nil, err
 	}
 
-	name := ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+	name := &ast.Name{
+		Token: nameToken,
+
+		Span: lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+	}
 	names := []*ast.Name{name}
-	endPos := name.Span().End
+	endPos := name.GetSpan().End
 
 	// Parse additional names with dots
 	for p.match(lexer.Dot) {
@@ -199,12 +222,20 @@ func (p *Parser) parseDottedName() (*ast.DottedName, error) {
 		if err != nil {
 			return nil, err
 		}
-		name = ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
+		name = &ast.Name{
+			Token: nameToken,
+
+			Span: lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+		}
 		names = append(names, name)
-		endPos = name.Span().End
+		endPos = name.GetSpan().End
 	}
 
-	return ast.NewDottedName(names, lexer.Span{Start: startPos, End: endPos}), nil
+	return &ast.DottedName{
+		Names: names,
+
+		Span: lexer.Span{Start: startPos, End: endPos},
+	}, nil
 }
 
 // parseImportFromAsNames handles: import_from_as_names: ','.import_from_as_name+
@@ -245,12 +276,19 @@ func (p *Parser) parseImportFromAsName() (*ast.ImportName, error) {
 		return nil, err
 	}
 
-	name := ast.NewName(nameToken, lexer.Span{Start: nameToken.Start(), End: nameToken.End()})
-	dottedName := ast.NewDottedName([]*ast.Name{name}, lexer.Span{Start: name.Span().Start, End: name.Span().End})
+	name := &ast.Name{
+		Token: nameToken,
+
+		Span: lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+	}
+	dottedName := &ast.DottedName{
+		Names: []*ast.Name{name},
+		Span:  lexer.Span{Start: name.GetSpan().Start, End: name.GetSpan().End},
+	}
 
 	// Check for optional 'as NAME'
 	var asName *ast.Name = nil
-	endPos := dottedName.Span().End
+	endPos := dottedName.GetSpan().End
 
 	if p.match(lexer.As) {
 		// Parse the alias name
@@ -258,9 +296,18 @@ func (p *Parser) parseImportFromAsName() (*ast.ImportName, error) {
 		if err != nil {
 			return nil, err
 		}
-		asName = ast.NewName(aliasToken, lexer.Span{Start: aliasToken.Start(), End: aliasToken.End()})
-		endPos = asName.Span().End
+		asName = &ast.Name{
+			Token: aliasToken,
+
+			Span: lexer.Span{Start: aliasToken.Start(), End: aliasToken.End()},
+		}
+		endPos = asName.GetSpan().End
 	}
 
-	return ast.NewImportName(dottedName, asName, lexer.Span{Start: startPos, End: endPos}), nil
+	return &ast.ImportName{
+		DottedName: dottedName,
+		AsName:     asName,
+
+		Span: lexer.Span{Start: startPos, End: endPos},
+	}, nil
 }

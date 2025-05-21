@@ -35,14 +35,28 @@ func (p *Parser) assignment() (ast.Stmt, error) {
 			}
 		}
 
-		endPos := typeExpr.Span().End
+		endPos := typeExpr.GetSpan().End
 		if valueExpr != nil {
-			endPos = valueExpr.Span().End
+			endPos = valueExpr.GetSpan().End
 		}
 
 		// Create a variable annotation statement
-		nameExpr := ast.NewName(name, lexer.Span{Start: name.Start(), End: name.End()})
-		return ast.NewAnnotationStmt(nameExpr, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		nameExpr := &ast.Name{
+			Token: name,
+
+			Span: name.Span,
+		}
+		return &ast.AnnotationStmt{
+			Target:   nameExpr,
+			Type:     typeExpr,
+			Value:    valueExpr,
+			HasValue: hasValue,
+
+			Span: lexer.Span{
+				Start: startPos,
+				End:   endPos,
+			},
+		}, nil
 	}
 
 	// ('(' single_target ')' | single_subscript_attribute_target) ':' expression ['=' annotated_rhs]
@@ -83,13 +97,23 @@ func (p *Parser) assignment() (ast.Stmt, error) {
 			}
 		}
 
-		endPos := typeExpr.Span().End
+		endPos := typeExpr.GetSpan().End
 		if valueExpr != nil {
-			endPos = valueExpr.Span().End
+			endPos = valueExpr.GetSpan().End
 		}
 
 		// Create annotation statement
-		return ast.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		return &ast.AnnotationStmt{
+			Target:   target,
+			Type:     typeExpr,
+			Value:    valueExpr,
+			HasValue: hasValue,
+
+			Span: lexer.Span{
+				Start: startPos,
+				End:   endPos,
+			},
+		}, nil
 	}
 
 trySingleSubscriptAttributeTarget:
@@ -121,13 +145,23 @@ trySingleSubscriptAttributeTarget:
 			}
 		}
 
-		endPos := typeExpr.Span().End
+		endPos := typeExpr.GetSpan().End
 		if valueExpr != nil {
-			endPos = valueExpr.Span().End
+			endPos = valueExpr.GetSpan().End
 		}
 
 		// Create annotation statement
-		return ast.NewAnnotationStmt(target, typeExpr, valueExpr, hasValue, lexer.Span{Start: startPos, End: endPos}), nil
+		return &ast.AnnotationStmt{
+			Target:   target,
+			Type:     typeExpr,
+			Value:    valueExpr,
+			HasValue: hasValue,
+
+			Span: lexer.Span{
+				Start: startPos,
+				End:   endPos,
+			},
+		}, nil
 	}
 
 	// Restore position and try form 3: (star_targets '=' )+ (yield_expr | star_expressions) !'=' [TYPE_COMMENT]
@@ -183,9 +217,20 @@ trySingleSubscriptAttributeTarget:
 			// TODO: we should assign the RHS expression to a temp variable, and then assign the temp variable to the targets
 			var stmts []ast.Stmt
 			for i := 0; i < len(targetChain); i++ {
-				stmts = append(stmts, ast.NewAssignStmt(targetChain[i], rhs, lexer.Span{Start: startPos, End: rhs.Span().End}))
+				stmts = append(stmts, &ast.AssignStmt{
+					Targets: targetChain[i],
+					Value:   rhs,
+
+					Span: lexer.Span{
+						Start: startPos,
+						End:   rhs.GetSpan().End,
+					},
+				})
 			}
-			return ast.NewMultiStmt(stmts, lexer.Span{Start: startPos, End: rhs.Span().End}), nil
+			return &ast.MultiStmt{
+				Stmts: stmts,
+				Span:  lexer.Span{Start: startPos, End: rhs.GetSpan().End},
+			}, nil
 		}
 	}
 
@@ -199,12 +244,7 @@ trySingleSubscriptAttributeTarget:
 	}
 
 	// Try to parse augassign
-	if p.match(lexer.PlusEqual, lexer.MinusEqual, lexer.StarEqual, lexer.AtEqual, lexer.SlashEqual, lexer.PercentEqual,
-		lexer.AmpEqual, lexer.PipeEqual, lexer.CaretEqual, lexer.LessLessEqual, lexer.GreaterGreaterEqual,
-		lexer.StarStarEqual, lexer.SlashSlashEqual) {
-
-		operator := p.previous()
-
+	if op, err := p.augassign(); err == nil {
 		// Parse the right-hand side expression
 		var value ast.Expr
 		if p.check(lexer.Yield) {
@@ -218,8 +258,22 @@ trySingleSubscriptAttributeTarget:
 
 		// Augmented assignment is syntactic sugar for:
 		// target = target op value
-		rhs := ast.NewBinary(singleTarget, augassignToOperator(operator), value, lexer.Span{Start: singleTarget.Span().Start, End: value.Span().End})
-		return ast.NewAssignStmt([]ast.Expr{singleTarget}, rhs, lexer.Span{Start: singleTarget.Span().Start, End: rhs.Span().End}), nil
+		rhs := &ast.Binary{
+			Left:     singleTarget, // We are assigning the same node, this may cause issues in the future - maybe we should clone the node?
+			Operator: augassignToOperator(op),
+			Right:    value,
+
+			Span: lexer.Span{
+				Start: singleTarget.GetSpan().Start,
+				End:   value.GetSpan().End,
+			},
+		}
+		return &ast.AssignStmt{
+			Targets: []ast.Expr{singleTarget},
+			Value:   rhs,
+
+			Span: lexer.Span{Start: singleTarget.GetSpan().Start, End: rhs.GetSpan().End},
+		}, nil
 	}
 
 	// If we get here, none of the assignment forms matched

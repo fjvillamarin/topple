@@ -11,23 +11,13 @@ type Binary struct {
 	Operator lexer.Token
 	Right    Expr
 
-	span lexer.Span
-}
-
-func NewBinary(left Expr, operator lexer.Token, right Expr, span lexer.Span) *Binary {
-	return &Binary{
-		Left:     left,
-		Operator: operator,
-		Right:    right,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (b *Binary) isExpr() {}
 
-func (b *Binary) Span() lexer.Span {
-	return b.span
+func (b *Binary) GetSpan() lexer.Span {
+	return b.Span
 }
 
 func (b *Binary) String() string {

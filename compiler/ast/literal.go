@@ -10,22 +10,13 @@ type Literal struct {
 	Token lexer.Token
 	Value any
 
-	span lexer.Span
-}
-
-func NewLiteral(token lexer.Token, value any, span lexer.Span) *Literal {
-	return &Literal{
-		Token: token,
-		Value: value,
-
-		span: span,
-	}
+	Span lexer.Span
 }
 
 func (l *Literal) isExpr() {}
 
-func (l *Literal) Span() lexer.Span {
-	return l.span
+func (l *Literal) GetSpan() lexer.Span {
+	return l.Span
 }
 
 func (l *Literal) String() string {
