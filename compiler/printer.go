@@ -947,3 +947,47 @@ func (p *ASTPrinter) VisitMultiStmt(node *ast.MultiStmt) ast.Visitor {
 	}
 	return p
 }
+
+// VisitIf handles If nodes
+func (p *ASTPrinter) VisitIf(node *ast.If) ast.Visitor {
+	p.printNodeStart("If", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the condition
+	if node.Condition != nil {
+		p.result.WriteString(fmt.Sprintf("%scondition:\n", p.indent()))
+		p.indentLevel++
+		node.Condition.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the body
+	if node.Body != nil {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Body {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Visit the else statements
+	if len(node.Else) > 0 {
+		p.result.WriteString(fmt.Sprintf("%selse:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Else {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

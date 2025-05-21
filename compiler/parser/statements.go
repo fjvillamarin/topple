@@ -3,11 +3,74 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 // statement parses a single statement.
 func (p *Parser) statement() (ast.Stmt, error) {
+	// Check for compound statements first
+	switch p.peek().Type {
+	case lexer.If:
+		return p.ifStatement()
+		// Add other compound statements as they are implemented
+	}
+
+	// Fall back to simple statements
 	return p.simpleStatement()
+}
+
+// block parses a block of statements, taking into account the indentation level.
+func (p *Parser) block() ([]ast.Stmt, error) {
+	// Check if this is a simple statement block (single line)
+	if !p.check(lexer.Newline) {
+		stmt, err := p.simpleStatement()
+		if err != nil {
+			return nil, err
+		}
+		return []ast.Stmt{stmt}, nil
+	}
+
+	fmt.Println("block")
+
+	// Otherwise expect NEWLINE INDENT statements DEDENT
+	_, err := p.consume(lexer.Newline, "expected newline")
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("newline")
+
+	_, err = p.consume(lexer.Indent, "expected indented block")
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("indent")
+
+	statements := []ast.Stmt{}
+	for !p.isAtEnd() && !p.check(lexer.Dedent) {
+		stmt, err := p.statement()
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("statement", stmt)
+
+		statements = append(statements, stmt)
+
+		if p.check(lexer.Newline) {
+			p.advance()
+		}
+	}
+
+	fmt.Println("dedent")
+
+	_, err = p.consume(lexer.Dedent, "expected dedent at end of block")
+	if err != nil {
+		return nil, err
+	}
+
+	return statements, nil
 }
 
 // simpleStatement parses an expression statement.

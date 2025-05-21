@@ -93,13 +93,11 @@ func (p *Parser) slice() (ast.Expr, error) {
 		}
 	}
 
-	endPos := p.previous().End()
+	endPos := expr.GetSpan().End
 	if step != nil {
 		endPos = step.GetSpan().End
 	} else if end != nil {
 		endPos = end.GetSpan().End
-	} else {
-		endPos = expr.GetSpan().End
 	}
 
 	return &ast.Slice{

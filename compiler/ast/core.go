@@ -72,4 +72,8 @@ type StmtVisitor interface {
 	VisitAssignStmt(a *AssignStmt) Visitor
 	VisitAnnotationStmt(a *AnnotationStmt) Visitor
 	VisitMultiStmt(m *MultiStmt) Visitor
+
+	// Compound statements
+	VisitIf(i *If) Visitor
+	VisitFor(f *For) Visitor
 }
