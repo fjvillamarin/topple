@@ -1373,3 +1373,120 @@ func (p *ASTPrinter) VisitClass(node *ast.Class) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitFunction handles Function nodes
+func (p *ASTPrinter) VisitFunction(node *ast.Function) ast.Visitor {
+	p.printNodeStart("Function", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Print if async
+	p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), node.IsAsync))
+
+	// Print the function name
+	p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+	p.indentLevel++
+	node.Name.Accept(p)
+	p.indentLevel--
+
+	// Print type parameters if any
+	if len(node.TypeParameters) > 0 {
+		p.result.WriteString(fmt.Sprintf("%stype parameters:\n", p.indent()))
+		p.indentLevel++
+		for i, param := range node.TypeParameters {
+			p.result.WriteString(fmt.Sprintf("%sparam %d: %s\n", p.indent(), i, param.String()))
+			p.indentLevel++
+			// TypeParam.Name is a lexer.Token, not a *Name node
+			p.result.WriteString(fmt.Sprintf("%sname: %s\n", p.indent(), param.Name.Lexeme))
+
+			if param.Bound != nil {
+				p.result.WriteString(fmt.Sprintf("%sbound:\n", p.indent()))
+				p.indentLevel++
+				param.Bound.Accept(p)
+				p.indentLevel--
+			}
+			if param.Default != nil {
+				p.result.WriteString(fmt.Sprintf("%sdefault:\n", p.indent()))
+				p.indentLevel++
+				param.Default.Accept(p)
+				p.indentLevel--
+			}
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Print parameter list
+	p.result.WriteString(fmt.Sprintf("%sparameters:\n", p.indent()))
+	p.indentLevel++
+	if node.Parameters != nil {
+		for i, param := range node.Parameters.Parameters {
+			p.result.WriteString(fmt.Sprintf("%sparam %d:\n", p.indent(), i))
+			p.indentLevel++
+
+			// Print parameter attributes
+			if param.IsStar {
+				p.result.WriteString(fmt.Sprintf("%sisStar: true\n", p.indent()))
+			}
+			if param.IsDoubleStar {
+				p.result.WriteString(fmt.Sprintf("%sisDoubleStar: true\n", p.indent()))
+			}
+			if param.IsSlash {
+				p.result.WriteString(fmt.Sprintf("%sisSlash: true\n", p.indent()))
+			}
+
+			// Print the parameter name
+			if param.Name != nil {
+				p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+				p.indentLevel++
+				param.Name.Accept(p)
+				p.indentLevel--
+			}
+
+			// Print the parameter annotation if present
+			if param.Annotation != nil {
+				p.result.WriteString(fmt.Sprintf("%sannotation:\n", p.indent()))
+				p.indentLevel++
+				param.Annotation.Accept(p)
+				p.indentLevel--
+			}
+
+			// Print the parameter default value if present
+			if param.Default != nil {
+				p.result.WriteString(fmt.Sprintf("%sdefault:\n", p.indent()))
+				p.indentLevel++
+				param.Default.Accept(p)
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+	}
+	p.indentLevel--
+
+	// Print return type if present
+	if node.ReturnType != nil {
+		p.result.WriteString(fmt.Sprintf("%sreturn type:\n", p.indent()))
+		p.indentLevel++
+		node.ReturnType.Accept(p)
+		p.indentLevel--
+	}
+
+	// Print the function body
+	if len(node.Body) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Body {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

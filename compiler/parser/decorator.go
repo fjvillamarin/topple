@@ -46,9 +46,8 @@ func (p *Parser) decorator() (ast.Stmt, error) {
 // isDecoratable checks if a statement can be decorated (classes and functions)
 func isDecoratable(stmt ast.Stmt) bool {
 	switch stmt.(type) {
-	case *ast.Class, *ast.Decorator:
-		// Classes and other decorators can be decorated
-		// Note: Function is not yet implemented but will be added later
+	case *ast.Class, *ast.Function, *ast.Decorator:
+		// Classes, functions, and other decorators can be decorated
 		return true
 	default:
 		return false

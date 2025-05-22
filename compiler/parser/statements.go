@@ -21,6 +21,8 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.tryStatement()
 	case lexer.Class:
 		return p.classStatement()
+	case lexer.Def:
+		return p.functionDef()
 	case lexer.Async:
 		// For async statements, we need to look ahead one more token
 		if p.checkNext(lexer.For) {
@@ -28,6 +30,9 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		}
 		if p.checkNext(lexer.With) {
 			return p.withStatement()
+		}
+		if p.checkNext(lexer.Def) {
+			return p.functionDef()
 		}
 		// Other async statements will be handled here as they're implemented
 		// Fall through to simple statements for now

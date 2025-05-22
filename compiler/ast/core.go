@@ -82,4 +82,5 @@ type StmtVisitor interface {
 	VisitTry(t *Try) Visitor
 	VisitDecorator(d *Decorator) Visitor
 	VisitClass(c *Class) Visitor
+	VisitFunction(f *Function) Visitor
 }
