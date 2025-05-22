@@ -1142,3 +1142,96 @@ func (p *ASTPrinter) VisitWith(node *ast.With) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitTry handles Try nodes
+func (p *ASTPrinter) VisitTry(node *ast.Try) ast.Visitor {
+	p.printNodeStart("Try", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit the try body
+	if len(node.Body) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Body {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Visit the except blocks
+	if len(node.Excepts) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sexcept blocks:\n", p.indent()))
+		p.indentLevel++
+		for i, except := range node.Excepts {
+			p.result.WriteString(fmt.Sprintf("%sexcept %d:\n", p.indent(), i))
+			p.indentLevel++
+
+			// Print if this is an except* block
+			p.result.WriteString(fmt.Sprintf("%sisStar: %t\n", p.indent(), except.IsStar))
+
+			// Print the exception type if present
+			if except.Type != nil {
+				p.result.WriteString(fmt.Sprintf("%stype:\n", p.indent()))
+				p.indentLevel++
+				except.Type.Accept(p)
+				p.indentLevel--
+			}
+
+			// Print the name if present
+			if except.Name != nil {
+				p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+				p.indentLevel++
+				except.Name.Accept(p)
+				p.indentLevel--
+			}
+
+			// Print the except body
+			if len(except.Body) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+				p.indentLevel++
+				for _, stmt := range except.Body {
+					if stmt != nil {
+						stmt.Accept(p)
+					}
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Visit the else block if present
+	if len(node.Else) > 0 {
+		p.result.WriteString(fmt.Sprintf("%selse:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Else {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Visit the finally block if present
+	if len(node.Finally) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sfinally:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Finally {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

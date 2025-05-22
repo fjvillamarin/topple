@@ -78,4 +78,5 @@ type StmtVisitor interface {
 	VisitWhile(w *While) Visitor
 	VisitFor(f *For) Visitor
 	VisitWith(w *With) Visitor
+	VisitTry(t *Try) Visitor
 }
