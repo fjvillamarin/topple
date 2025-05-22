@@ -11,7 +11,17 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	switch p.peek().Type {
 	case lexer.If:
 		return p.ifStatement()
-		// Add other compound statements as they are implemented
+	case lexer.While:
+		return p.whileStatement()
+	case lexer.For:
+		return p.forStatement()
+	case lexer.Async:
+		// For async statements, we need to look ahead one more token
+		if p.checkNext(lexer.For) {
+			return p.forStatement()
+		}
+		// Other async statements will be handled here as they're implemented
+		// Fall through to simple statements for now
 	}
 
 	// Fall back to simple statements
@@ -49,7 +59,8 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 
 		statements = append(statements, stmt)
 
-		if p.check(lexer.Newline) {
+		// Consume all the newlines we see
+		for p.check(lexer.Newline) {
 			p.advance()
 		}
 	}

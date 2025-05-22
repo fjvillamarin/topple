@@ -75,5 +75,6 @@ type StmtVisitor interface {
 
 	// Compound statements
 	VisitIf(i *If) Visitor
+	VisitWhile(w *While) Visitor
 	VisitFor(f *For) Visitor
 }

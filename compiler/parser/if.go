@@ -49,35 +49,19 @@ func (p *Parser) ifStatement() (ast.Stmt, error) {
 	}
 
 	// Check for else
-	var elseBody []ast.Stmt
+	elseBody, err := p.elseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine the end position
 	var endPos lexer.Position
-
-	if p.match(lexer.Else) {
-		// Expect colon
-		_, err = p.consume(lexer.Colon, "expected ':' after 'else'")
-		if err != nil {
-			return nil, err
-		}
-
-		// Parse else body
-		elseBody, err = p.block()
-		if err != nil {
-			return nil, err
-		}
-
-		// Set end position to end of else body
-		if len(elseBody) > 0 {
-			endPos = elseBody[len(elseBody)-1].GetSpan().End
-		} else {
-			endPos = p.previous().End()
-		}
+	if len(elseBody) > 0 {
+		endPos = elseBody[len(elseBody)-1].GetSpan().End
+	} else if len(body) > 0 {
+		endPos = body[len(body)-1].GetSpan().End
 	} else {
-		// No else, end is end of if body
-		if len(body) > 0 {
-			endPos = body[len(body)-1].GetSpan().End
-		} else {
-			endPos = p.previous().End()
-		}
+		endPos = p.previous().End()
 	}
 
 	return &ast.If{
@@ -129,35 +113,19 @@ func (p *Parser) elifStatement() (ast.Stmt, error) {
 	}
 
 	// Check for else
-	var elseBody []ast.Stmt
+	elseBody, err := p.elseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	// Determine the end position
 	var endPos lexer.Position
-
-	if p.match(lexer.Else) {
-		// Expect colon
-		_, err = p.consume(lexer.Colon, "expected ':' after 'else'")
-		if err != nil {
-			return nil, err
-		}
-
-		// Parse else body
-		elseBody, err = p.block()
-		if err != nil {
-			return nil, err
-		}
-
-		// Set end position to end of else body
-		if len(elseBody) > 0 {
-			endPos = elseBody[len(elseBody)-1].GetSpan().End
-		} else {
-			endPos = p.previous().End()
-		}
+	if len(elseBody) > 0 {
+		endPos = elseBody[len(elseBody)-1].GetSpan().End
+	} else if len(body) > 0 {
+		endPos = body[len(body)-1].GetSpan().End
 	} else {
-		// No else, end is end of elif body
-		if len(body) > 0 {
-			endPos = body[len(body)-1].GetSpan().End
-		} else {
-			endPos = p.previous().End()
-		}
+		endPos = p.previous().End()
 	}
 
 	return &ast.If{
