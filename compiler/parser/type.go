@@ -136,7 +136,7 @@ func (p *Parser) typeParam() (ast.Expr, error) {
 		endPos = bound.GetSpan().End
 	}
 
-	return &ast.TypeParamExpr{
+	return &ast.TypeParam{
 		Name:         name,
 		Bound:        bound,
 		Default:      defaultValue,

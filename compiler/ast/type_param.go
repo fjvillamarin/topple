@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// TypeParamExpr represents a type parameter expression
-type TypeParamExpr struct {
+// TypeParam represents a type parameter expression
+type TypeParam struct {
 	Name         lexer.Token
 	Bound        Expr // Optional bound (: expression)
 	Default      Expr // Optional default (= expression)
@@ -16,13 +16,13 @@ type TypeParamExpr struct {
 	Span lexer.Span
 }
 
-func (t *TypeParamExpr) isExpr() {}
+func (t *TypeParam) isExpr() {}
 
-func (t *TypeParamExpr) GetSpan() lexer.Span {
+func (t *TypeParam) GetSpan() lexer.Span {
 	return t.Span
 }
 
-func (t *TypeParamExpr) String() string {
+func (t *TypeParam) String() string {
 	prefix := ""
 	if t.IsStar {
 		prefix = "*"
@@ -33,6 +33,6 @@ func (t *TypeParamExpr) String() string {
 }
 
 // Accept calls the VisitTypeParamExpr method on the visitor
-func (t *TypeParamExpr) Accept(visitor Visitor) {
+func (t *TypeParam) Accept(visitor Visitor) {
 	visitor.VisitTypeParamExpr(t)
 }
