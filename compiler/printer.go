@@ -1088,3 +1088,57 @@ func (p *ASTPrinter) VisitFor(node *ast.For) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitWith handles With nodes
+func (p *ASTPrinter) VisitWith(node *ast.With) ast.Visitor {
+	p.printNodeStart("With", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Display if this is an async with
+	p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), node.IsAsync))
+
+	// Print the with items
+	if len(node.Items) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sitems:\n", p.indent()))
+		p.indentLevel++
+		for i, item := range node.Items {
+			p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+			p.indentLevel++
+
+			// Print the expression
+			p.result.WriteString(fmt.Sprintf("%sexpr:\n", p.indent()))
+			p.indentLevel++
+			item.Expr.Accept(p)
+			p.indentLevel--
+
+			// Print the 'as' target if it exists
+			if item.As != nil {
+				p.result.WriteString(fmt.Sprintf("%sas:\n", p.indent()))
+				p.indentLevel++
+				item.As.Accept(p)
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Visit the body
+	if len(node.Body) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		for _, stmt := range node.Body {
+			if stmt != nil {
+				stmt.Accept(p)
+			}
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

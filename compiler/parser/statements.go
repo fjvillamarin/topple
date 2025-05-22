@@ -15,10 +15,15 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.whileStatement()
 	case lexer.For:
 		return p.forStatement()
+	case lexer.With:
+		return p.withStatement()
 	case lexer.Async:
 		// For async statements, we need to look ahead one more token
 		if p.checkNext(lexer.For) {
 			return p.forStatement()
+		}
+		if p.checkNext(lexer.With) {
+			return p.withStatement()
 		}
 		// Other async statements will be handled here as they're implemented
 		// Fall through to simple statements for now
@@ -43,6 +48,11 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 	_, err := p.consume(lexer.Newline, "expected newline")
 	if err != nil {
 		return nil, err
+	}
+
+	// Consume all remaining newlines
+	for p.check(lexer.Newline) {
+		p.advance()
 	}
 
 	_, err = p.consume(lexer.Indent, "expected indented block")

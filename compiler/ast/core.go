@@ -77,4 +77,5 @@ type StmtVisitor interface {
 	VisitIf(i *If) Visitor
 	VisitWhile(w *While) Visitor
 	VisitFor(f *For) Visitor
+	VisitWith(w *With) Visitor
 }
