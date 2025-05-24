@@ -1559,3 +1559,177 @@ func (p *ASTPrinter) VisitLambda(node *ast.Lambda) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitListComp handles ListComp nodes
+func (p *ASTPrinter) VisitListComp(node *ast.ListComp) ast.Visitor {
+	p.printNodeStart("ListComp", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display the element expression
+	p.result.WriteString(fmt.Sprintf("%selement:\n", p.indent()))
+	p.indentLevel++
+	node.Element.Accept(p)
+	p.indentLevel--
+
+	// Display the for/if clauses
+	if len(node.Clauses) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sclauses:\n", p.indent()))
+		p.indentLevel++
+		for i, clause := range node.Clauses {
+			p.result.WriteString(fmt.Sprintf("%sclause_%d:\n", p.indent(), i))
+			p.indentLevel++
+
+			p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), clause.IsAsync))
+
+			p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+			p.indentLevel++
+			clause.Target.Accept(p)
+			p.indentLevel--
+
+			p.result.WriteString(fmt.Sprintf("%siter:\n", p.indent()))
+			p.indentLevel++
+			clause.Iter.Accept(p)
+			p.indentLevel--
+
+			if len(clause.Ifs) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sifs:\n", p.indent()))
+				p.indentLevel++
+				for j, ifCond := range clause.Ifs {
+					p.result.WriteString(fmt.Sprintf("%sif_%d:\n", p.indent(), j))
+					p.indentLevel++
+					ifCond.Accept(p)
+					p.indentLevel--
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitSetComp handles SetComp nodes
+func (p *ASTPrinter) VisitSetComp(node *ast.SetComp) ast.Visitor {
+	p.printNodeStart("SetComp", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display the element expression
+	p.result.WriteString(fmt.Sprintf("%selement:\n", p.indent()))
+	p.indentLevel++
+	node.Element.Accept(p)
+	p.indentLevel--
+
+	// Display the for/if clauses
+	if len(node.Clauses) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sclauses:\n", p.indent()))
+		p.indentLevel++
+		for i, clause := range node.Clauses {
+			p.result.WriteString(fmt.Sprintf("%sclause_%d:\n", p.indent(), i))
+			p.indentLevel++
+
+			p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), clause.IsAsync))
+
+			p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+			p.indentLevel++
+			clause.Target.Accept(p)
+			p.indentLevel--
+
+			p.result.WriteString(fmt.Sprintf("%siter:\n", p.indent()))
+			p.indentLevel++
+			clause.Iter.Accept(p)
+			p.indentLevel--
+
+			if len(clause.Ifs) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sifs:\n", p.indent()))
+				p.indentLevel++
+				for j, ifCond := range clause.Ifs {
+					p.result.WriteString(fmt.Sprintf("%sif_%d:\n", p.indent(), j))
+					p.indentLevel++
+					ifCond.Accept(p)
+					p.indentLevel--
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitDictComp handles DictComp nodes
+func (p *ASTPrinter) VisitDictComp(node *ast.DictComp) ast.Visitor {
+	p.printNodeStart("DictComp", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display the key expression
+	p.result.WriteString(fmt.Sprintf("%skey:\n", p.indent()))
+	p.indentLevel++
+	node.Key.Accept(p)
+	p.indentLevel--
+
+	// Display the value expression
+	p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+	p.indentLevel++
+	node.Value.Accept(p)
+	p.indentLevel--
+
+	// Display the for/if clauses
+	if len(node.Clauses) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sclauses:\n", p.indent()))
+		p.indentLevel++
+		for i, clause := range node.Clauses {
+			p.result.WriteString(fmt.Sprintf("%sclause_%d:\n", p.indent(), i))
+			p.indentLevel++
+
+			p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), clause.IsAsync))
+
+			p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+			p.indentLevel++
+			clause.Target.Accept(p)
+			p.indentLevel--
+
+			p.result.WriteString(fmt.Sprintf("%siter:\n", p.indent()))
+			p.indentLevel++
+			clause.Iter.Accept(p)
+			p.indentLevel--
+
+			if len(clause.Ifs) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sifs:\n", p.indent()))
+				p.indentLevel++
+				for j, ifCond := range clause.Ifs {
+					p.result.WriteString(fmt.Sprintf("%sif_%d:\n", p.indent(), j))
+					p.indentLevel++
+					ifCond.Accept(p)
+					p.indentLevel--
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

@@ -11,7 +11,7 @@ func (p *Parser) dictOrSet() (ast.Expr, error) {
 	startPos := p.Current
 
 	// Consume the opening '{'
-	_, err := p.consume(lexer.LeftBrace, "expected '{'")
+	leftBrace, err := p.consume(lexer.LeftBrace, "expected '{'")
 	if err != nil {
 		return nil, err
 	}
@@ -30,25 +30,45 @@ func (p *Parser) dictOrSet() (ast.Expr, error) {
 		return p.dict()
 	}
 
-	// We need to look ahead to see if there's a colon after an expression
-	// Try to parse an expression and see if it's followed by a colon
-	_, err = p.expression()
+	// We need to look ahead to see what follows the first expression
+	// Try to parse the first expression
+	firstExpr, err := p.namedExpression()
 	if err != nil {
 		// If we can't parse an expression, restore and try set
 		p.Current = startPos
 		return p.set()
 	}
 
-	// Check if there's a colon after the expression
+	// Check what follows the first expression
 	if p.check(lexer.Colon) {
-		// It's a dictionary (key: value)
+		// It's a dictionary pattern (key: value or comprehension)
+		// Consume the colon
+		p.match(lexer.Colon)
+
+		// Parse the value expression
+		valueExpr, err := p.expression()
+		if err != nil {
+			p.Current = startPos
+			return p.set()
+		}
+
+		// Check if this is a dictionary comprehension
+		if p.check(lexer.For) || p.check(lexer.Async) {
+			// It's a dictionary comprehension
+			return p.dictComp(firstExpr, valueExpr, leftBrace)
+		}
+
+		// It's a regular dictionary
 		p.Current = startPos
 		return p.dict()
+	} else if p.check(lexer.For) || p.check(lexer.Async) {
+		// It's a set comprehension
+		return p.setComp(firstExpr, leftBrace)
+	} else {
+		// It's a regular set
+		p.Current = startPos
+		return p.set()
 	}
-
-	// Otherwise, it's a set
-	p.Current = startPos
-	return p.set()
 }
 
 // dict parses a dictionary literal according to the grammar:

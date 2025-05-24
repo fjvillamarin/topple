@@ -46,6 +46,9 @@ type ExprVisitor interface {
 	VisitTupleExpr(t *TupleExpr) Visitor
 	VisitSetExpr(s *SetExpr) Visitor
 	VisitDictExpr(d *DictExpr) Visitor
+	VisitListComp(lc *ListComp) Visitor
+	VisitSetComp(sc *SetComp) Visitor
+	VisitDictComp(dc *DictComp) Visitor
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitTypeParamExpr(t *TypeParam) Visitor

@@ -177,8 +177,8 @@ func (p *Parser) atom() (ast.Expr, error) {
 	}
 
 	if p.check(lexer.LeftBracket) {
-		// List literal
-		return p.list()
+		// Could be either a list literal or list comprehension
+		return p.listOrListComp()
 	}
 
 	if p.check(lexer.LeftBrace) {
