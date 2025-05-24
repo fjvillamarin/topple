@@ -89,4 +89,18 @@ type StmtVisitor interface {
 	VisitDecorator(d *Decorator) Visitor
 	VisitClass(c *Class) Visitor
 	VisitFunction(f *Function) Visitor
+	VisitMatch(m *MatchStmt) Visitor
+
+	// Pattern visitors
+	VisitLiteralPattern(lp *LiteralPattern) Visitor
+	VisitCapturePattern(cp *CapturePattern) Visitor
+	VisitWildcardPattern(wp *WildcardPattern) Visitor
+	VisitValuePattern(vp *ValuePattern) Visitor
+	VisitGroupPattern(gp *GroupPattern) Visitor
+	VisitSequencePattern(sp *SequencePattern) Visitor
+	VisitStarPattern(sp *StarPattern) Visitor
+	VisitMappingPattern(mp *MappingPattern) Visitor
+	VisitClassPattern(cp *ClassPattern) Visitor
+	VisitAsPattern(ap *AsPattern) Visitor
+	VisitOrPattern(op *OrPattern) Visitor
 }

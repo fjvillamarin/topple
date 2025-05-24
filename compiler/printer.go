@@ -1789,3 +1789,317 @@ func (p *ASTPrinter) VisitGenExpr(node *ast.GenExpr) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitMatch handles MatchStmt nodes
+func (p *ASTPrinter) VisitMatch(node *ast.MatchStmt) ast.Visitor {
+	p.printNodeStart("MatchStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Print the subject expression
+	p.result.WriteString(fmt.Sprintf("%ssubject:\n", p.indent()))
+	p.indentLevel++
+	node.Subject.Accept(p)
+	p.indentLevel--
+
+	// Print the case blocks
+	if len(node.Cases) > 0 {
+		p.result.WriteString(fmt.Sprintf("%scases:\n", p.indent()))
+		p.indentLevel++
+		for i, caseBlock := range node.Cases {
+			p.result.WriteString(fmt.Sprintf("%scase_%d:\n", p.indent(), i))
+			p.indentLevel++
+
+			// Print patterns
+			if len(caseBlock.Patterns) > 0 {
+				p.result.WriteString(fmt.Sprintf("%spatterns:\n", p.indent()))
+				p.indentLevel++
+				for j, pattern := range caseBlock.Patterns {
+					p.result.WriteString(fmt.Sprintf("%spattern_%d:\n", p.indent(), j))
+					p.indentLevel++
+					pattern.Accept(p)
+					p.indentLevel--
+				}
+				p.indentLevel--
+			}
+
+			// Print guard if present
+			if caseBlock.Guard != nil {
+				p.result.WriteString(fmt.Sprintf("%sguard:\n", p.indent()))
+				p.indentLevel++
+				caseBlock.Guard.Accept(p)
+				p.indentLevel--
+			}
+
+			// Print body
+			if len(caseBlock.Body) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+				p.indentLevel++
+				for _, stmt := range caseBlock.Body {
+					if stmt != nil {
+						stmt.Accept(p)
+					}
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitLiteralPattern handles LiteralPattern nodes
+func (p *ASTPrinter) VisitLiteralPattern(node *ast.LiteralPattern) ast.Visitor {
+	p.printNodeStart("LiteralPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+	p.indentLevel++
+	node.Value.Accept(p)
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitCapturePattern handles CapturePattern nodes
+func (p *ASTPrinter) VisitCapturePattern(node *ast.CapturePattern) ast.Visitor {
+	p.printNodeStart("CapturePattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+	p.indentLevel++
+	node.Name.Accept(p)
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitWildcardPattern handles WildcardPattern nodes
+func (p *ASTPrinter) VisitWildcardPattern(node *ast.WildcardPattern) ast.Visitor {
+	p.printNodeStart("WildcardPattern", node)
+	p.result.WriteString(" (_)\n")
+	return p
+}
+
+// VisitValuePattern handles ValuePattern nodes
+func (p *ASTPrinter) VisitValuePattern(node *ast.ValuePattern) ast.Visitor {
+	p.printNodeStart("ValuePattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+	p.indentLevel++
+	node.Value.Accept(p)
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitGroupPattern handles GroupPattern nodes
+func (p *ASTPrinter) VisitGroupPattern(node *ast.GroupPattern) ast.Visitor {
+	p.printNodeStart("GroupPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%spattern:\n", p.indent()))
+	p.indentLevel++
+	node.Pattern.Accept(p)
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitSequencePattern handles SequencePattern nodes
+func (p *ASTPrinter) VisitSequencePattern(node *ast.SequencePattern) ast.Visitor {
+	p.printNodeStart("SequencePattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%sisTuple: %t\n", p.indent(), node.IsTuple))
+
+	if len(node.Patterns) > 0 {
+		p.result.WriteString(fmt.Sprintf("%spatterns:\n", p.indent()))
+		p.indentLevel++
+		for i, pattern := range node.Patterns {
+			p.result.WriteString(fmt.Sprintf("%spattern_%d:\n", p.indent(), i))
+			p.indentLevel++
+			pattern.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitStarPattern handles StarPattern nodes
+func (p *ASTPrinter) VisitStarPattern(node *ast.StarPattern) ast.Visitor {
+	p.printNodeStart("StarPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	p.result.WriteString(fmt.Sprintf("%spattern:\n", p.indent()))
+	p.indentLevel++
+	node.Pattern.Accept(p)
+	p.indentLevel--
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitMappingPattern handles MappingPattern nodes
+func (p *ASTPrinter) VisitMappingPattern(node *ast.MappingPattern) ast.Visitor {
+	p.printNodeStart("MappingPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	if len(node.Pairs) > 0 {
+		p.result.WriteString(fmt.Sprintf("%spairs:\n", p.indent()))
+		p.indentLevel++
+		for i, pair := range node.Pairs {
+			p.result.WriteString(fmt.Sprintf("%spair_%d:\n", p.indent(), i))
+			p.indentLevel++
+			p.result.WriteString(fmt.Sprintf("%skey:\n", p.indent()))
+			p.indentLevel++
+			pair.Key.Accept(p)
+			p.indentLevel--
+			p.result.WriteString(fmt.Sprintf("%spattern:\n", p.indent()))
+			p.indentLevel++
+			pair.Pattern.Accept(p)
+			p.indentLevel--
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	if node.HasRest {
+		p.result.WriteString(fmt.Sprintf("%srest:\n", p.indent()))
+		p.indentLevel++
+		node.DoubleStar.Accept(p)
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitClassPattern handles ClassPattern nodes
+func (p *ASTPrinter) VisitClassPattern(node *ast.ClassPattern) ast.Visitor {
+	p.printNodeStart("ClassPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	p.result.WriteString(fmt.Sprintf("%sclass:\n", p.indent()))
+	p.indentLevel++
+	node.Class.Accept(p)
+	p.indentLevel--
+
+	if len(node.Patterns) > 0 {
+		p.result.WriteString(fmt.Sprintf("%spatterns:\n", p.indent()))
+		p.indentLevel++
+		for i, pattern := range node.Patterns {
+			p.result.WriteString(fmt.Sprintf("%spattern_%d:\n", p.indent(), i))
+			p.indentLevel++
+			pattern.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	if len(node.KwdPatterns) > 0 {
+		p.result.WriteString(fmt.Sprintf("%skeyword_patterns:\n", p.indent()))
+		p.indentLevel++
+		for i, kwdPattern := range node.KwdPatterns {
+			p.result.WriteString(fmt.Sprintf("%skwd_%d:\n", p.indent(), i))
+			p.indentLevel++
+			p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+			p.indentLevel++
+			kwdPattern.Name.Accept(p)
+			p.indentLevel--
+			p.result.WriteString(fmt.Sprintf("%spattern:\n", p.indent()))
+			p.indentLevel++
+			kwdPattern.Pattern.Accept(p)
+			p.indentLevel--
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitAsPattern handles AsPattern nodes
+func (p *ASTPrinter) VisitAsPattern(node *ast.AsPattern) ast.Visitor {
+	p.printNodeStart("AsPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	p.result.WriteString(fmt.Sprintf("%spattern:\n", p.indent()))
+	p.indentLevel++
+	node.Pattern.Accept(p)
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+	p.indentLevel++
+	node.Target.Accept(p)
+	p.indentLevel--
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitOrPattern handles OrPattern nodes
+func (p *ASTPrinter) VisitOrPattern(node *ast.OrPattern) ast.Visitor {
+	p.printNodeStart("OrPattern", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	if len(node.Patterns) > 0 {
+		p.result.WriteString(fmt.Sprintf("%salternatives:\n", p.indent()))
+		p.indentLevel++
+		for i, pattern := range node.Patterns {
+			p.result.WriteString(fmt.Sprintf("%salt_%d:\n", p.indent(), i))
+			p.indentLevel++
+			pattern.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

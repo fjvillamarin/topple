@@ -19,6 +19,8 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.withStatement()
 	case lexer.Try:
 		return p.tryStatement()
+	case lexer.Match:
+		return p.matchStmt()
 	case lexer.Class:
 		return p.classStatement()
 	case lexer.Def:
