@@ -49,6 +49,17 @@ func (p *Parser) tuple() (ast.Expr, error) {
 		}, nil
 	}
 
+	// Check if this is a generator expression (for/async keywords)
+	if p.check(lexer.For) || p.check(lexer.Async) {
+		// It's a generator expression
+		// Star expressions are not allowed in generator expressions
+		_, isStarExpr := expr.(*ast.StarExpr)
+		if isStarExpr {
+			return nil, p.error(p.previous(), "starred expression cannot appear in a generator expression")
+		}
+		return p.genExpr(expr, leftParen)
+	}
+
 	// If there's a comma, it's a tuple
 	if p.match(lexer.Comma) {
 		elements := []ast.Expr{expr}

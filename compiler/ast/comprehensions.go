@@ -84,3 +84,29 @@ func (dc *DictComp) String() string {
 func (dc *DictComp) Accept(visitor Visitor) {
 	visitor.VisitDictComp(dc)
 }
+
+// GenExpr represents a generator expression: (expression for_if_clauses)
+type GenExpr struct {
+	Element Expr          // The expression to evaluate for each iteration
+	Clauses []ForIfClause // One or more for/if clauses
+
+	Span lexer.Span
+}
+
+func (ge *GenExpr) isExpr() {}
+
+func (ge *GenExpr) GetSpan() lexer.Span {
+	return ge.Span
+}
+
+func (ge *GenExpr) String() string {
+	var clauses []string
+	for _, clause := range ge.Clauses {
+		clauses = append(clauses, clause.String())
+	}
+	return fmt.Sprintf("(%s %s)", ge.Element.String(), strings.Join(clauses, " "))
+}
+
+func (ge *GenExpr) Accept(visitor Visitor) {
+	visitor.VisitGenExpr(ge)
+}

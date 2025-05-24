@@ -233,3 +233,25 @@ func (p *Parser) listFromBracket(leftBracket lexer.Token) (ast.Expr, error) {
 		Span:     lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()},
 	}, nil
 }
+
+// genExpr parses a generator expression according to the grammar:
+// genexp: '(' ( assignment_expression | expression !':=') for_if_clauses ')'
+func (p *Parser) genExpr(element ast.Expr, leftParen lexer.Token) (ast.Expr, error) {
+	// Parse for_if_clauses
+	clauses, err := p.forIfClauses()
+	if err != nil {
+		return nil, err
+	}
+
+	// Consume the closing ')'
+	rightParen, err := p.consume(lexer.RightParen, "expected ')' after generator expression")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.GenExpr{
+		Element: element,
+		Clauses: clauses,
+		Span:    lexer.Span{Start: leftParen.Start(), End: rightParen.End()},
+	}, nil
+}

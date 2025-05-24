@@ -1733,3 +1733,59 @@ func (p *ASTPrinter) VisitDictComp(node *ast.DictComp) ast.Visitor {
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
 	return p
 }
+
+// VisitGenExpr handles GenExpr nodes
+func (p *ASTPrinter) VisitGenExpr(node *ast.GenExpr) ast.Visitor {
+	p.printNodeStart("GenExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display the element expression
+	p.result.WriteString(fmt.Sprintf("%selement:\n", p.indent()))
+	p.indentLevel++
+	node.Element.Accept(p)
+	p.indentLevel--
+
+	// Display the for/if clauses
+	if len(node.Clauses) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sclauses:\n", p.indent()))
+		p.indentLevel++
+		for i, clause := range node.Clauses {
+			p.result.WriteString(fmt.Sprintf("%sclause_%d:\n", p.indent(), i))
+			p.indentLevel++
+
+			p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), clause.IsAsync))
+
+			p.result.WriteString(fmt.Sprintf("%starget:\n", p.indent()))
+			p.indentLevel++
+			clause.Target.Accept(p)
+			p.indentLevel--
+
+			p.result.WriteString(fmt.Sprintf("%siter:\n", p.indent()))
+			p.indentLevel++
+			clause.Iter.Accept(p)
+			p.indentLevel--
+
+			if len(clause.Ifs) > 0 {
+				p.result.WriteString(fmt.Sprintf("%sifs:\n", p.indent()))
+				p.indentLevel++
+				for j, ifCond := range clause.Ifs {
+					p.result.WriteString(fmt.Sprintf("%sif_%d:\n", p.indent(), j))
+					p.indentLevel++
+					ifCond.Accept(p)
+					p.indentLevel--
+				}
+				p.indentLevel--
+			}
+
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}

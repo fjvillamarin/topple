@@ -49,6 +49,7 @@ type ExprVisitor interface {
 	VisitListComp(lc *ListComp) Visitor
 	VisitSetComp(sc *SetComp) Visitor
 	VisitDictComp(dc *DictComp) Visitor
+	VisitGenExpr(ge *GenExpr) Visitor
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitTypeParamExpr(t *TypeParam) Visitor
