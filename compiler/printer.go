@@ -395,20 +395,56 @@ func (p *ASTPrinter) VisitSetExpr(node *ast.SetExpr) ast.Visitor {
 	p.result.WriteString(" (\n")
 
 	p.indentLevel++
-	// Visit all elements in the set
+
 	if len(node.Elements) > 0 {
 		p.result.WriteString(fmt.Sprintf("%selements:\n", p.indent()))
 		p.indentLevel++
-		for i, elem := range node.Elements {
-			if elem != nil {
-				p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+		for _, element := range node.Elements {
+			element.Accept(p)
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitDictExpr handles DictExpr nodes
+func (p *ASTPrinter) VisitDictExpr(node *ast.DictExpr) ast.Visitor {
+	p.printNodeStart("DictExpr", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	if len(node.Pairs) > 0 {
+		p.result.WriteString(fmt.Sprintf("%spairs:\n", p.indent()))
+		p.indentLevel++
+		for i, pair := range node.Pairs {
+			switch kvp := pair.(type) {
+			case *ast.KeyValuePair:
+				p.result.WriteString(fmt.Sprintf("%skvpair_%d:\n", p.indent(), i))
 				p.indentLevel++
-				elem.Accept(p)
+				p.result.WriteString(fmt.Sprintf("%skey:\n", p.indent()))
+				p.indentLevel++
+				kvp.Key.Accept(p)
+				p.indentLevel--
+				p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+				p.indentLevel++
+				kvp.Value.Accept(p)
+				p.indentLevel--
+				p.indentLevel--
+			case *ast.DoubleStarredPair:
+				p.result.WriteString(fmt.Sprintf("%sstarred_%d:\n", p.indent(), i))
+				p.indentLevel++
+				kvp.Expr.Accept(p)
 				p.indentLevel--
 			}
 		}
 		p.indentLevel--
 	}
+
 	p.indentLevel--
 
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
@@ -824,7 +860,8 @@ func (p *ASTPrinter) VisitSlice(node *ast.Slice) ast.Visitor {
 	p.result.WriteString(" (\n")
 
 	p.indentLevel++
-	// Visit the start index if present
+
+	// Display start index if present
 	if node.StartIndex != nil {
 		p.result.WriteString(fmt.Sprintf("%sstart:\n", p.indent()))
 		p.indentLevel++
@@ -832,7 +869,7 @@ func (p *ASTPrinter) VisitSlice(node *ast.Slice) ast.Visitor {
 		p.indentLevel--
 	}
 
-	// Visit the end index if present
+	// Display end index if present
 	if node.EndIndex != nil {
 		p.result.WriteString(fmt.Sprintf("%send:\n", p.indent()))
 		p.indentLevel++
@@ -840,13 +877,14 @@ func (p *ASTPrinter) VisitSlice(node *ast.Slice) ast.Visitor {
 		p.indentLevel--
 	}
 
-	// Visit the step if present
+	// Display step if present
 	if node.Step != nil {
 		p.result.WriteString(fmt.Sprintf("%sstep:\n", p.indent()))
 		p.indentLevel++
 		node.Step.Accept(p)
 		p.indentLevel--
 	}
+
 	p.indentLevel--
 
 	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
@@ -1482,6 +1520,37 @@ func (p *ASTPrinter) VisitFunction(node *ast.Function) ast.Visitor {
 				stmt.Accept(p)
 			}
 		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitLambda handles Lambda nodes
+func (p *ASTPrinter) VisitLambda(node *ast.Lambda) ast.Visitor {
+	p.printNodeStart("Lambda", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display parameters if present
+	if node.Parameters != nil {
+		p.result.WriteString(fmt.Sprintf("%sparameters:\n", p.indent()))
+		p.indentLevel++
+		// Note: ParameterList doesn't implement the visitor pattern yet,
+		// so we'll just print a string representation for now
+		p.result.WriteString(fmt.Sprintf("%s%s\n", p.indent(), node.Parameters.String()))
+		p.indentLevel--
+	}
+
+	// Display the body expression
+	if node.Body != nil {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		node.Body.Accept(p)
 		p.indentLevel--
 	}
 

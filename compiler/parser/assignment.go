@@ -130,7 +130,7 @@ trySingleSubscriptAttributeTarget:
 
 		// Parse type expression
 		typeExpr, err := p.expression()
-		if err == nil {
+		if err != nil {
 			return nil, err
 		}
 
@@ -176,18 +176,30 @@ trySingleSubscriptAttributeTarget:
 			var targetChain [][]ast.Expr
 			targetChain = append(targetChain, targets)
 
-			lastPos := p.Current
 			// Parse additional star_targets '=' pairs
 			for p.match(lexer.Equal) {
+				// Save position before trying to parse more targets
+				posBeforeTargets := p.Current
+
+				// Try to parse more targets
 				moreTargets, err := p.starTargets()
 				if err != nil {
-					// We've probably consumed the right-hand side expression
-					// so we need to restore the position, which should be the last equal sign
-					p.Current = lastPos
+					// If we can't parse targets, this isn't a chain assignment
+					// Restore position to the equal sign we just consumed
+					p.Current = posBeforeTargets - 1
 					break
 				}
+
+				// Check if there's another '=' after these targets
+				if !p.check(lexer.Equal) {
+					// No '=' after these targets, so they're part of the RHS expression
+					// Restore position to before we parsed these "targets"
+					p.Current = posBeforeTargets - 1
+					break
+				}
+
+				// We have valid targets followed by '=', add them to the chain
 				targetChain = append(targetChain, moreTargets)
-				lastPos = p.Current
 			}
 
 			_, err = p.consume(lexer.Equal, "expected '=' after targets")

@@ -3,6 +3,7 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 func (p *Parser) await() (ast.Expr, error) {
@@ -28,8 +29,11 @@ func (p *Parser) primary() (ast.Expr, error) {
 	// Parse the initial atom
 	expr, err := p.atom()
 	if err != nil {
+		fmt.Println("err", err)
 		return nil, err
 	}
+
+	fmt.Println("expr", expr)
 
 	// Keep parsing postfix operations while they exist
 	for {
@@ -159,6 +163,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	}
 
 	if p.match(lexer.Identifier) {
+		fmt.Println("identifier", p.previous())
 		return &ast.Name{
 			Token: p.previous(),
 
@@ -177,8 +182,8 @@ func (p *Parser) atom() (ast.Expr, error) {
 	}
 
 	if p.check(lexer.LeftBrace) {
-		// Set literal
-		return p.set()
+		// Could be either a dictionary or a set - we need to look ahead
+		return p.dictOrSet()
 	}
 
 	if p.check(lexer.Yield) {

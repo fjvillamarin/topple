@@ -7,6 +7,11 @@ import (
 
 // expression parses an expression.
 func (p *Parser) expression() (ast.Expr, error) {
+	// Check for lambda expressions first
+	if p.check(lexer.Lambda) {
+		return p.lambdef()
+	}
+
 	expr, err := p.disjunction()
 	if err != nil {
 		return nil, err

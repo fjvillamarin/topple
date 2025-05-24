@@ -11,13 +11,6 @@ type ListExpr struct {
 	Span lexer.Span
 }
 
-func NewListExpr(elements []Expr, Span lexer.Span) *ListExpr {
-	return &ListExpr{
-		Elements: elements,
-		Span:     Span,
-	}
-}
-
 func (l *ListExpr) isExpr() {}
 
 func (l *ListExpr) GetSpan() lexer.Span {

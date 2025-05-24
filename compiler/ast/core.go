@@ -45,12 +45,14 @@ type ExprVisitor interface {
 	VisitListExpr(l *ListExpr) Visitor
 	VisitTupleExpr(t *TupleExpr) Visitor
 	VisitSetExpr(s *SetExpr) Visitor
+	VisitDictExpr(d *DictExpr) Visitor
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitTypeParamExpr(t *TypeParam) Visitor
 	VisitSlice(s *Slice) Visitor
 	VisitAwaitExpr(a *AwaitExpr) Visitor
 	VisitArgument(a *Argument) Visitor
+	VisitLambda(l *Lambda) Visitor
 }
 
 // StmtVisitor is the interface for visitors that traverse statements.

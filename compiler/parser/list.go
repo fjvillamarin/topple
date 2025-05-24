@@ -3,6 +3,7 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 func (p *Parser) list() (ast.Expr, error) {
@@ -38,11 +39,17 @@ func (p *Parser) list() (ast.Expr, error) {
 		}
 	}
 
+	fmt.Println("elements", elements)
+
 	// Expect closing bracket
 	rightBracket, err := p.consume(lexer.RightBracket, "expected ']'")
 	if err != nil {
 		return nil, err
 	}
 
-	return ast.NewListExpr(elements, lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()}), nil
+	return &ast.ListExpr{
+		Elements: elements,
+
+		Span: lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()},
+	}, nil
 }
