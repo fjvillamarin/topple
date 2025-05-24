@@ -464,7 +464,10 @@ func (s *Scanner) identifier() {
 	for isIdentifierContinue(s.peek()) {
 		s.advance()
 	}
-	if tok, ok := Keywords[string(s.src[s.start:s.cur])]; ok {
+
+	lexeme := string(s.src[s.start:s.cur])
+
+	if tok, ok := Keywords[lexeme]; ok {
 		s.addToken(tok)
 		return
 	}
@@ -479,9 +482,26 @@ func isIdentifierContinue(r rune) bool {
 	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
-// ── numeric literal (decimal & float only – extend later) ───────────
+// ── numeric literal (decimal, binary, octal, hex & float) ───────────
 
 func (s *Scanner) number() {
+	// Check for special prefixes after initial '0'
+	if s.src[s.start] == '0' && !s.atEnd() {
+		next := s.peek()
+		switch next {
+		case 'b', 'B':
+			s.binaryNumber()
+			return
+		case 'o', 'O':
+			s.octalNumber()
+			return
+		case 'x', 'X':
+			s.hexNumber()
+			return
+		}
+	}
+
+	// Regular decimal number (possibly with decimal point and exponent)
 	for unicode.IsDigit(s.peek()) {
 		s.advance()
 	}
@@ -506,6 +526,13 @@ func (s *Scanner) number() {
 		}
 	}
 
+	// Check for imaginary unit (j or J suffix)
+	if p := s.peek(); p == 'j' || p == 'J' {
+		s.advance() // consume 'j' or 'J'
+		s.complexNumber(isFloat)
+		return
+	}
+
 	lit := string(s.src[s.start:s.cur])
 	if isFloat {
 		val, err := strconv.ParseFloat(lit, 64)
@@ -522,6 +549,164 @@ func (s *Scanner) number() {
 		}
 		s.addTokenLit(Number, val)
 	}
+}
+
+// complexNumber handles imaginary number literals (ending with j/J)
+func (s *Scanner) complexNumber(isFloat bool) {
+	// Get the numeric part (excluding the 'j' suffix)
+	numStr := string(s.src[s.start : s.cur-1])
+
+	if isFloat {
+		imagPart, err := strconv.ParseFloat(numStr, 64)
+		if err != nil {
+			s.errorf("invalid complex literal: %v", err)
+			return
+		}
+		// Create complex number with 0 real part and parsed imaginary part
+		complexVal := complex(0, imagPart)
+		s.addTokenLit(Number, complexVal)
+	} else {
+		imagPart, err := strconv.ParseInt(numStr, 10, 64)
+		if err != nil {
+			s.errorf("invalid complex literal: %v", err)
+			return
+		}
+		// Create complex number with 0 real part and parsed imaginary part
+		complexVal := complex(0, float64(imagPart))
+		s.addTokenLit(Number, complexVal)
+	}
+}
+
+// binaryNumber handles binary literals like 0b1010 or 0B1010
+func (s *Scanner) binaryNumber() {
+	s.advance() // consume 'b' or 'B'
+
+	start := s.cur
+	for {
+		r := s.peek()
+		if r == '0' || r == '1' {
+			s.advance()
+		} else {
+			break
+		}
+	}
+
+	if s.cur == start {
+		s.errorf("invalid binary literal: no digits after 0b/0B")
+		return
+	}
+
+	// Check for imaginary unit after binary number
+	if p := s.peek(); p == 'j' || p == 'J' {
+		s.advance() // consume 'j' or 'J'
+		// Parse the binary digits (skip the "0b" prefix)
+		binaryStr := string(s.src[s.start+2 : s.cur-1])
+		val, err := strconv.ParseInt(binaryStr, 2, 64)
+		if err != nil {
+			s.errorf("invalid binary complex literal: %v", err)
+			return
+		}
+		complexVal := complex(0, float64(val))
+		s.addTokenLit(Number, complexVal)
+		return
+	}
+
+	// Parse the binary digits (skip the "0b" prefix)
+	binaryStr := string(s.src[s.start+2 : s.cur])
+	val, err := strconv.ParseInt(binaryStr, 2, 64)
+	if err != nil {
+		s.errorf("invalid binary literal: %v", err)
+		return
+	}
+	s.addTokenLit(Number, val)
+}
+
+// octalNumber handles octal literals like 0o755 or 0O755
+func (s *Scanner) octalNumber() {
+	s.advance() // consume 'o' or 'O'
+
+	start := s.cur
+	for {
+		r := s.peek()
+		if r >= '0' && r <= '7' {
+			s.advance()
+		} else {
+			break
+		}
+	}
+
+	if s.cur == start {
+		s.errorf("invalid octal literal: no digits after 0o/0O")
+		return
+	}
+
+	// Check for imaginary unit after octal number
+	if p := s.peek(); p == 'j' || p == 'J' {
+		s.advance() // consume 'j' or 'J'
+		// Parse the octal digits (skip the "0o" prefix)
+		octalStr := string(s.src[s.start+2 : s.cur-1])
+		val, err := strconv.ParseInt(octalStr, 8, 64)
+		if err != nil {
+			s.errorf("invalid octal complex literal: %v", err)
+			return
+		}
+		complexVal := complex(0, float64(val))
+		s.addTokenLit(Number, complexVal)
+		return
+	}
+
+	// Parse the octal digits (skip the "0o" prefix)
+	octalStr := string(s.src[s.start+2 : s.cur])
+	val, err := strconv.ParseInt(octalStr, 8, 64)
+	if err != nil {
+		s.errorf("invalid octal literal: %v", err)
+		return
+	}
+	s.addTokenLit(Number, val)
+}
+
+// hexNumber handles hexadecimal literals like 0x123 or 0X123
+func (s *Scanner) hexNumber() {
+	s.advance() // consume 'x' or 'X'
+
+	start := s.cur
+	for {
+		r := s.peek()
+		if unicode.IsDigit(r) || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F') {
+			s.advance()
+		} else {
+			break
+		}
+	}
+
+	if s.cur == start {
+		s.errorf("invalid hexadecimal literal: no digits after 0x/0X")
+		return
+	}
+
+	// Check for imaginary unit after hex number
+	if p := s.peek(); p == 'j' || p == 'J' {
+		s.advance() // consume 'j' or 'J'
+		// Parse the hex digits (skip the "0x" prefix)
+		hexStr := string(s.src[s.start+2 : s.cur-1])
+		val, err := strconv.ParseInt(hexStr, 16, 64)
+		if err != nil {
+			s.errorf("invalid hexadecimal complex literal: %v", err)
+			return
+		}
+		complexVal := complex(0, float64(val))
+		s.addTokenLit(Number, complexVal)
+		return
+	}
+
+	// Parse the hex digits (skip the "0x" prefix)
+	hexStr := string(s.src[s.start+2 : s.cur])
+	val, err := strconv.ParseInt(hexStr, 16, 64)
+	if err != nil {
+		s.errorf("invalid hexadecimal literal: %v", err)
+		return
+	}
+	s.addTokenLit(Number, val)
 }
 
 // ── string literal (single / double; no prefixes yet) ───────────────
