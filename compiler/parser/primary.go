@@ -3,7 +3,6 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 func (p *Parser) await() (ast.Expr, error) {
@@ -29,11 +28,8 @@ func (p *Parser) primary() (ast.Expr, error) {
 	// Parse the initial atom
 	expr, err := p.atom()
 	if err != nil {
-		fmt.Println("err", err)
 		return nil, err
 	}
-
-	fmt.Println("expr", expr)
 
 	// Keep parsing postfix operations while they exist
 	for {
@@ -82,29 +78,10 @@ func (p *Parser) primary() (ast.Expr, error) {
 }
 
 func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
-	args := []ast.Expr{}
-	if !p.check(lexer.RightParen) {
-		// Parse first argument
-		arg, err := p.expression()
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, arg)
-
-		// Parse additional arguments
-		for p.match(lexer.Comma) {
-			// If there's a right parenthesis after the comma,
-			// it's a trailing comma, so we're done parsing arguments
-			if p.check(lexer.RightParen) {
-				break
-			}
-
-			arg, err := p.expression()
-			if err != nil {
-				return nil, err
-			}
-			args = append(args, arg)
-		}
+	// Use the proper arguments parser that handles *args and **kwargs
+	args, err := p.arguments()
+	if err != nil {
+		return nil, err
 	}
 
 	right, err := p.consume(lexer.RightParen, "expected ')' after arguments")
@@ -112,9 +89,15 @@ func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
 		return nil, err
 	}
 
+	// Convert []ast.Argument to []ast.Expr for the Call node
+	argExprs := make([]ast.Expr, len(args))
+	for i, arg := range args {
+		argExprs[i] = arg.Value
+	}
+
 	return &ast.Call{
 		Callee:    callee,
-		Arguments: args,
+		Arguments: argExprs,
 
 		Span: lexer.Span{Start: callee.GetSpan().Start, End: right.End()},
 	}, nil
@@ -168,7 +151,6 @@ func (p *Parser) atom() (ast.Expr, error) {
 	}
 
 	if p.match(lexer.Identifier) {
-		fmt.Println("identifier", p.previous())
 		return &ast.Name{
 			Token: p.previous(),
 

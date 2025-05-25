@@ -125,7 +125,7 @@ trySingleSubscriptAttributeTarget:
 	if err == nil {
 		_, err = p.consume(lexer.Colon, "expected ':' after target")
 		if err != nil {
-			return nil, err
+			goto tryStarTargets
 		}
 
 		// Parse type expression
@@ -164,6 +164,7 @@ trySingleSubscriptAttributeTarget:
 		}, nil
 	}
 
+tryStarTargets:
 	// Restore position and try form 3: (star_targets '=' )+ (yield_expr | star_expressions) !'=' [TYPE_COMMENT]
 	p.Current = originalPos
 

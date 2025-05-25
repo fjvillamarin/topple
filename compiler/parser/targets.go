@@ -41,6 +41,15 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// Check if there's another lookahead after this accessor
+			if !p.tLookahead() {
+				// No lookahead after NAME, so we need to backtrack
+				// This accessor should be handled by the caller (e.g., singleSubscriptAttributeTarget)
+				p.Current = originalPosition
+				break
+			}
+
 			expr = &ast.Attribute{
 				Object: expr,
 				Name:   name,
@@ -54,7 +63,11 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 				return nil, err
 			}
 
-			// TODO: check for genexp if call fails
+			// Check if there's another lookahead after this accessor
+			if !p.tLookahead() {
+				// No more accessors, we're done
+				break
+			}
 		} else if p.match(lexer.LeftBracket) {
 			// Rule: t_primary '[' slices ']' &t_lookahead
 			indices, err := p.slices()
@@ -66,6 +79,13 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// Check if there's another lookahead after this accessor
+			if !p.tLookahead() {
+				// No more accessors, we're done
+				break
+			}
+
 			expr = &ast.Subscript{
 				Object:  expr,
 				Indices: indices,
@@ -75,15 +95,6 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 		} else {
 			// If we didn't consume any accessor, we're done
 			// Either we have atom &t_lookahead or we've finished a chain
-			break
-		}
-
-		// Each accessor must be followed by another lookahead token
-		// This implements the &t_lookahead at the end of each recursive rule
-		if !p.tLookahead() {
-			// If not, we've been too greedy and consumed too many tokens
-			// Restore the position and return what we had before
-			p.Current = originalPosition
 			break
 		}
 	}
