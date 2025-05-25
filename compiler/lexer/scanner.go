@@ -32,6 +32,9 @@ type fstringContext struct {
 	braceDepth   int  // Depth of nested braces in expressions
 	inExpression bool // Whether we're currently parsing an expression inside {}
 	inFormatSpec bool // Whether we're currently parsing a format specification
+	nestingLevel int  // Level of f-string nesting (for nested f-strings)
+	isRaw        bool // Whether this is a raw f-string
+	isTriple     bool // Whether this is a triple-quoted f-string
 }
 
 // ── scanner object ───────────────────────────────────────────────────
@@ -406,17 +409,74 @@ func (s *Scanner) scanToken() {
 
 	// ── literals / identifiers ──
 	case '"', '\'':
+		// Check if this might be part of a nested f-string
+		// We need to look back to see if there was an 'f' or 'r' prefix
+		if s.start > 0 {
+			// Check for f-string prefix
+			prevStart := s.start - 1
+			if prevStart > 0 && (s.src[prevStart] == 'f' || s.src[prevStart] == 'F') {
+				// This is a nested f-string - handle it specially
+				s.cur = s.start     // Reset to before the quote
+				s.start = prevStart // Include the 'f' prefix
+				s.fstring(r)
+				return
+			}
+			// Check for raw f-string prefix (rf or fr)
+			if prevStart > 0 && (s.src[prevStart] == 'r' || s.src[prevStart] == 'R') {
+				prevPrevStart := prevStart - 1
+				if prevPrevStart >= 0 && (s.src[prevPrevStart] == 'f' || s.src[prevPrevStart] == 'F') {
+					// This is a raw f-string (fr")
+					s.cur = s.start         // Reset to before the quote
+					s.start = prevPrevStart // Include the 'fr' prefix
+					s.fstring(r)
+					return
+				}
+			}
+			if prevStart > 0 && (s.src[prevStart] == 'f' || s.src[prevStart] == 'F') {
+				prevPrevStart := prevStart - 1
+				if prevPrevStart >= 0 && (s.src[prevPrevStart] == 'r' || s.src[prevPrevStart] == 'R') {
+					// This is a raw f-string (rf")
+					s.cur = s.start         // Reset to before the quote
+					s.start = prevPrevStart // Include the 'rf' prefix
+					s.fstring(r)
+					return
+				}
+			}
+		}
 		s.string(r)
 	default:
 		switch {
 		case r == 'f' || r == 'F':
-			// Check if this is an f-string (f" or f')
+			// Check if this is a nested f-string (f" or f')
 			if s.peek() == '"' || s.peek() == '\'' {
 				quote := s.peek()
 				s.fstring(quote)
 				return
 			}
 			// If not an f-string, treat as identifier
+			s.identifier()
+		case r == 'r' || r == 'R':
+			// Check if this is a raw f-string (rf" or rf')
+			next := s.peek()
+			if next == 'f' || next == 'F' {
+				s.advance() // consume 'f' or 'F'
+				if s.peek() == '"' || s.peek() == '\'' {
+					quote := s.peek()
+					s.fstring(quote)
+					return
+				}
+				// If not an f-string, backtrack and treat as identifier
+				s.cur-- // backtrack the 'f'
+				s.identifier()
+				return
+			}
+			// Check if this is a raw string (r" or r')
+			if next == '"' || next == '\'' {
+				s.advance() // consume quote
+				s.string(next)
+				return
+			}
+			// If not a raw string, treat as identifier
 			s.identifier()
 		case isIdentifierStart(r):
 			s.identifier()
@@ -791,11 +851,34 @@ func (s *Scanner) string(quote rune) {
 // ── f-string literal ──────────────────────────────────────────────
 
 func (s *Scanner) fstring(quote rune) {
-	// We've already consumed 'f', now consume the opening quote
-	s.advance() // consume the quote
+	// Check if this is a triple-quoted f-string
+	isTriple := s.peek() == quote && s.peekN(1) == quote
 
-	// Emit FSTRING_START token (includes 'f"' or "f'")
+	// Determine if this is a raw f-string by checking if we consumed 'r' before 'f'
+	isRaw := false
+	if s.start > 0 {
+		// Check if the character before 'f' was 'r' or 'R'
+		prevChar, _ := utf8.DecodeLastRune(s.src[:s.start])
+		if prevChar == 'r' || prevChar == 'R' {
+			isRaw = true
+		}
+	}
+
+	// Consume the opening quote(s)
+	s.advance() // consume the first quote
+	if isTriple {
+		s.advance() // consume second quote
+		s.advance() // consume third quote
+	}
+
+	// Emit FSTRING_START token
 	s.addToken(FStringStart)
+
+	// Determine nesting level
+	nestingLevel := 0
+	if len(s.fstringStack) > 0 {
+		nestingLevel = s.fstringStack[len(s.fstringStack)-1].nestingLevel + 1
+	}
 
 	// Push f-string context onto stack
 	s.fstringStack = append(s.fstringStack, fstringContext{
@@ -803,9 +886,12 @@ func (s *Scanner) fstring(quote rune) {
 		braceDepth:   0,
 		inExpression: false,
 		inFormatSpec: false,
+		nestingLevel: nestingLevel,
+		isRaw:        isRaw,
+		isTriple:     isTriple,
 	})
 
-	// Start tracking content after the opening quote
+	// Start tracking content after the opening quote(s)
 	s.start = s.cur
 
 	// Continue scanning in f-string mode
@@ -827,6 +913,12 @@ func (s *Scanner) scanFStringContent() {
 
 // scanFStringText scans literal text portions of f-strings
 func (s *Scanner) scanFStringText() {
+	// Check if we have a valid f-string context
+	if len(s.fstringStack) == 0 {
+		s.errorf("internal error: scanFStringText called without f-string context")
+		return
+	}
+
 	ctx := &s.fstringStack[len(s.fstringStack)-1]
 
 	for !s.atEnd() {
@@ -834,23 +926,49 @@ func (s *Scanner) scanFStringText() {
 
 		// Check for end of f-string
 		if r == ctx.quote {
-			// Emit any accumulated text
-			if s.cur > s.start {
-				text := string(s.src[s.start:s.cur])
-				s.addTokenLit(FStringMiddle, text)
+			if ctx.isTriple {
+				// For triple-quoted f-strings, need to check for three consecutive quotes
+				if s.peekN(1) == ctx.quote && s.peekN(2) == ctx.quote {
+					// Emit any accumulated text
+					if s.cur > s.start {
+						text := string(s.src[s.start:s.cur])
+						s.addTokenLit(FStringMiddle, text)
+					}
+
+					// Consume closing quotes and emit FSTRING_END
+					s.start = s.cur
+					s.advance() // first quote
+					s.advance() // second quote
+					s.advance() // third quote
+					s.addToken(FStringEnd)
+
+					// Pop f-string context
+					s.fstringStack = s.fstringStack[:len(s.fstringStack)-1]
+
+					// Reset start position
+					s.start = s.cur
+					return
+				}
+			} else {
+				// Single quote - end of regular f-string
+				// Emit any accumulated text
+				if s.cur > s.start {
+					text := string(s.src[s.start:s.cur])
+					s.addTokenLit(FStringMiddle, text)
+				}
+
+				// Consume closing quote and emit FSTRING_END
+				s.start = s.cur
+				s.advance()
+				s.addToken(FStringEnd)
+
+				// Pop f-string context
+				s.fstringStack = s.fstringStack[:len(s.fstringStack)-1]
+
+				// Reset start position
+				s.start = s.cur
+				return
 			}
-
-			// Consume closing quote and emit FSTRING_END
-			s.start = s.cur
-			s.advance()
-			s.addToken(FStringEnd)
-
-			// Pop f-string context
-			s.fstringStack = s.fstringStack[:len(s.fstringStack)-1]
-
-			// Reset start position
-			s.start = s.cur
-			return
 		}
 
 		// Check for start of replacement field
@@ -898,18 +1016,28 @@ func (s *Scanner) scanFStringText() {
 			return
 		}
 
-		// Handle newlines in f-strings (only allowed in triple-quoted)
+		// Handle newlines in f-strings
 		if r == '\n' {
-			// For now, allow newlines (proper handling would check for triple quotes)
+			if !ctx.isTriple {
+				// Newlines not allowed in single-quoted f-strings
+				s.errorf("f-string: unterminated string literal (detected at line %d)", s.line)
+				return
+			}
 			s.advance()
 			continue
 		}
 
 		// Handle escape sequences
 		if r == '\\' {
-			s.advance() // consume backslash
-			if !s.atEnd() {
-				s.advance() // consume escaped character
+			if ctx.isRaw {
+				// In raw f-strings, backslashes are literal
+				s.advance()
+			} else {
+				// In regular f-strings, handle escape sequences
+				s.advance() // consume backslash
+				if !s.atEnd() {
+					s.advance() // consume escaped character
+				}
 			}
 			continue
 		}
@@ -918,15 +1046,31 @@ func (s *Scanner) scanFStringText() {
 	}
 
 	// If we get here, the f-string was not terminated
-	s.errorf("unterminated f-string")
+	if ctx.isTriple {
+		s.errorf("unterminated triple-quoted f-string")
+	} else {
+		s.errorf("unterminated f-string")
+	}
 }
 
 // scanFStringExpression scans expressions inside f-string replacement fields
 func (s *Scanner) scanFStringExpression() {
+	// Check if we have a valid f-string context
+	if len(s.fstringStack) == 0 {
+		s.errorf("internal error: scanFStringExpression called without f-string context")
+		return
+	}
+
 	ctx := &s.fstringStack[len(s.fstringStack)-1]
 
+	// Additional safety check
+	if !ctx.inExpression {
+		s.errorf("internal error: scanFStringExpression called when not in expression mode")
+		return
+	}
+
 	// We're in expression mode - scan tokens directly but watch for special characters
-	for !s.atEnd() && ctx.inExpression {
+	for !s.atEnd() && ctx.inExpression && len(s.fstringStack) > 0 {
 		s.lexLine, s.lexCol = s.line, s.col
 		s.start = s.cur
 
@@ -936,7 +1080,12 @@ func (s *Scanner) scanFStringExpression() {
 		if r == '{' {
 			ctx.braceDepth++
 			s.advance()
-			s.addToken(LeftBrace)
+			// If we're in a format spec, this is a nested replacement field
+			if ctx.inFormatSpec {
+				s.addToken(LeftBraceF)
+			} else {
+				s.addToken(LeftBrace)
+			}
 			continue
 		}
 
@@ -952,7 +1101,17 @@ func (s *Scanner) scanFStringExpression() {
 				return
 			} else {
 				s.advance()
-				s.addToken(RightBrace)
+				// If we're in a format spec, this closes a nested replacement field
+				if ctx.inFormatSpec {
+					s.addToken(RightBraceF)
+					// After closing a nested replacement field in format spec,
+					// we need to continue scanning the format spec
+					s.start = s.cur
+					s.scanFStringFormatSpec()
+					return
+				} else {
+					s.addToken(RightBrace)
+				}
 				continue
 			}
 		}
@@ -1114,6 +1273,12 @@ func (s *Scanner) scanExpressionToken() {
 		} else {
 			s.addToken(Greater)
 		}
+	case '=':
+		if s.match('=') {
+			s.addToken(EqualEqual)
+		} else {
+			s.addToken(Equal)
+		}
 	case '!':
 		if s.match('=') {
 			s.addToken(BangEqual)
@@ -1140,9 +1305,75 @@ func (s *Scanner) scanExpressionToken() {
 
 	// ── literals / identifiers ──
 	case '"', '\'':
+		// Check if this might be part of a nested f-string
+		// We need to look back to see if there was an 'f' or 'r' prefix
+		if s.start > 0 {
+			// Check for f-string prefix
+			prevStart := s.start - 1
+			if prevStart > 0 && (s.src[prevStart] == 'f' || s.src[prevStart] == 'F') {
+				// This is a nested f-string - handle it specially
+				s.cur = s.start     // Reset to before the quote
+				s.start = prevStart // Include the 'f' prefix
+				s.fstring(r)
+				return
+			}
+			// Check for raw f-string prefix (rf or fr)
+			if prevStart > 0 && (s.src[prevStart] == 'r' || s.src[prevStart] == 'R') {
+				prevPrevStart := prevStart - 1
+				if prevPrevStart >= 0 && (s.src[prevPrevStart] == 'f' || s.src[prevPrevStart] == 'F') {
+					// This is a raw f-string (fr")
+					s.cur = s.start         // Reset to before the quote
+					s.start = prevPrevStart // Include the 'fr' prefix
+					s.fstring(r)
+					return
+				}
+			}
+			if prevStart > 0 && (s.src[prevStart] == 'f' || s.src[prevStart] == 'F') {
+				prevPrevStart := prevStart - 1
+				if prevPrevStart >= 0 && (s.src[prevPrevStart] == 'r' || s.src[prevPrevStart] == 'R') {
+					// This is a raw f-string (rf")
+					s.cur = s.start         // Reset to before the quote
+					s.start = prevPrevStart // Include the 'rf' prefix
+					s.fstring(r)
+					return
+				}
+			}
+		}
 		s.string(r)
 	default:
 		switch {
+		case r == 'f' || r == 'F':
+			// Check if this is a nested f-string (f" or f')
+			if s.peek() == '"' || s.peek() == '\'' {
+				quote := s.peek()
+				s.fstring(quote)
+				return
+			}
+			// If not an f-string, treat as identifier
+			s.identifier()
+		case r == 'r' || r == 'R':
+			// Check if this is a raw f-string (rf" or rf')
+			next := s.peek()
+			if next == 'f' || next == 'F' {
+				s.advance() // consume 'f' or 'F'
+				if s.peek() == '"' || s.peek() == '\'' {
+					quote := s.peek()
+					s.fstring(quote)
+					return
+				}
+				// If not an f-string, backtrack and treat as identifier
+				s.cur-- // backtrack the 'f'
+				s.identifier()
+				return
+			}
+			// Check if this is a raw string (r" or r')
+			if next == '"' || next == '\'' {
+				s.advance() // consume quote
+				s.string(next)
+				return
+			}
+			// If not a raw string, treat as identifier
+			s.identifier()
 		case isIdentifierStart(r):
 			s.identifier()
 		case unicode.IsDigit(r):
@@ -1155,6 +1386,12 @@ func (s *Scanner) scanExpressionToken() {
 
 // scanFStringFormatSpec scans format specifications (after :)
 func (s *Scanner) scanFStringFormatSpec() {
+	// Check if we have a valid f-string context
+	if len(s.fstringStack) == 0 {
+		s.errorf("internal error: scanFStringFormatSpec called without f-string context")
+		return
+	}
+
 	ctx := &s.fstringStack[len(s.fstringStack)-1]
 
 	for !s.atEnd() && ctx.inFormatSpec {
@@ -1173,7 +1410,7 @@ func (s *Scanner) scanFStringFormatSpec() {
 
 		// Nested replacement field in format spec
 		if r == '{' {
-			// Emit any accumulated format spec text
+			// Emit any accumulated format spec text before the nested field
 			if s.cur > s.start {
 				text := string(s.src[s.start:s.cur])
 				s.addTokenLit(FStringMiddle, text)
@@ -1187,7 +1424,11 @@ func (s *Scanner) scanFStringFormatSpec() {
 			// Increase brace depth for nested expression
 			ctx.braceDepth++
 
+			// Reset start position and continue scanning the expression
 			s.start = s.cur
+
+			// The nested replacement field will be handled by scanFStringExpression
+			// When it returns, we need to continue scanning the format spec
 			return
 		}
 

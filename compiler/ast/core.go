@@ -63,6 +63,7 @@ type ExprVisitor interface {
 	VisitFStringConversion(f *FStringConversion) Visitor
 	VisitFStringFormatSpec(f *FStringFormatSpec) Visitor
 	VisitFStringFormatMiddle(f *FStringFormatMiddle) Visitor
+	VisitFStringFormatReplacementField(f *FStringFormatReplacementField) Visitor
 }
 
 // StmtVisitor is the interface for visitors that traverse statements.

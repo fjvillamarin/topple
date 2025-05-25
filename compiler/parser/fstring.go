@@ -141,10 +141,16 @@ func (p *Parser) fstringFormatSpec() (*ast.FStringFormatSpec, error) {
 			if err != nil {
 				return nil, err
 			}
-			// Note: This would need to be converted to FStringFormatPart interface
-			// For now, skip nested replacement fields in format specs
-			_ = replacementField
-			break
+
+			// Convert FStringReplacementField to FStringFormatReplacementField
+			formatReplacementField := &ast.FStringFormatReplacementField{
+				Expression: replacementField.(*ast.FStringReplacementField).Expression,
+				Equal:      replacementField.(*ast.FStringReplacementField).Equal,
+				Conversion: replacementField.(*ast.FStringReplacementField).Conversion,
+				FormatSpec: replacementField.(*ast.FStringReplacementField).FormatSpec,
+				Span:       replacementField.GetSpan(),
+			}
+			parts = append(parts, formatReplacementField)
 		} else {
 			break
 		}

@@ -161,3 +161,38 @@ func (f *FStringFormatMiddle) String() string {
 func (f *FStringFormatMiddle) Accept(visitor Visitor) {
 	visitor.VisitFStringFormatMiddle(f)
 }
+
+// FStringFormatReplacementField represents a replacement field in a format specification
+type FStringFormatReplacementField struct {
+	Expression Expr               // The expression to evaluate
+	Equal      bool               // Whether there's an = after the expression (for debugging)
+	Conversion *FStringConversion // Optional conversion (!r, !s, !a)
+	FormatSpec *FStringFormatSpec // Optional format specification
+
+	Span lexer.Span
+}
+
+func (f *FStringFormatReplacementField) isFStringFormatPart() {}
+
+func (f *FStringFormatReplacementField) GetSpan() lexer.Span {
+	return f.Span
+}
+
+func (f *FStringFormatReplacementField) String() string {
+	result := "{" + f.Expression.String()
+	if f.Equal {
+		result += "="
+	}
+	if f.Conversion != nil {
+		result += f.Conversion.String()
+	}
+	if f.FormatSpec != nil {
+		result += f.FormatSpec.String()
+	}
+	result += "}"
+	return result
+}
+
+func (f *FStringFormatReplacementField) Accept(visitor Visitor) {
+	visitor.VisitFStringFormatReplacementField(f)
+}

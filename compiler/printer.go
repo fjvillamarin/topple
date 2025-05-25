@@ -206,6 +206,46 @@ func (p *ASTPrinter) VisitFStringFormatMiddle(node *ast.FStringFormatMiddle) ast
 	return p
 }
 
+// VisitFStringFormatReplacementField handles FStringFormatReplacementField nodes
+func (p *ASTPrinter) VisitFStringFormatReplacementField(node *ast.FStringFormatReplacementField) ast.Visitor {
+	p.printNodeStart("FStringFormatReplacementField", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	// Visit the expression
+	if node.Expression != nil {
+		p.result.WriteString(fmt.Sprintf("%sexpression:\n", p.indent()))
+		p.indentLevel++
+		node.Expression.Accept(p)
+		p.indentLevel--
+	}
+
+	// Display debugging equals if present
+	if node.Equal {
+		p.result.WriteString(fmt.Sprintf("%sequal: true\n", p.indent()))
+	}
+
+	// Visit the conversion if present
+	if node.Conversion != nil {
+		p.result.WriteString(fmt.Sprintf("%sconversion:\n", p.indent()))
+		p.indentLevel++
+		node.Conversion.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit the format spec if present
+	if node.FormatSpec != nil {
+		p.result.WriteString(fmt.Sprintf("%sformat_spec:\n", p.indent()))
+		p.indentLevel++
+		node.FormatSpec.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
 // VisitAttribute handles Attribute nodes
 func (p *ASTPrinter) VisitAttribute(node *ast.Attribute) ast.Visitor {
 	p.printNodeStart("Attribute", node)
