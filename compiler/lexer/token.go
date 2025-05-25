@@ -74,6 +74,15 @@ const (
 	Number
 	Ellipsis // ...
 
+	// ── f-string tokens ─────────────────────────────────────────
+	FStringStart           // f" or f'
+	FStringMiddle          // text between {} in f-strings
+	FStringEnd             // " or ' at end of f-string
+	LeftBraceF             // { inside f-strings (start of replacement field)
+	RightBraceF            // } inside f-strings (end of replacement field)
+	FStringEqual           // = in f-string for debugging
+	FStringConversionStart // ! in f-string conversion
+
 	// ── layout / structural tokens ──────────────────────────────
 	Newline
 	Indent
@@ -184,6 +193,15 @@ var tokenTypeNames = [...]string{
 	"String",
 	"Number",
 	"Ellipsis",
+
+	"FStringStart",
+	"FStringMiddle",
+	"FStringEnd",
+
+	"LeftBraceF",
+	"RightBraceF",
+	"FStringEqual",
+	"FStringConversionStart",
 
 	"Newline",
 	"Indent",

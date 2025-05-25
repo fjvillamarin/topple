@@ -154,6 +154,11 @@ func (p *Parser) atom() (ast.Expr, error) {
 		}, nil
 	}
 
+	if p.check(lexer.FStringStart) {
+		// Backtrack since we consumed the FStringStart token
+		return p.fstring()
+	}
+
 	if p.match(lexer.Ellipsis) {
 		return &ast.Literal{
 			Value: nil,

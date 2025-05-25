@@ -26,6 +26,14 @@ func DefaultScannerConfig() ScannerConfig {
 	return ScannerConfig{StartLine: 1, StartColumn: 1}
 }
 
+// fstringContext tracks the state of f-string parsing
+type fstringContext struct {
+	quote        rune // The quote character (' or ")
+	braceDepth   int  // Depth of nested braces in expressions
+	inExpression bool // Whether we're currently parsing an expression inside {}
+	inFormatSpec bool // Whether we're currently parsing a format specification
+}
+
 // ── scanner object ───────────────────────────────────────────────────
 
 type Scanner struct {
@@ -41,6 +49,9 @@ type Scanner struct {
 	indentStack []int // stack[0] == 0  (invariant)
 	parenDepth  int   // (),[],{} nesting ⇒ lines may continue
 	cfg         ScannerConfig
+
+	// F-string state management
+	fstringStack []fstringContext // Stack of f-string contexts for nested f-strings
 }
 
 // NewScanner returns a default-configured scanner.
@@ -221,6 +232,12 @@ func (s *Scanner) errorf(format string, args ...any) {
 // ── main dispatcher ─────────────────────────────────────────────────
 
 func (s *Scanner) scanToken() {
+	// Check if we're inside an f-string and should continue f-string scanning
+	if len(s.fstringStack) > 0 {
+		s.scanFStringContent()
+		return
+	}
+
 	switch r := s.advance(); r {
 	// ── single char punctuation ──
 	case '(':
@@ -392,6 +409,15 @@ func (s *Scanner) scanToken() {
 		s.string(r)
 	default:
 		switch {
+		case r == 'f' || r == 'F':
+			// Check if this is an f-string (f" or f')
+			if s.peek() == '"' || s.peek() == '\'' {
+				quote := s.peek()
+				s.fstring(quote)
+				return
+			}
+			// If not an f-string, treat as identifier
+			s.identifier()
 		case isIdentifierStart(r):
 			s.identifier()
 		case unicode.IsDigit(r):
@@ -757,6 +783,413 @@ func (s *Scanner) string(quote rune) {
 
 	body := s.src[s.start+1 : s.cur-1]
 	s.addTokenLit(String, string(body)) // raw; real unescape can be deferred
+}
+
+// ── f-string literal ──────────────────────────────────────────────
+
+func (s *Scanner) fstring(quote rune) {
+	// We've already consumed 'f', now consume the opening quote
+	s.advance() // consume the quote
+
+	// Emit FSTRING_START token (includes 'f"' or "f'")
+	s.addToken(FStringStart)
+
+	// Push f-string context onto stack
+	s.fstringStack = append(s.fstringStack, fstringContext{
+		quote:        quote,
+		braceDepth:   0,
+		inExpression: false,
+		inFormatSpec: false,
+	})
+
+	// Start tracking content after the opening quote
+	s.start = s.cur
+
+	// Continue scanning in f-string mode
+	s.scanFStringContent()
+}
+
+// scanFStringContent handles the main f-string content scanning
+func (s *Scanner) scanFStringContent() {
+	for !s.atEnd() && len(s.fstringStack) > 0 {
+		ctx := &s.fstringStack[len(s.fstringStack)-1]
+
+		if ctx.inExpression {
+			s.scanFStringExpression()
+		} else {
+			s.scanFStringText()
+		}
+	}
+}
+
+// scanFStringText scans literal text portions of f-strings
+func (s *Scanner) scanFStringText() {
+	ctx := &s.fstringStack[len(s.fstringStack)-1]
+
+	for !s.atEnd() {
+		r := s.peek()
+
+		// Check for end of f-string
+		if r == ctx.quote {
+			// Emit any accumulated text
+			if s.cur > s.start {
+				text := string(s.src[s.start:s.cur])
+				s.addTokenLit(FStringMiddle, text)
+			}
+
+			// Consume closing quote and emit FSTRING_END
+			s.start = s.cur
+			s.advance()
+			s.addToken(FStringEnd)
+
+			// Pop f-string context
+			s.fstringStack = s.fstringStack[:len(s.fstringStack)-1]
+
+			// Reset start position
+			s.start = s.cur
+			return
+		}
+
+		// Check for start of replacement field
+		if r == '{' {
+			// Check for escaped brace {{
+			if s.peekN(1) == '{' {
+				// Include the escaped brace in the text
+				s.advance() // consume first {
+				s.advance() // consume second {
+				continue
+			}
+
+			// Emit any accumulated text before the replacement field
+			if s.cur > s.start {
+				text := string(s.src[s.start:s.cur])
+				s.addTokenLit(FStringMiddle, text)
+			}
+
+			// Start replacement field
+			s.start = s.cur
+			s.advance() // consume '{'
+			s.addToken(LeftBraceF)
+
+			// Switch to expression mode
+			ctx.inExpression = true
+			ctx.braceDepth = 1
+
+			// Reset start for expression parsing
+			s.start = s.cur
+			return
+		}
+
+		// Check for unmatched closing brace
+		if r == '}' {
+			// Check for escaped brace }}
+			if s.peekN(1) == '}' {
+				// Include the escaped brace in the text
+				s.advance() // consume first }
+				s.advance() // consume second }
+				continue
+			}
+
+			// Unmatched closing brace
+			s.errorf("f-string: single '}' is not allowed")
+			return
+		}
+
+		// Handle newlines in f-strings (only allowed in triple-quoted)
+		if r == '\n' {
+			// For now, allow newlines (proper handling would check for triple quotes)
+			s.advance()
+			continue
+		}
+
+		// Handle escape sequences
+		if r == '\\' {
+			s.advance() // consume backslash
+			if !s.atEnd() {
+				s.advance() // consume escaped character
+			}
+			continue
+		}
+
+		s.advance()
+	}
+
+	// If we get here, the f-string was not terminated
+	s.errorf("unterminated f-string")
+}
+
+// scanFStringExpression scans expressions inside f-string replacement fields
+func (s *Scanner) scanFStringExpression() {
+	ctx := &s.fstringStack[len(s.fstringStack)-1]
+
+	// We're in expression mode - scan tokens directly but watch for special characters
+	for !s.atEnd() && ctx.inExpression {
+		s.lexLine, s.lexCol = s.line, s.col
+		s.start = s.cur
+
+		r := s.peek()
+
+		// Handle braces for nesting
+		if r == '{' {
+			ctx.braceDepth++
+			s.advance()
+			s.addToken(LeftBrace)
+			continue
+		}
+
+		if r == '}' {
+			ctx.braceDepth--
+			if ctx.braceDepth == 0 {
+				// End of replacement field
+				s.advance()
+				s.addToken(RightBraceF)
+				ctx.inExpression = false
+				ctx.inFormatSpec = false
+				s.start = s.cur
+				return
+			} else {
+				s.advance()
+				s.addToken(RightBrace)
+				continue
+			}
+		}
+
+		// Handle debugging equals (=)
+		if r == '=' && !ctx.inFormatSpec {
+			s.advance()
+			s.addToken(FStringEqual)
+			continue
+		}
+
+		// Handle conversion specifier (!)
+		if r == '!' && !ctx.inFormatSpec {
+			s.advance()
+			s.addToken(FStringConversionStart)
+			// Next should be a name (r, s, a)
+			s.start = s.cur
+			if isIdentifierStart(s.peek()) {
+				s.identifier()
+			}
+			continue
+		}
+
+		// Handle format specification (:)
+		if r == ':' && !ctx.inFormatSpec {
+			s.advance()
+			s.addToken(Colon)
+			ctx.inFormatSpec = true
+			s.start = s.cur
+			s.scanFStringFormatSpec()
+			continue
+		}
+
+		// For all other characters, use direct token scanning (not scanToken to avoid recursion)
+		s.scanExpressionToken()
+	}
+}
+
+// scanExpressionToken scans a single token for expressions (used in f-strings)
+// This is like scanToken but doesn't check for f-string context to avoid recursion
+func (s *Scanner) scanExpressionToken() {
+	switch r := s.advance(); r {
+	// ── single char punctuation ──
+	case '(':
+		s.parenDepth++
+		s.addToken(LeftParen)
+	case ')':
+		if s.parenDepth > 0 {
+			s.parenDepth--
+		}
+		s.addToken(RightParen)
+	case '[':
+		s.parenDepth++
+		s.addToken(LeftBracket)
+	case ']':
+		if s.parenDepth > 0 {
+			s.parenDepth--
+		}
+		s.addToken(RightBracket)
+	case ',':
+		s.addToken(Comma)
+	case ';':
+		s.addToken(Semicolon)
+	case '~':
+		s.addToken(Tilde)
+	case '.':
+		if s.match('.') && s.match('.') {
+			s.addToken(Ellipsis)
+		} else if isDigit(s.peek()) {
+			s.number()
+		} else {
+			s.addToken(Dot)
+		}
+
+	// ── operator and assignment combos ──
+	case '+':
+		if s.match('=') {
+			s.addToken(PlusEqual)
+		} else {
+			s.addToken(Plus)
+		}
+	case '-':
+		if s.match('=') {
+			s.addToken(MinusEqual)
+		} else if s.match('>') {
+			s.addToken(Arrow)
+		} else {
+			s.addToken(Minus)
+		}
+	case '*':
+		if s.match('*') {
+			if s.match('=') {
+				s.addToken(StarStarEqual)
+			} else {
+				s.addToken(StarStar)
+			}
+		} else if s.match('=') {
+			s.addToken(StarEqual)
+		} else {
+			s.addToken(Star)
+		}
+	case '/':
+		if s.match('/') {
+			if s.match('=') {
+				s.addToken(SlashSlashEqual)
+			} else {
+				s.addToken(SlashSlash)
+			}
+		} else if s.match('=') {
+			s.addToken(SlashEqual)
+		} else {
+			s.addToken(Slash)
+		}
+	case '%':
+		if s.match('=') {
+			s.addToken(PercentEqual)
+		} else {
+			s.addToken(Percent)
+		}
+	case '|':
+		if s.match('=') {
+			s.addToken(PipeEqual)
+		} else {
+			s.addToken(Pipe)
+		}
+	case '&':
+		if s.match('=') {
+			s.addToken(AmpEqual)
+		} else {
+			s.addToken(Ampersand)
+		}
+	case '^':
+		if s.match('=') {
+			s.addToken(CaretEqual)
+		} else {
+			s.addToken(Caret)
+		}
+	case '<':
+		if s.match('<') {
+			if s.match('=') {
+				s.addToken(LessLessEqual)
+			} else {
+				s.addToken(LessLess)
+			}
+		} else if s.match('=') {
+			s.addToken(LessEqual)
+		} else {
+			s.addToken(Less)
+		}
+	case '>':
+		if s.match('>') {
+			if s.match('=') {
+				s.addToken(GreaterGreaterEqual)
+			} else {
+				s.addToken(GreaterGreater)
+			}
+		} else if s.match('=') {
+			s.addToken(GreaterEqual)
+		} else {
+			s.addToken(Greater)
+		}
+	case '!':
+		if s.match('=') {
+			s.addToken(BangEqual)
+		} else {
+			s.errorf("unexpected '!' – only '!=' is valid in Python")
+		}
+	case '@':
+		if s.match('=') {
+			s.addToken(AtEqual)
+		} else {
+			s.addToken(At)
+		}
+
+	// ── whitespace / comments / newlines ──
+	case ' ', '\t', '\r':
+		// just skip
+	case '\n':
+		// In expressions, newlines are usually ignored
+	case '#':
+		// consume comment until physical line break
+		for !s.atEnd() && s.peek() != '\n' {
+			s.advance()
+		}
+
+	// ── literals / identifiers ──
+	case '"', '\'':
+		s.string(r)
+	default:
+		switch {
+		case isIdentifierStart(r):
+			s.identifier()
+		case unicode.IsDigit(r):
+			s.number()
+		default:
+			s.errorf("unexpected character %q", r)
+		}
+	}
+}
+
+// scanFStringFormatSpec scans format specifications (after :)
+func (s *Scanner) scanFStringFormatSpec() {
+	ctx := &s.fstringStack[len(s.fstringStack)-1]
+
+	for !s.atEnd() && ctx.inFormatSpec {
+		r := s.peek()
+
+		// End of replacement field
+		if r == '}' {
+			// Emit any accumulated format spec text
+			if s.cur > s.start {
+				text := string(s.src[s.start:s.cur])
+				s.addTokenLit(FStringMiddle, text)
+			}
+			ctx.inFormatSpec = false
+			return
+		}
+
+		// Nested replacement field in format spec
+		if r == '{' {
+			// Emit any accumulated format spec text
+			if s.cur > s.start {
+				text := string(s.src[s.start:s.cur])
+				s.addTokenLit(FStringMiddle, text)
+			}
+
+			// Start nested replacement field
+			s.start = s.cur
+			s.advance()
+			s.addToken(LeftBraceF)
+
+			// Increase brace depth for nested expression
+			ctx.braceDepth++
+
+			s.start = s.cur
+			return
+		}
+
+		s.advance()
+	}
 }
 
 // ── small utility ───────────────────────────────────────────────────

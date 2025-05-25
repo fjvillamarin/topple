@@ -103,6 +103,109 @@ func (p *ASTPrinter) VisitLiteral(node *ast.Literal) ast.Visitor {
 	return p
 }
 
+// VisitFString handles FString nodes
+func (p *ASTPrinter) VisitFString(node *ast.FString) ast.Visitor {
+	p.printNodeStart("FString", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	if len(node.Parts) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sparts:\n", p.indent()))
+		p.indentLevel++
+		for i, part := range node.Parts {
+			p.result.WriteString(fmt.Sprintf("%spart %d:\n", p.indent(), i))
+			p.indentLevel++
+			part.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitFStringMiddle handles FStringMiddle nodes
+func (p *ASTPrinter) VisitFStringMiddle(node *ast.FStringMiddle) ast.Visitor {
+	p.printNodeStart("FStringMiddle", node)
+	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.Value))
+	return p
+}
+
+// VisitFStringReplacementField handles FStringReplacementField nodes
+func (p *ASTPrinter) VisitFStringReplacementField(node *ast.FStringReplacementField) ast.Visitor {
+	p.printNodeStart("FStringReplacementField", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	if node.Expression != nil {
+		p.result.WriteString(fmt.Sprintf("%sexpression:\n", p.indent()))
+		p.indentLevel++
+		node.Expression.Accept(p)
+		p.indentLevel--
+	}
+
+	if node.Equal {
+		p.result.WriteString(fmt.Sprintf("%sequal: true\n", p.indent()))
+	}
+
+	if node.Conversion != nil {
+		p.result.WriteString(fmt.Sprintf("%sconversion:\n", p.indent()))
+		p.indentLevel++
+		node.Conversion.Accept(p)
+		p.indentLevel--
+	}
+
+	if node.FormatSpec != nil {
+		p.result.WriteString(fmt.Sprintf("%sformatSpec:\n", p.indent()))
+		p.indentLevel++
+		node.FormatSpec.Accept(p)
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitFStringConversion handles FStringConversion nodes
+func (p *ASTPrinter) VisitFStringConversion(node *ast.FStringConversion) ast.Visitor {
+	p.printNodeStart("FStringConversion", node)
+	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.Type))
+	return p
+}
+
+// VisitFStringFormatSpec handles FStringFormatSpec nodes
+func (p *ASTPrinter) VisitFStringFormatSpec(node *ast.FStringFormatSpec) ast.Visitor {
+	p.printNodeStart("FStringFormatSpec", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+	if len(node.Spec) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sspec:\n", p.indent()))
+		p.indentLevel++
+		for i, part := range node.Spec {
+			p.result.WriteString(fmt.Sprintf("%spart %d:\n", p.indent(), i))
+			p.indentLevel++
+			part.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitFStringFormatMiddle handles FStringFormatMiddle nodes
+func (p *ASTPrinter) VisitFStringFormatMiddle(node *ast.FStringFormatMiddle) ast.Visitor {
+	p.printNodeStart("FStringFormatMiddle", node)
+	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.Value))
+	return p
+}
+
 // VisitAttribute handles Attribute nodes
 func (p *ASTPrinter) VisitAttribute(node *ast.Attribute) ast.Visitor {
 	p.printNodeStart("Attribute", node)

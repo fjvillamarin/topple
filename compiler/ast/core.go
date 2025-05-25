@@ -57,6 +57,12 @@ type ExprVisitor interface {
 	VisitAwaitExpr(a *AwaitExpr) Visitor
 	VisitArgument(a *Argument) Visitor
 	VisitLambda(l *Lambda) Visitor
+	VisitFString(f *FString) Visitor
+	VisitFStringMiddle(f *FStringMiddle) Visitor
+	VisitFStringReplacementField(f *FStringReplacementField) Visitor
+	VisitFStringConversion(f *FStringConversion) Visitor
+	VisitFStringFormatSpec(f *FStringFormatSpec) Visitor
+	VisitFStringFormatMiddle(f *FStringFormatMiddle) Visitor
 }
 
 // StmtVisitor is the interface for visitors that traverse statements.
