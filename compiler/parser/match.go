@@ -163,18 +163,134 @@ func (p *Parser) caseBlock() (ast.CaseBlock, error) {
 // patterns parses patterns according to the grammar:
 // patterns: open_sequence_pattern | pattern
 func (p *Parser) patterns() ([]ast.Pattern, error) {
-	// For now, we'll simplify and just parse or_pattern which handles alternatives
-	pattern, err := p.orPattern()
+	// Check for open sequence pattern (comma-separated patterns)
+	if p.checkOpenSequencePattern() {
+		return p.openSequencePattern()
+	}
+
+	// Parse single pattern
+	pattern, err := p.pattern()
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if this is an or_pattern with multiple alternatives
-	if orPat, ok := pattern.(*ast.OrPattern); ok {
-		return orPat.Patterns, nil
+	return []ast.Pattern{pattern}, nil
+}
+
+// checkOpenSequencePattern checks if we have an open sequence pattern
+func (p *Parser) checkOpenSequencePattern() bool {
+	// Look ahead to see if we have a pattern followed by a comma
+	// This is a simplified check - in practice we'd need more sophisticated lookahead
+	return false // For now, we'll handle this in the main patterns function
+}
+
+// openSequencePattern parses open sequence patterns:
+// open_sequence_pattern: maybe_star_pattern ',' maybe_sequence_pattern?
+func (p *Parser) openSequencePattern() ([]ast.Pattern, error) {
+	var patterns []ast.Pattern
+
+	// Parse first pattern
+	pattern, err := p.maybeStarPattern()
+	if err != nil {
+		return nil, err
+	}
+	patterns = append(patterns, pattern)
+
+	// Consume comma
+	if !p.match(lexer.Comma) {
+		return patterns, nil
 	}
 
-	return []ast.Pattern{pattern}, nil
+	// Parse remaining patterns if present
+	if !p.check(lexer.Colon) && !p.check(lexer.If) {
+		remaining, err := p.maybeSequencePattern()
+		if err != nil {
+			return nil, err
+		}
+		patterns = append(patterns, remaining...)
+	}
+
+	return patterns, nil
+}
+
+// maybeSequencePattern parses maybe_sequence_pattern:
+// maybe_sequence_pattern: ','.maybe_star_pattern+ ','?
+func (p *Parser) maybeSequencePattern() ([]ast.Pattern, error) {
+	var patterns []ast.Pattern
+
+	for {
+		pattern, err := p.maybeStarPattern()
+		if err != nil {
+			return nil, err
+		}
+		patterns = append(patterns, pattern)
+
+		if !p.match(lexer.Comma) {
+			break
+		}
+
+		// Allow trailing comma
+		if p.check(lexer.Colon) || p.check(lexer.If) {
+			break
+		}
+	}
+
+	return patterns, nil
+}
+
+// maybeStarPattern parses maybe_star_pattern:
+// maybe_star_pattern: star_pattern | pattern
+func (p *Parser) maybeStarPattern() (ast.Pattern, error) {
+	if p.check(lexer.Star) {
+		return p.starPattern()
+	}
+	return p.pattern()
+}
+
+// starPattern parses star patterns:
+// star_pattern: '*' (capture_pattern | wildcard_pattern)
+func (p *Parser) starPattern() (ast.Pattern, error) {
+	starToken, err := p.consume(lexer.Star, "expected '*'")
+	if err != nil {
+		return nil, err
+	}
+
+	var pattern ast.Pattern
+
+	if p.check(lexer.Identifier) && p.peek().Lexeme == "_" {
+		// Wildcard pattern
+		token, _ := p.consume(lexer.Identifier, "")
+		pattern = &ast.WildcardPattern{
+			Span: lexer.Span{Start: token.Start(), End: token.End()},
+		}
+	} else if p.check(lexer.Identifier) {
+		// Capture pattern
+		nameToken, err := p.consume(lexer.Identifier, "expected identifier")
+		if err != nil {
+			return nil, err
+		}
+		name := &ast.Name{
+			Token: nameToken,
+			Span:  lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+		}
+		pattern = &ast.CapturePattern{
+			Name: name,
+			Span: name.GetSpan(),
+		}
+	} else {
+		return nil, p.error(p.peek(), "expected identifier or '_' after '*'")
+	}
+
+	return &ast.StarPattern{
+		Pattern: pattern,
+		Span:    lexer.Span{Start: starToken.Start(), End: pattern.GetSpan().End},
+	}, nil
+}
+
+// pattern parses a single pattern:
+// pattern: as_pattern | or_pattern
+func (p *Parser) pattern() (ast.Pattern, error) {
+	return p.asPattern()
 }
 
 // orPattern parses or patterns according to the grammar:
@@ -183,7 +299,7 @@ func (p *Parser) orPattern() (ast.Pattern, error) {
 	patterns := []ast.Pattern{}
 
 	// Parse the first pattern
-	pattern, err := p.asPattern()
+	pattern, err := p.closedPattern()
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +307,7 @@ func (p *Parser) orPattern() (ast.Pattern, error) {
 
 	// Parse additional patterns separated by '|'
 	for p.match(lexer.Pipe) {
-		pattern, err := p.asPattern()
+		pattern, err := p.closedPattern()
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +329,7 @@ func (p *Parser) orPattern() (ast.Pattern, error) {
 // asPattern parses as patterns according to the grammar:
 // as_pattern: or_pattern 'as' pattern_capture_target
 func (p *Parser) asPattern() (ast.Pattern, error) {
-	pattern, err := p.closedPattern()
+	pattern, err := p.orPattern()
 	if err != nil {
 		return nil, err
 	}
@@ -260,25 +376,96 @@ func (p *Parser) closedPattern() (ast.Pattern, error) {
 	case p.check(lexer.Number), p.check(lexer.String), p.check(lexer.None), p.check(lexer.True), p.check(lexer.False):
 		return p.literalPattern()
 
+	// Signed number (negative numbers)
+	case p.check(lexer.Minus):
+		return p.signedNumberPattern()
+
 	// Group pattern or tuple pattern: (pattern)
 	case p.check(lexer.LeftParen):
 		return p.groupOrSequencePattern(true)
 
 	// List pattern: [pattern]
 	case p.check(lexer.LeftBracket):
-		return p.groupOrSequencePattern(false)
+		return p.sequencePattern(false)
 
 	// Mapping pattern: {pattern}
 	case p.check(lexer.LeftBrace):
 		return p.mappingPattern()
 
-	// Identifier: could be capture pattern or value pattern
+	// Identifier: could be capture pattern, value pattern, or class pattern
 	case p.check(lexer.Identifier):
 		return p.identifierPattern()
 
 	default:
 		return nil, p.error(p.peek(), "expected pattern")
 	}
+}
+
+// signedNumberPattern parses signed number patterns (negative numbers and complex numbers)
+func (p *Parser) signedNumberPattern() (ast.Pattern, error) {
+	minusToken, err := p.consume(lexer.Minus, "expected '-'")
+	if err != nil {
+		return nil, err
+	}
+
+	if !p.check(lexer.Number) {
+		return nil, p.error(p.peek(), "expected number after '-'")
+	}
+
+	numberToken, err := p.consume(lexer.Number, "expected number")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a negative number literal
+	var expr ast.Expr = &ast.Unary{
+		Operator: minusToken,
+		Right: &ast.Literal{
+			Value: numberToken.Literal,
+			Token: numberToken,
+			Span:  lexer.Span{Start: numberToken.Start(), End: numberToken.End()},
+		},
+		Span: lexer.Span{Start: minusToken.Start(), End: numberToken.End()},
+	}
+
+	// Check for complex number patterns (signed_number '+' NUMBER or signed_number '-' NUMBER)
+	if p.check(lexer.Plus) || p.check(lexer.Minus) {
+		opToken := p.advance()
+		if p.check(lexer.Number) {
+			imagToken, err := p.consume(lexer.Number, "expected imaginary number")
+			if err != nil {
+				return nil, err
+			}
+
+			// Create complex number expression
+			imagLiteral := &ast.Literal{
+				Value: imagToken.Literal,
+				Token: imagToken,
+				Span:  lexer.Span{Start: imagToken.Start(), End: imagToken.End()},
+			}
+
+			var rightOperand ast.Expr = imagLiteral
+			if opToken.Type == lexer.Minus {
+				rightOperand = &ast.Unary{
+					Operator: opToken,
+					Right:    imagLiteral,
+					Span:     lexer.Span{Start: opToken.Start(), End: imagToken.End()},
+				}
+			}
+
+			expr = &ast.Binary{
+				Left:     expr,
+				Operator: opToken,
+				Right:    rightOperand,
+				Span:     lexer.Span{Start: minusToken.Start(), End: imagToken.End()},
+			}
+		}
+	}
+
+	return &ast.LiteralPattern{
+		Value: expr,
+		Span:  expr.GetSpan(),
+	}, nil
 }
 
 // literalPattern parses literal patterns
@@ -293,6 +480,40 @@ func (p *Parser) literalPattern() (ast.Pattern, error) {
 			Token: token,
 			Span:  lexer.Span{Start: token.Start(), End: token.End()},
 		}
+
+		// Check for complex number patterns (NUMBER '+' NUMBER or NUMBER '-' NUMBER)
+		if p.check(lexer.Plus) || p.check(lexer.Minus) {
+			opToken := p.advance()
+			if p.check(lexer.Number) {
+				imagToken, err := p.consume(lexer.Number, "expected imaginary number")
+				if err != nil {
+					return nil, err
+				}
+
+				imagLiteral := &ast.Literal{
+					Value: imagToken.Literal,
+					Token: imagToken,
+					Span:  lexer.Span{Start: imagToken.Start(), End: imagToken.End()},
+				}
+
+				var rightOperand ast.Expr = imagLiteral
+				if opToken.Type == lexer.Minus {
+					rightOperand = &ast.Unary{
+						Operator: opToken,
+						Right:    imagLiteral,
+						Span:     lexer.Span{Start: opToken.Start(), End: imagToken.End()},
+					}
+				}
+
+				expr = &ast.Binary{
+					Left:     expr,
+					Operator: opToken,
+					Right:    rightOperand,
+					Span:     lexer.Span{Start: token.Start(), End: imagToken.End()},
+				}
+			}
+		}
+
 	case p.check(lexer.String):
 		token, _ := p.consume(lexer.String, "")
 		expr = &ast.Literal{
@@ -331,7 +552,7 @@ func (p *Parser) literalPattern() (ast.Pattern, error) {
 	}, nil
 }
 
-// identifierPattern determines if an identifier is a capture pattern or value pattern
+// identifierPattern determines if an identifier is a capture pattern, value pattern, or class pattern
 func (p *Parser) identifierPattern() (ast.Pattern, error) {
 	nameToken, err := p.consume(lexer.Identifier, "expected identifier")
 	if err != nil {
@@ -343,9 +564,9 @@ func (p *Parser) identifierPattern() (ast.Pattern, error) {
 		Span:  lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
 	}
 
-	// Check if this is a dotted name (value pattern)
+	// Check if this is a dotted name (value pattern) or class pattern
 	if p.check(lexer.Dot) {
-		// Parse as attribute access (value pattern)
+		// Parse as attribute access (value pattern or class name)
 		expr := ast.Expr(name)
 		for p.match(lexer.Dot) {
 			attrName, err := p.consume(lexer.Identifier, "expected identifier after '.'")
@@ -358,16 +579,115 @@ func (p *Parser) identifierPattern() (ast.Pattern, error) {
 				Span:   lexer.Span{Start: expr.GetSpan().Start, End: attrName.End()},
 			}
 		}
+
+		// Check if this is a class pattern
+		if p.check(lexer.LeftParen) {
+			return p.classPattern(expr)
+		}
+
+		// Value pattern
 		return &ast.ValuePattern{
 			Value: expr,
 			Span:  expr.GetSpan(),
 		}, nil
 	}
 
+	// Check if this is a class pattern
+	if p.check(lexer.LeftParen) {
+		return p.classPattern(name)
+	}
+
 	// Simple identifier - capture pattern
 	return &ast.CapturePattern{
 		Name: name,
 		Span: name.GetSpan(),
+	}, nil
+}
+
+// classPattern parses class patterns:
+// class_pattern: name_or_attr '(' [pattern_arguments ','?] ')'
+func (p *Parser) classPattern(className ast.Expr) (ast.Pattern, error) {
+	_, err := p.consume(lexer.LeftParen, "expected '('")
+	if err != nil {
+		return nil, err
+	}
+
+	var positionalPatterns []ast.Pattern
+	var keywordPatterns []ast.KwdPatternPair
+
+	// Empty class pattern
+	if p.check(lexer.RightParen) {
+		rightParen, err := p.consume(lexer.RightParen, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.ClassPattern{
+			Class:       className,
+			Patterns:    positionalPatterns,
+			KwdPatterns: keywordPatterns,
+			Span:        lexer.Span{Start: className.GetSpan().Start, End: rightParen.End()},
+		}, nil
+	}
+
+	// Parse pattern arguments
+	for {
+		// Check for keyword pattern (NAME '=' pattern)
+		if p.check(lexer.Identifier) && p.peekN(1).Type == lexer.Equal {
+			nameToken, err := p.consume(lexer.Identifier, "expected identifier")
+			if err != nil {
+				return nil, err
+			}
+			_, err = p.consume(lexer.Equal, "expected '='")
+			if err != nil {
+				return nil, err
+			}
+			pattern, err := p.pattern()
+			if err != nil {
+				return nil, err
+			}
+
+			name := &ast.Name{
+				Token: nameToken,
+				Span:  lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+			}
+
+			keywordPatterns = append(keywordPatterns, ast.KwdPatternPair{
+				Name:    name,
+				Pattern: pattern,
+				Span:    lexer.Span{Start: nameToken.Start(), End: pattern.GetSpan().End},
+			})
+		} else {
+			// Positional pattern
+			if len(keywordPatterns) > 0 {
+				return nil, p.error(p.peek(), "positional patterns must come before keyword patterns")
+			}
+			pattern, err := p.pattern()
+			if err != nil {
+				return nil, err
+			}
+			positionalPatterns = append(positionalPatterns, pattern)
+		}
+
+		if !p.match(lexer.Comma) {
+			break
+		}
+
+		// Allow trailing comma
+		if p.check(lexer.RightParen) {
+			break
+		}
+	}
+
+	rightParen, err := p.consume(lexer.RightParen, "expected ')'")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.ClassPattern{
+		Class:       className,
+		Patterns:    positionalPatterns,
+		KwdPatterns: keywordPatterns,
+		Span:        lexer.Span{Start: className.GetSpan().Start, End: rightParen.End()},
 	}, nil
 }
 
@@ -409,7 +729,7 @@ func (p *Parser) groupOrSequencePattern(isParens bool) (ast.Pattern, error) {
 	// Parse patterns
 	var patterns []ast.Pattern
 	for {
-		pattern, err := p.closedPattern()
+		pattern, err := p.maybeStarPattern()
 		if err != nil {
 			return nil, err
 		}
@@ -436,6 +756,14 @@ func (p *Parser) groupOrSequencePattern(isParens bool) (ast.Pattern, error) {
 
 	// Single pattern in parentheses is a group pattern, not a sequence
 	if isParens && len(patterns) == 1 {
+		// Check if it's a star pattern or has a comma - then it's a sequence
+		if _, isStar := patterns[0].(*ast.StarPattern); isStar {
+			return &ast.SequencePattern{
+				Patterns: patterns,
+				IsTuple:  isParens,
+				Span:     lexer.Span{Start: leftToken.Start(), End: rightToken.End()},
+			}, nil
+		}
 		return &ast.GroupPattern{
 			Pattern: patterns[0],
 			Span:    lexer.Span{Start: leftToken.Start(), End: rightToken.End()},
@@ -447,6 +775,11 @@ func (p *Parser) groupOrSequencePattern(isParens bool) (ast.Pattern, error) {
 		IsTuple:  isParens,
 		Span:     lexer.Span{Start: leftToken.Start(), End: rightToken.End()},
 	}, nil
+}
+
+// sequencePattern parses sequence patterns for brackets
+func (p *Parser) sequencePattern(isParens bool) (ast.Pattern, error) {
+	return p.groupOrSequencePattern(isParens)
 }
 
 // mappingPattern parses mapping patterns (dictionaries)
@@ -479,7 +812,7 @@ func (p *Parser) mappingPattern() (ast.Pattern, error) {
 			if hasRest {
 				return nil, p.error(p.previous(), "only one **pattern allowed in mapping pattern")
 			}
-			pattern, err := p.closedPattern()
+			pattern, err := p.capturePattern()
 			if err != nil {
 				return nil, err
 			}
@@ -487,9 +820,45 @@ func (p *Parser) mappingPattern() (ast.Pattern, error) {
 			hasRest = true
 		} else {
 			// Parse key: pattern
-			key, err := p.expression()
-			if err != nil {
-				return nil, err
+			// Key must be a literal or value pattern
+			var key ast.Expr
+			if p.check(lexer.Number) || p.check(lexer.String) || p.check(lexer.None) || p.check(lexer.True) || p.check(lexer.False) {
+				// Literal key
+				literalPattern, err := p.literalPattern()
+				if err != nil {
+					return nil, err
+				}
+				if litPat, ok := literalPattern.(*ast.LiteralPattern); ok {
+					key = litPat.Value
+				} else {
+					return nil, p.error(p.peek(), "expected literal key")
+				}
+			} else if p.check(lexer.Identifier) {
+				// Value pattern key (dotted name)
+				nameToken, err := p.consume(lexer.Identifier, "expected identifier")
+				if err != nil {
+					return nil, err
+				}
+				name := &ast.Name{
+					Token: nameToken,
+					Span:  lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+				}
+				key = name
+
+				// Handle dotted names
+				for p.match(lexer.Dot) {
+					attrName, err := p.consume(lexer.Identifier, "expected identifier after '.'")
+					if err != nil {
+						return nil, err
+					}
+					key = &ast.Attribute{
+						Object: key,
+						Name:   attrName,
+						Span:   lexer.Span{Start: key.GetSpan().Start, End: attrName.End()},
+					}
+				}
+			} else {
+				return nil, p.error(p.peek(), "expected literal or identifier for mapping key")
 			}
 
 			_, err = p.consume(lexer.Colon, "expected ':' after mapping pattern key")
@@ -497,7 +866,7 @@ func (p *Parser) mappingPattern() (ast.Pattern, error) {
 				return nil, err
 			}
 
-			pattern, err := p.closedPattern()
+			pattern, err := p.pattern()
 			if err != nil {
 				return nil, err
 			}
@@ -529,5 +898,31 @@ func (p *Parser) mappingPattern() (ast.Pattern, error) {
 		DoubleStar: doubleStar,
 		HasRest:    hasRest,
 		Span:       lexer.Span{Start: leftBrace.Start(), End: rightBrace.End()},
+	}, nil
+}
+
+// capturePattern parses a capture pattern (identifier that's not '_')
+func (p *Parser) capturePattern() (ast.Pattern, error) {
+	if !p.check(lexer.Identifier) {
+		return nil, p.error(p.peek(), "expected identifier")
+	}
+
+	nameToken, err := p.consume(lexer.Identifier, "expected identifier")
+	if err != nil {
+		return nil, err
+	}
+
+	if nameToken.Lexeme == "_" {
+		return nil, p.error(nameToken, "cannot use '_' as capture pattern")
+	}
+
+	name := &ast.Name{
+		Token: nameToken,
+		Span:  lexer.Span{Start: nameToken.Start(), End: nameToken.End()},
+	}
+
+	return &ast.CapturePattern{
+		Name: name,
+		Span: name.GetSpan(),
 	}, nil
 }

@@ -757,6 +757,9 @@ func (s *Scanner) string(quote rune) {
 			}
 			s.advance()
 		}
+		// For triple-quoted strings, skip 3 characters at start and end
+		body := s.src[s.start+3 : s.cur-3]
+		s.addTokenLit(String, string(body))
 	} else {
 		for {
 			if s.atEnd() {
@@ -779,10 +782,10 @@ func (s *Scanner) string(quote rune) {
 			}
 			s.advance()
 		}
+		// For regular strings, skip 1 character at start and end
+		body := s.src[s.start+1 : s.cur-1]
+		s.addTokenLit(String, string(body))
 	}
-
-	body := s.src[s.start+1 : s.cur-1]
-	s.addTokenLit(String, string(body)) // raw; real unescape can be deferred
 }
 
 // ── f-string literal ──────────────────────────────────────────────
