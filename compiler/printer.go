@@ -1180,10 +1180,10 @@ func (p *ASTPrinter) VisitWhile(node *ast.While) ast.Visitor {
 
 	p.indentLevel++
 	// Visit the condition
-	if node.Condition != nil {
+	if node.Test != nil {
 		p.result.WriteString(fmt.Sprintf("%scondition:\n", p.indent()))
 		p.indentLevel++
-		node.Condition.Accept(p)
+		node.Test.Accept(p)
 		p.indentLevel--
 	}
 

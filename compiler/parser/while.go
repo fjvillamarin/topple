@@ -48,9 +48,9 @@ func (p *Parser) whileStatement() (ast.Stmt, error) {
 	}
 
 	return &ast.While{
-		Condition: condition,
-		Body:      body,
-		Else:      elseBody,
-		Span:      lexer.Span{Start: whileToken.Start(), End: endPos},
+		Test: condition,
+		Body: body,
+		Else: elseBody,
+		Span: lexer.Span{Start: whileToken.Start(), End: endPos},
 	}, nil
 }

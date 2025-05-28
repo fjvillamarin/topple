@@ -81,9 +81,9 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 		// Process single file
 		log.DebugContext(*ctx, "Input is a file", slog.String("path", c.Input))
 
-		// Verify it's a .bsct file
-		if filepath.Ext(c.Input) != ".bsct" {
-			return fmt.Errorf("input file is not a .bsct file: %s", c.Input)
+		// Verify it's a .psx file
+		if filepath.Ext(c.Input) != ".psx" {
+			return fmt.Errorf("input file is not a .psx file: %s", c.Input)
 		}
 
 		if err := compileFile(fs, compiler, c.Input, c.Output, log, *ctx); err != nil {
@@ -124,9 +124,9 @@ func compileFile(fs filesystem.FileSystem, cmp compiler.Compiler, inputPath, out
 		Name:    filepath.Base(inputPath),
 		Content: content,
 	}
-	pythonCode, err := cmp.Compile(ctx, file)
-	if err != nil {
-		return fmt.Errorf("error compiling file: %w", err)
+	pythonCode, errors := cmp.Compile(ctx, file)
+	if len(errors) > 0 {
+		return fmt.Errorf("error compiling file: %d errors", len(errors))
 	}
 
 	// Write the output file

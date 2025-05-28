@@ -75,7 +75,7 @@ func (p *ParameterList) GetSpan() lexer.Span {
 
 // Accept implements the Node interface by delegating to Visit
 func (p *ParameterList) Accept(visitor Visitor) {
-	visitor.Visit(p)
+	visitor.VisitParameterList(p)
 }
 
 func (p *ParameterList) String() string {

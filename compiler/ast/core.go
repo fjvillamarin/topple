@@ -52,6 +52,7 @@ type ExprVisitor interface {
 	VisitGenExpr(ge *GenExpr) Visitor
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
+	VisitParameterList(p *ParameterList) Visitor
 	VisitTypeParamExpr(t *TypeParam) Visitor
 	VisitSlice(s *Slice) Visitor
 	VisitAwaitExpr(a *AwaitExpr) Visitor

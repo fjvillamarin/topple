@@ -108,6 +108,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.False) {
 		return &ast.Literal{
 			Value: false,
+			Type:  ast.LiteralTypeBool,
 
 			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil
@@ -116,6 +117,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.True) {
 		return &ast.Literal{
 			Value: true,
+			Type:  ast.LiteralTypeBool,
 
 			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil
@@ -124,6 +126,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.None) {
 		return &ast.Literal{
 			Value: nil,
+			Type:  ast.LiteralTypeNone,
 
 			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil
@@ -132,6 +135,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.Number, lexer.String) {
 		return &ast.Literal{
 			Value: p.previous().Literal,
+			Type:  ast.LiteralTypeString,
 
 			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil
@@ -145,6 +149,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 	if p.match(lexer.Ellipsis) {
 		return &ast.Literal{
 			Value: nil,
+			Type:  ast.LiteralTypeNone,
 
 			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil

@@ -5,10 +5,20 @@ import (
 	"fmt"
 )
 
+type LiteralType int
+
+const (
+	LiteralTypeString LiteralType = iota
+	LiteralTypeNumber
+	LiteralTypeBool
+	LiteralTypeNone
+)
+
 // Literal represents a literal value (number, string, etc.).
 type Literal struct {
 	Token lexer.Token
 	Value any
+	Type  LiteralType
 
 	Span lexer.Span
 }

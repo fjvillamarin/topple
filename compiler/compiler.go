@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"biscuit/compiler/ast"
+	"biscuit/compiler/codegen"
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/parser"
 )
@@ -18,7 +19,7 @@ type File struct {
 // Compiler is the main interface for the Biscuit compiler
 type Compiler interface {
 	// Compile takes a Biscuit source code and compiles it to Python code
-	Compile(ctx context.Context, file File) ([]byte, error)
+	Compile(ctx context.Context, file File) ([]byte, []error)
 }
 
 // StandardCompiler is the standard implementation of the Compiler interface
@@ -38,8 +39,16 @@ func NewCompiler(logger *slog.Logger) *StandardCompiler {
 }
 
 // Compile takes a Biscuit source code and compiles it to Python code
-func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, error) {
-	return nil, nil
+func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []error) {
+	ast, errors := Parse(file.Content)
+	if len(errors) > 0 {
+		return nil, errors
+	}
+
+	generator := codegen.NewCodeGenerator()
+	result := generator.Generate(ast)
+
+	return []byte(result), nil
 }
 
 // Parse scans a source file and returns a parsed AST.
