@@ -28,6 +28,9 @@ type Stmt interface {
 type Visitor interface {
 	ExprVisitor
 	StmtVisitor
+
+	// Generic visit method for fallback
+	Visit(node Node) Visitor
 }
 
 // ExprVisitor is the interface for visitors that traverse expressions.
@@ -53,6 +56,7 @@ type ExprVisitor interface {
 	VisitYieldExpr(y *YieldExpr) Visitor
 	VisitGroupExpr(g *GroupExpr) Visitor
 	VisitParameterList(p *ParameterList) Visitor
+	VisitParameter(p *Parameter) Visitor
 	VisitTypeParamExpr(t *TypeParam) Visitor
 	VisitSlice(s *Slice) Visitor
 	VisitAwaitExpr(a *AwaitExpr) Visitor
@@ -69,37 +73,36 @@ type ExprVisitor interface {
 
 // StmtVisitor is the interface for visitors that traverse statements.
 type StmtVisitor interface {
-	Visit(node Node) Visitor
-	VisitModule(m *Module) Visitor
 	VisitExprStmt(e *ExprStmt) Visitor
-	VisitTypeAlias(t *TypeAlias) Visitor
+	VisitAssignStmt(a *AssignStmt) Visitor
+	VisitAnnotationStmt(a *AnnotationStmt) Visitor
 	VisitReturnStmt(r *ReturnStmt) Visitor
 	VisitRaiseStmt(r *RaiseStmt) Visitor
 	VisitPassStmt(p *PassStmt) Visitor
-	VisitBreakStmt(b *BreakStmt) Visitor
-	VisitContinueStmt(c *ContinueStmt) Visitor
 	VisitYieldStmt(y *YieldStmt) Visitor
 	VisitAssertStmt(a *AssertStmt) Visitor
+	VisitBreakStmt(b *BreakStmt) Visitor
+	VisitContinueStmt(c *ContinueStmt) Visitor
 	VisitGlobalStmt(g *GlobalStmt) Visitor
 	VisitNonlocalStmt(n *NonlocalStmt) Visitor
 	VisitImportStmt(i *ImportStmt) Visitor
 	VisitImportFromStmt(i *ImportFromStmt) Visitor
-	VisitAssignStmt(a *AssignStmt) Visitor
-	VisitAnnotationStmt(a *AnnotationStmt) Visitor
+	VisitTypeAlias(t *TypeAlias) Visitor
+	VisitDecorator(d *Decorator) Visitor
+	VisitModule(m *Module) Visitor
 	VisitMultiStmt(m *MultiStmt) Visitor
 
-	// Compound statements
+	// Compound statements (using correct type names)
 	VisitIf(i *If) Visitor
 	VisitWhile(w *While) Visitor
 	VisitFor(f *For) Visitor
 	VisitWith(w *With) Visitor
 	VisitTry(t *Try) Visitor
-	VisitDecorator(d *Decorator) Visitor
 	VisitClass(c *Class) Visitor
 	VisitFunction(f *Function) Visitor
 	VisitMatch(m *MatchStmt) Visitor
 
-	// Pattern visitors
+	// Pattern visitors (for match statements)
 	VisitLiteralPattern(lp *LiteralPattern) Visitor
 	VisitCapturePattern(cp *CapturePattern) Visitor
 	VisitWildcardPattern(wp *WildcardPattern) Visitor
@@ -111,4 +114,11 @@ type StmtVisitor interface {
 	VisitClassPattern(cp *ClassPattern) Visitor
 	VisitAsPattern(ap *AsPattern) Visitor
 	VisitOrPattern(op *OrPattern) Visitor
+
+	// New Biscuit-specific nodes
+	VisitViewStmt(v *ViewStmt) Visitor
+	VisitHTMLElement(h *HTMLElement) Visitor
+	VisitHTMLContent(h *HTMLContent) Visitor
+	VisitHTMLText(h *HTMLText) Visitor
+	VisitHTMLInterpolation(h *HTMLInterpolation) Visitor
 }

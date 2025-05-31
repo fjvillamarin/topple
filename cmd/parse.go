@@ -47,18 +47,10 @@ func (p *ParseCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 	start := time.Now()
 
 	if isDir {
-		// Include both Biscuit (.bsct) and Python (.py) source files
-		files, err := fs.ListFiles(p.Input, globals.Recursive)
+		// Use the specialized method to get Biscuit (.psx) files
+		sources, err := fs.ListBiscuitFiles(p.Input, globals.Recursive)
 		if err != nil {
-			return fmt.Errorf("error listing files: %w", err)
-		}
-
-		var sources []string
-		for _, f := range files {
-			ext := filepath.Ext(f)
-			if ext == ".bsct" || ext == ".py" {
-				sources = append(sources, f)
-			}
+			return fmt.Errorf("error listing biscuit files: %w", err)
 		}
 
 		log.InfoContext(*ctx, "Parsing files in directory", slog.Int("fileCount", len(sources)))

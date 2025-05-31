@@ -2228,16 +2228,285 @@ func (p *ASTPrinter) VisitOrPattern(node *ast.OrPattern) ast.Visitor {
 	p.result.WriteString(" (\n")
 
 	p.indentLevel++
-
 	if len(node.Patterns) > 0 {
-		p.result.WriteString(fmt.Sprintf("%salternatives:\n", p.indent()))
+		p.result.WriteString(fmt.Sprintf("%spatterns:\n", p.indent()))
 		p.indentLevel++
 		for i, pattern := range node.Patterns {
-			p.result.WriteString(fmt.Sprintf("%salt_%d:\n", p.indent(), i))
+			p.result.WriteString(fmt.Sprintf("%spattern %d:\n", p.indent(), i))
 			p.indentLevel++
 			pattern.Accept(p)
 			p.indentLevel--
 		}
+		p.indentLevel--
+	}
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitViewStmt handles ViewStmt nodes
+func (p *ASTPrinter) VisitViewStmt(node *ast.ViewStmt) ast.Visitor {
+	p.printNodeStart("ViewStmt", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit the view name
+	if node.Name != nil {
+		p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+		p.indentLevel++
+		node.Name.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit type parameters if any
+	if len(node.TypeParams) > 0 {
+		p.result.WriteString(fmt.Sprintf("%stypeParams:\n", p.indent()))
+		p.indentLevel++
+		for i, param := range node.TypeParams {
+			p.result.WriteString(fmt.Sprintf("%sparam %d:\n", p.indent(), i))
+			p.indentLevel++
+			param.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Visit parameters
+	if node.Params != nil {
+		p.result.WriteString(fmt.Sprintf("%sparams:\n", p.indent()))
+		p.indentLevel++
+		node.Params.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit return type if any
+	if node.ReturnType != nil {
+		p.result.WriteString(fmt.Sprintf("%sreturnType:\n", p.indent()))
+		p.indentLevel++
+		node.ReturnType.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit body statements
+	if len(node.Body) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sbody:\n", p.indent()))
+		p.indentLevel++
+		for i, stmt := range node.Body {
+			if stmt != nil {
+				p.result.WriteString(fmt.Sprintf("%sstmt %d:\n", p.indent(), i))
+				p.indentLevel++
+				stmt.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Display async flag
+	p.result.WriteString(fmt.Sprintf("%sisAsync: %t\n", p.indent(), node.IsAsync))
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitHTMLElement handles HTMLElement nodes
+func (p *ASTPrinter) VisitHTMLElement(node *ast.HTMLElement) ast.Visitor {
+	p.printNodeStart("HTMLElement", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Display element type
+	var typeStr string
+	switch node.Type {
+	case ast.HTMLOpenTag:
+		typeStr = "OpenTag"
+	case ast.HTMLCloseTag:
+		typeStr = "CloseTag"
+	case ast.HTMLSelfClosingTag:
+		typeStr = "SelfClosingTag"
+	case ast.HTMLMultilineElement:
+		typeStr = "MultilineElement"
+	case ast.HTMLSingleLineElement:
+		typeStr = "SingleLineElement"
+	default:
+		typeStr = "Unknown"
+	}
+	p.result.WriteString(fmt.Sprintf("%stype: %s\n", p.indent(), typeStr))
+
+	// Display tag name
+	p.result.WriteString(fmt.Sprintf("%stagName: %s\n", p.indent(), node.TagName.Lexeme))
+
+	// Visit attributes if any
+	if len(node.Attributes) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sattributes:\n", p.indent()))
+		p.indentLevel++
+		for i, attr := range node.Attributes {
+			p.result.WriteString(fmt.Sprintf("%sattr %d:\n", p.indent(), i))
+			p.indentLevel++
+			p.result.WriteString(fmt.Sprintf("%sname: %s\n", p.indent(), attr.Name.Lexeme))
+			if attr.Value != nil {
+				p.result.WriteString(fmt.Sprintf("%svalue:\n", p.indent()))
+				p.indentLevel++
+				attr.Value.Accept(p)
+				p.indentLevel--
+			}
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	// Visit content if any
+	if len(node.Content) > 0 {
+		p.result.WriteString(fmt.Sprintf("%scontent:\n", p.indent()))
+		p.indentLevel++
+		for i, contentStmt := range node.Content {
+			if contentStmt != nil {
+				p.result.WriteString(fmt.Sprintf("%sitem %d:\n", p.indent(), i))
+				p.indentLevel++
+				contentStmt.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Display closing flag
+	p.result.WriteString(fmt.Sprintf("%sisClosing: %t\n", p.indent(), node.IsClosing))
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitParameter handles Parameter nodes
+func (p *ASTPrinter) VisitParameter(node *ast.Parameter) ast.Visitor {
+	p.printNodeStart("Parameter", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit parameter name
+	if node.Name != nil {
+		p.result.WriteString(fmt.Sprintf("%sname:\n", p.indent()))
+		p.indentLevel++
+		node.Name.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit annotation if any
+	if node.Annotation != nil {
+		p.result.WriteString(fmt.Sprintf("%sannotation:\n", p.indent()))
+		p.indentLevel++
+		node.Annotation.Accept(p)
+		p.indentLevel--
+	}
+
+	// Visit default value if any
+	if node.Default != nil {
+		p.result.WriteString(fmt.Sprintf("%sdefault:\n", p.indent()))
+		p.indentLevel++
+		node.Default.Accept(p)
+		p.indentLevel--
+	}
+
+	// Display parameter flags
+	p.result.WriteString(fmt.Sprintf("%sisStar: %t\n", p.indent(), node.IsStar))
+	p.result.WriteString(fmt.Sprintf("%sisDoubleStar: %t\n", p.indent(), node.IsDoubleStar))
+	p.result.WriteString(fmt.Sprintf("%sisSlash: %t\n", p.indent(), node.IsSlash))
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitParameterList handles ParameterList nodes
+func (p *ASTPrinter) VisitParameterList(node *ast.ParameterList) ast.Visitor {
+	p.printNodeStart("ParameterList", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit parameters if any
+	if len(node.Parameters) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sparameters:\n", p.indent()))
+		p.indentLevel++
+		for i, param := range node.Parameters {
+			if param != nil {
+				p.result.WriteString(fmt.Sprintf("%sparam %d:\n", p.indent(), i))
+				p.indentLevel++
+				param.Accept(p)
+				p.indentLevel--
+			}
+		}
+		p.indentLevel--
+	}
+
+	// Display parameter list flags and indices
+	p.result.WriteString(fmt.Sprintf("%shasSlash: %t\n", p.indent(), node.HasSlash))
+	p.result.WriteString(fmt.Sprintf("%sslashIndex: %d\n", p.indent(), node.SlashIndex))
+	p.result.WriteString(fmt.Sprintf("%shasVarArg: %t\n", p.indent(), node.HasVarArg))
+	p.result.WriteString(fmt.Sprintf("%svarArgIndex: %d\n", p.indent(), node.VarArgIndex))
+	p.result.WriteString(fmt.Sprintf("%shasKwArg: %t\n", p.indent(), node.HasKwArg))
+	p.result.WriteString(fmt.Sprintf("%skwArgIndex: %d\n", p.indent(), node.KwArgIndex))
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitHTMLContent handles HTMLContent nodes
+func (p *ASTPrinter) VisitHTMLContent(node *ast.HTMLContent) ast.Visitor {
+	p.printNodeStart("HTMLContent", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit content parts
+	if len(node.Parts) > 0 {
+		p.result.WriteString(fmt.Sprintf("%sparts:\n", p.indent()))
+		p.indentLevel++
+		for i, part := range node.Parts {
+			p.result.WriteString(fmt.Sprintf("%spart %d:\n", p.indent(), i))
+			p.indentLevel++
+			part.Accept(p)
+			p.indentLevel--
+		}
+		p.indentLevel--
+	}
+
+	p.indentLevel--
+
+	p.result.WriteString(fmt.Sprintf("%s)\n", p.indent()))
+	return p
+}
+
+// VisitHTMLText handles HTMLText nodes
+func (p *ASTPrinter) VisitHTMLText(node *ast.HTMLText) ast.Visitor {
+	p.printNodeStart("HTMLText", node)
+	p.result.WriteString(fmt.Sprintf(" (%s)\n", node.Value))
+	return p
+}
+
+// VisitHTMLInterpolation handles HTMLInterpolation nodes
+func (p *ASTPrinter) VisitHTMLInterpolation(node *ast.HTMLInterpolation) ast.Visitor {
+	p.printNodeStart("HTMLInterpolation", node)
+	p.result.WriteString(" (\n")
+
+	p.indentLevel++
+
+	// Visit the expression
+	if node.Expression != nil {
+		p.result.WriteString(fmt.Sprintf("%sexpression:\n", p.indent()))
+		p.indentLevel++
+		node.Expression.Accept(p)
 		p.indentLevel--
 	}
 

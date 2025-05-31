@@ -55,10 +55,32 @@ func (s *ScanCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger) 
 		}
 
 		var sources []string
+		psxFiles := make(map[string]bool) // Track .psx files to avoid .py duplicates
+
+		// First pass: collect all .psx files
 		for _, f := range files {
 			ext := filepath.Ext(f)
-			if ext == ".bsct" || ext == ".py" {
+			if ext == ".psx" {
 				sources = append(sources, f)
+				// Store base name without extension to track .psx files
+				baseName := strings.TrimSuffix(filepath.Base(f), ext)
+				dirPath := filepath.Dir(f)
+				psxFiles[filepath.Join(dirPath, baseName)] = true
+			}
+		}
+
+		// Second pass: collect .py files only if no corresponding .psx exists
+		for _, f := range files {
+			ext := filepath.Ext(f)
+			if ext == ".py" {
+				baseName := strings.TrimSuffix(filepath.Base(f), ext)
+				dirPath := filepath.Dir(f)
+				baseKey := filepath.Join(dirPath, baseName)
+
+				// Only include .py file if no corresponding .psx file exists
+				if !psxFiles[baseKey] {
+					sources = append(sources, f)
+				}
 			}
 		}
 
