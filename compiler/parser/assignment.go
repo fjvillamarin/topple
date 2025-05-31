@@ -3,6 +3,7 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 // assignment parses an assignment statement.
@@ -296,10 +297,18 @@ tryStarTargets:
 // annotatedRhs parses the right-hand side of an annotated assignment:
 // annotated_rhs: yield_expr | star_expressions
 func (p *Parser) annotatedRhs() (ast.Expr, error) {
+	fmt.Printf("[DEBUG] annotatedRhs() entry, current token: %d %s at pos %d\n", p.Current, p.peek().Type, p.Current)
+
 	if p.check(lexer.Yield) {
-		return p.yieldExpression()
+		result, err := p.yieldExpression()
+		fmt.Printf("[DEBUG] annotatedRhs() yield exit, pos %d\n", p.Current)
+		return result, err
 	}
-	return p.starExpressions()
+
+	fmt.Printf("[DEBUG] annotatedRhs() calling starExpressions(), pos %d\n", p.Current)
+	result, err := p.starExpressions()
+	fmt.Printf("[DEBUG] annotatedRhs() starExpressions() returned, pos %d\n", p.Current)
+	return result, err
 }
 
 // augassign parses an augmented assignment operator:

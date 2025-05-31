@@ -173,7 +173,7 @@ func (p *Parser) yieldExpression() (ast.Expr, error) {
 	}
 
 	// Check if there's an expression after 'yield'
-	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) || p.check(lexer.RightParen) || p.check(lexer.Comma) {
+	if p.isAtEnd() || p.check(lexer.Newline) || p.check(lexer.Semicolon) || p.check(lexer.RightParen) || p.check(lexer.RightBraceF) || p.check(lexer.Comma) {
 		// No expression, yield on its own
 		return &ast.YieldExpr{
 			IsFrom: isFrom,

@@ -83,6 +83,15 @@ const (
 	FStringEqual           // = in f-string for debugging
 	FStringConversionStart // ! in f-string conversion
 
+	// ── HTML tokens ─────────────────────────────────────────────
+	TagOpen                // < (opening angle bracket)
+	TagClose               // > (closing angle bracket)
+	TagCloseStart          // </ (closing tag start)
+	TagSelfClose           // /> (self-closing tag end)
+	HTMLTextInline         // text content (only in inline mode)
+	HTMLInterpolationStart // { in HTML context
+	HTMLInterpolationEnd   // } in HTML context
+
 	// ── layout / structural tokens ──────────────────────────────
 	Newline
 	Indent
@@ -202,6 +211,14 @@ var tokenTypeNames = [...]string{
 	"RightBraceF",
 	"FStringEqual",
 	"FStringConversionStart",
+
+	"TagOpen",
+	"TagClose",
+	"TagCloseStart",
+	"TagSelfClose",
+	"HTMLTextInline",
+	"HTMLInterpolationStart",
+	"HTMLInterpolationEnd",
 
 	"Newline",
 	"Indent",
@@ -323,7 +340,7 @@ var Keywords = map[string]TokenType{
 	"elif":     Elif,
 	"else":     Else,
 	"except":   Except,
-	"false":    False,
+	"False":    False,
 	"finally":  Finally,
 	"for":      For,
 	"from":     From,
@@ -334,14 +351,14 @@ var Keywords = map[string]TokenType{
 	"is":       Is,
 	"lambda":   Lambda,
 	"match":    Match,
-	"none":     None,
+	"None":     None,
 	"nonlocal": Nonlocal,
 	"not":      Not,
 	"or":       Or,
 	"pass":     Pass,
 	"raise":    Raise,
 	"return":   Return,
-	"true":     True,
+	"True":     True,
 	"try":      Try,
 	"while":    While,
 	"with":     With,

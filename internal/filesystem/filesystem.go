@@ -198,7 +198,7 @@ func (s *StandardFileSystem) ListFiles(dir string, recursive bool) ([]string, er
 	return files, nil
 }
 
-// ListBiscuitFiles lists all .bsct files in a directory
+// ListBiscuitFiles lists all .psx files in a directory
 func (s *StandardFileSystem) ListBiscuitFiles(dir string, recursive bool) ([]string, error) {
 	s.logger.Debug("Listing biscuit files", "directory", dir, "recursive", recursive)
 
@@ -209,7 +209,7 @@ func (s *StandardFileSystem) ListBiscuitFiles(dir string, recursive bool) ([]str
 
 	var biscuitFiles []string
 	for _, file := range files {
-		if strings.HasSuffix(file, ".bsct") {
+		if strings.HasSuffix(file, ".psx") {
 			biscuitFiles = append(biscuitFiles, file)
 		}
 	}
@@ -292,9 +292,9 @@ func (s *StandardFileSystem) GetOutputPath(inputPath, outputDir string) (string,
 	}
 
 	// Check if input is a Biscuit file
-	if !strings.HasSuffix(absInputPath, ".bsct") {
-		s.logger.Error("Input file must be a .bsct file", "path", inputPath)
-		return "", fmt.Errorf("input file must be a .bsct file: %s", inputPath)
+	if !strings.HasSuffix(absInputPath, ".psx") {
+		s.logger.Error("Input file must be a .psx file", "path", inputPath)
+		return "", fmt.Errorf("input file must be a .psx file: %s", inputPath)
 	}
 
 	// If no output directory is specified or output directory is empty,
@@ -302,7 +302,7 @@ func (s *StandardFileSystem) GetOutputPath(inputPath, outputDir string) (string,
 	if outputDir == "" {
 		inputDir := filepath.Dir(absInputPath)
 		baseName := filepath.Base(absInputPath)
-		pyName := strings.TrimSuffix(baseName, ".bsct") + ".py"
+		pyName := strings.TrimSuffix(baseName, ".psx") + ".py"
 		outputPath := filepath.Join(inputDir, pyName)
 		s.logger.Debug("No output dir specified, writing to input directory",
 			"input", absInputPath,
@@ -335,9 +335,9 @@ func (s *StandardFileSystem) GetOutputPath(inputPath, outputDir string) (string,
 	}
 
 	if isDir {
-		// Replace .bsct extension with .py
+		// Replace .psx extension with .py
 		baseName := filepath.Base(absInputPath)
-		pyName := strings.TrimSuffix(baseName, ".bsct") + ".py"
+		pyName := strings.TrimSuffix(baseName, ".psx") + ".py"
 		outputPath := filepath.Join(absOutputDir, pyName)
 		s.logger.Debug("Generated output path", "input", absInputPath, "output", outputPath)
 		return outputPath, nil

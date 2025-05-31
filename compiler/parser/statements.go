@@ -9,6 +9,8 @@ import (
 func (p *Parser) statement() (ast.Stmt, error) {
 	// Check for compound statements first
 	switch p.peek().Type {
+	case lexer.View:
+		return p.viewStatement()
 	case lexer.If:
 		return p.ifStatement()
 	case lexer.While:

@@ -11,6 +11,7 @@ package lexer
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -37,6 +38,29 @@ type fstringContext struct {
 	isTriple     bool // Whether this is a triple-quoted f-string
 }
 
+// LexMode represents the current lexing mode
+type LexMode int
+
+const (
+	PythonMode            LexMode = iota // Normal Python tokenization
+	HTMLTagMode                          // Inside <tag attributes> - handles tag names, attributes, and >
+	HTMLContentMode                      // Inside tag content, can contain text
+	HTMLInterpolationMode                // Inside {expression} within HTML
+)
+
+// LexerContext tracks the state for context-aware lexing
+type LexerContext struct {
+	viewDepth       int       // Depth of nested view functions (0 = not in view)
+	mode            LexMode   // Current lexing mode
+	htmlTagDepth    int       // Track HTML tag nesting
+	atLineStart     bool      // Are we at the start of a logical line?
+	pendingIndent   bool      // Waiting to process indentation?
+	htmlTagName     string    // Current HTML tag being processed
+	isClosingTag    bool      // Whether we're parsing a closing tag
+	inHTMLAttribute bool      // Whether we're inside an HTML attribute
+	modeStack       []LexMode // Stack to track mode before interpolations
+}
+
 // ── scanner object ───────────────────────────────────────────────────
 
 type Scanner struct {
@@ -55,6 +79,9 @@ type Scanner struct {
 
 	// F-string state management
 	fstringStack []fstringContext // Stack of f-string contexts for nested f-strings
+
+	// Lexer context for HTML/Python mode switching
+	ctx LexerContext
 }
 
 // NewScanner returns a default-configured scanner.
@@ -71,6 +98,10 @@ func NewScannerWithConfig(src []byte, cfg ScannerConfig) *Scanner {
 		lexCol:      cfg.StartColumn,
 		cfg:         cfg,
 		indentStack: []int{0}, // invariant bottom = 0
+		ctx: LexerContext{
+			mode:        PythonMode,
+			atLineStart: true,
+		},
 	}
 	return sc
 }
@@ -87,6 +118,8 @@ func (s *Scanner) ScanTokens() []Token {
 	// flush pending dedents (PEP Tokenizer rule 3)
 	for len(s.indentStack) > 1 {
 		s.indentStack = s.indentStack[:len(s.indentStack)-1]
+		// Set proper position for dedent token at EOF
+		s.start = s.cur
 		s.addToken(Dedent)
 	}
 
@@ -232,15 +265,145 @@ func (s *Scanner) errorf(format string, args ...any) {
 	s.Errors = append(s.Errors, NewScannerError(fmt.Sprintf(format, args...), s.lexLine, s.lexCol))
 }
 
+// ── context-aware lexing helpers ────────────────────────────────────
+
+// handleLineStart determines the lexing mode based on the first non-whitespace character
+func (s *Scanner) handleLineStart() {
+	if s.ctx.viewDepth == 0 {
+		// Outside view functions, always Python mode
+		s.ctx.mode = PythonMode
+		s.ctx.atLineStart = false
+		return
+	}
+
+	// Skip whitespace to find first significant character
+	firstChar := s.peekFirstNonWhitespace()
+
+	switch {
+	case firstChar == '<':
+		// Line starts with < → HTML mode
+		s.ctx.mode = HTMLTagMode
+		// Skip to the '<' character
+		s.skipToFirstNonWhitespace()
+
+	case isIdentifierStart(firstChar):
+		// Check if it's a keyword that indicates Python mode
+		if s.isKeywordAtPosition() {
+			s.ctx.mode = PythonMode
+		} else {
+			// Identifier at line start → Python mode (assignment, etc.)
+			s.ctx.mode = PythonMode
+		}
+
+	case s.parenDepth > 0:
+		// Continuation line with open parentheses → keep current mode
+		// (don't change mode)
+
+	default:
+		// Default to Python mode for other cases
+		s.ctx.mode = PythonMode
+	}
+
+	s.ctx.atLineStart = false
+}
+
+// skipToFirstNonWhitespace advances the cursor to the first non-whitespace character
+func (s *Scanner) skipToFirstNonWhitespace() {
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+		s.col++
+	}
+}
+
+// peekFirstNonWhitespace returns the first non-whitespace character from current position
+func (s *Scanner) peekFirstNonWhitespace() rune {
+	i := s.cur
+	for i < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[i:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			return r
+		}
+		i += size
+	}
+	return -1 // EOF or newline
+}
+
+// isKeywordAtPosition checks if there's a Python keyword at the current position
+func (s *Scanner) isKeywordAtPosition() bool {
+	// Save current position
+	savedCur := s.cur
+
+	// Scan identifier
+	if !isIdentifierStart(s.peekFirstNonWhitespace()) {
+		return false
+	}
+
+	// Skip to first non-whitespace
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+	}
+
+	start := s.cur
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if !isIdentifierContinue(r) {
+			break
+		}
+		s.cur += size
+	}
+
+	identifier := string(s.src[start:s.cur])
+	isKeyword := IsKeyword(identifier)
+
+	// Restore position
+	s.cur = savedCur
+
+	return isKeyword
+}
+
+// detectViewFunction checks if we're entering a view function
+func (s *Scanner) detectViewFunction() {
+	// Increment view depth for nested views
+	s.ctx.viewDepth++
+}
+
 // ── main dispatcher ─────────────────────────────────────────────────
 
 func (s *Scanner) scanToken() {
+	// Handle line start mode detection
+	if s.ctx.atLineStart {
+		s.handleLineStart()
+	}
+
 	// Check if we're inside an f-string and should continue f-string scanning
 	if len(s.fstringStack) > 0 {
 		s.scanFStringContent()
 		return
 	}
 
+	// Route to appropriate scanner based on current mode
+	switch s.ctx.mode {
+	case PythonMode:
+		s.scanPythonToken()
+	case HTMLTagMode:
+		s.scanHTMLTag()
+	case HTMLContentMode:
+		s.scanHTMLContent()
+	case HTMLInterpolationMode:
+		s.scanPythonToken() // Python expressions inside {}
+	}
+}
+
+// scanPythonToken handles Python tokenization
+func (s *Scanner) scanPythonToken() {
 	switch r := s.advance(); r {
 	// ── single char punctuation ──
 	case '(':
@@ -266,7 +429,21 @@ func (s *Scanner) scanToken() {
 		if s.parenDepth > 0 {
 			s.parenDepth--
 		}
-		s.addToken(RightBrace)
+
+		// Check if we're closing HTML interpolation
+		if s.ctx.mode == HTMLInterpolationMode {
+			s.addToken(HTMLInterpolationEnd)
+			// Restore previous mode from stack
+			if len(s.ctx.modeStack) > 0 {
+				s.ctx.mode = s.ctx.modeStack[len(s.ctx.modeStack)-1]
+				s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1] // Pop from stack
+			} else {
+				// Fallback to content mode if stack is empty
+				s.ctx.mode = HTMLContentMode
+			}
+		} else {
+			s.addToken(RightBrace)
+		}
 	case ',':
 		s.addToken(Comma)
 	case ':':
@@ -399,7 +576,8 @@ func (s *Scanner) scanToken() {
 	case ' ', '\t', '\r':
 		// just skip – indentation handled after NEWLINE
 	case '\n':
-		s.handleNewline() // emits NEWLINE + {INDENT,DEDENT}*
+		s.handleNewline()        // emits NEWLINE + {INDENT,DEDENT}*
+		s.ctx.atLineStart = true // Mark that we're at line start after newline
 	case '#':
 		// consume comment until physical line break
 		for !s.atEnd() && s.peek() != '\n' {
@@ -554,6 +732,10 @@ func (s *Scanner) identifier() {
 	lexeme := string(s.src[s.start:s.cur])
 
 	if tok, ok := Keywords[lexeme]; ok {
+		// Special handling for 'view' keyword
+		if tok == View {
+			s.detectViewFunction()
+		}
 		s.addToken(tok)
 		return
 	}
@@ -987,31 +1169,22 @@ func (s *Scanner) scanFStringText() {
 				s.addTokenLit(FStringMiddle, text)
 			}
 
-			// Start replacement field
+			// Set start position for the replacement field token
 			s.start = s.cur
 			s.advance() // consume '{'
 			s.addToken(LeftBraceF)
 
-			// Switch to expression mode
+			// Set f-string context to expression mode
 			ctx.inExpression = true
 			ctx.braceDepth = 1
 
-			// Reset start for expression parsing
+			// Reset start position for the expression
 			s.start = s.cur
 			return
 		}
 
-		// Check for unmatched closing brace
+		// Check for unmatched closing brace (should not happen in valid f-strings)
 		if r == '}' {
-			// Check for escaped brace }}
-			if s.peekN(1) == '}' {
-				// Include the escaped brace in the text
-				s.advance() // consume first }
-				s.advance() // consume second }
-				continue
-			}
-
-			// Unmatched closing brace
 			s.errorf("f-string: single '}' is not allowed")
 			return
 		}
@@ -1433,6 +1606,222 @@ func (s *Scanner) scanFStringFormatSpec() {
 		}
 
 		s.advance()
+	}
+}
+
+// ── HTML scanning methods ──────────────────────────────────────────
+
+// scanHTMLTag scans HTML tag content (tag name and attributes)
+func (s *Scanner) scanHTMLTag() {
+	// If we're at the start of a tag, we need to consume the '<'
+	if s.peek() == '<' {
+		s.advance() // consume '<'
+
+		// Check for HTML comment first
+		if s.peek() == '!' && s.peekN(1) == '-' && s.peekN(2) == '-' {
+			s.scanHTMLComment()
+			// After comment, we're back in content mode
+			s.ctx.mode = HTMLContentMode
+			return
+		}
+
+		// Check for closing tag
+		if s.peek() == '/' {
+			s.advance()               // consume '/'
+			s.addToken(TagCloseStart) // Emit '</' token
+			// Stay in tag mode to handle tag name
+			return
+		}
+
+		// Emit '<' token for opening tag
+		s.addToken(TagOpen)
+		// Stay in tag mode to handle tag name and attributes
+		return
+	}
+
+	// We're inside a tag, handle tag content
+	for !s.atEnd() {
+		s.start = s.cur
+
+		switch r := s.advance(); r {
+		case ' ', '\t', '\r':
+			// Skip whitespace in tags
+			continue
+		case '\n':
+			// Newlines in tags are treated as whitespace
+			s.line++
+			s.col = s.cfg.StartColumn
+			continue
+		case '>':
+			// End of tag
+			s.addToken(TagClose)
+			s.ctx.mode = HTMLContentMode
+			return
+		case '/':
+			// Check for self-closing tag
+			if s.peek() == '>' {
+				s.advance() // consume '>'
+				s.addToken(TagSelfClose)
+				s.ctx.mode = HTMLContentMode
+				return
+			}
+			s.errorf("unexpected '/' in HTML tag")
+			return
+		case '=':
+			s.addToken(Equal)
+		case '"', '\'':
+			s.string(r) // Use regular string parsing
+		case '{':
+			// Start of interpolation in attribute
+			s.ctx.modeStack = append(s.ctx.modeStack, s.ctx.mode) // Push current mode
+			s.addToken(HTMLInterpolationStart)
+			s.ctx.mode = HTMLInterpolationMode
+			return
+		default:
+			if isIdentifierStart(r) {
+				s.scanHTMLIdentifier()
+			} else {
+				s.errorf("unexpected character %q in HTML tag", r)
+				return
+			}
+		}
+	}
+}
+
+// scanHTMLContent scans HTML content between tags
+func (s *Scanner) scanHTMLContent() {
+	textStart := s.cur
+
+	for !s.atEnd() {
+		r := s.peek()
+		switch r {
+		case '<':
+			// Emit any accumulated text
+			if s.cur > textStart {
+				s.addHTMLText(textStart)
+			}
+
+			// Switch to tag mode to handle the '<'
+			s.ctx.mode = HTMLTagMode
+			return
+
+		case '{':
+			// Emit any accumulated text
+			if s.cur > textStart {
+				s.addHTMLText(textStart)
+			}
+
+			// Set start position for the interpolation token
+			s.start = s.cur
+			s.advance()                                           // consume '{'
+			s.ctx.modeStack = append(s.ctx.modeStack, s.ctx.mode) // Push current mode
+			s.addToken(HTMLInterpolationStart)
+			s.ctx.mode = HTMLInterpolationMode
+			return
+
+		case '\n':
+			// Emit any accumulated text first
+			if s.cur > textStart {
+				s.addHTMLText(textStart)
+			}
+
+			// Let the main scanner handle the newline properly
+			// by returning to Python mode temporarily
+			s.ctx.mode = PythonMode
+			s.ctx.atLineStart = true
+			return
+
+		default:
+			s.advance()
+		}
+	}
+
+	// Emit any remaining text
+	if s.cur > textStart {
+		s.addHTMLText(textStart)
+	}
+}
+
+// ── HTML helper methods ────────────────────────────────────────────
+
+// isHTMLComment checks if we're at the start of an HTML comment
+func (s *Scanner) isHTMLComment() bool {
+	// We should be positioned after '<', check for '!--'
+	return s.peek() == '!' && s.peekN(1) == '-' && s.peekN(2) == '-'
+}
+
+// scanHTMLComment scans and skips HTML comments
+func (s *Scanner) scanHTMLComment() {
+	// We've seen '<!' and confirmed next two chars are '--'
+	s.advance() // consume '!'
+	s.advance() // consume first '-'
+	s.advance() // consume second '-'
+
+	// Consume until we find '-->'
+	for !s.atEnd() {
+		if s.peek() == '-' && s.peekN(1) == '-' && s.peekN(2) == '>' {
+			s.advance() // consume first '-'
+			s.advance() // consume second '-'
+			s.advance() // consume '>'
+			return
+		}
+		r := s.advance()
+		if r == '\n' {
+			s.line++
+			s.col = s.cfg.StartColumn
+		}
+	}
+
+	s.errorf("unterminated HTML comment")
+}
+
+// isNextContentOnSameLine checks if content starts on the same line as the tag
+func (s *Scanner) isNextContentOnSameLine() bool {
+	// Skip whitespace
+	i := s.cur
+	for i < len(s.src) && (s.src[i] == ' ' || s.src[i] == '\t') {
+		i++
+	}
+
+	// If we hit a newline or end of file, it's multiline
+	if i >= len(s.src) || s.src[i] == '\n' || s.src[i] == '\r' {
+		return false
+	}
+
+	return true
+}
+
+// scanHTMLIdentifier scans an identifier in HTML context (tag name or attribute name)
+func (s *Scanner) scanHTMLIdentifier() {
+	// We've already consumed the first character in scanHTMLTag
+	// Continue scanning the rest of the identifier
+	for isIdentifierContinue(s.peek()) || s.peek() == '-' {
+		s.advance()
+	}
+
+	// This is a tag name or attribute name
+	s.addToken(Identifier)
+}
+
+// addHTMLText adds an HTML text token from the given start position
+func (s *Scanner) addHTMLText(textStart int) {
+	text := string(s.src[textStart:s.cur])
+	if len(text) > 0 {
+		// Trim whitespace for cleaner output
+		text = strings.TrimSpace(text)
+		if len(text) > 0 {
+			// Create a token with the text span
+			token := Token{
+				Type:    HTMLTextInline,
+				Lexeme:  text,
+				Literal: text,
+				Span: Span{
+					Start: Position{Line: s.lexLine, Column: s.lexCol},
+					End:   Position{Line: s.line, Column: s.col},
+				},
+			}
+			s.tokens = append(s.tokens, token)
+		}
 	}
 }
 

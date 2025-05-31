@@ -3,6 +3,7 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 // fstring parses an f-string literal according to the grammar:
@@ -56,16 +57,20 @@ func (p *Parser) fstring() (ast.Expr, error) {
 // fstringReplacementField parses a replacement field in an f-string: {expr!conv:format}
 // Grammar: '{' annotated_rhs '='? [fstring_conversion] [fstring_full_format_spec] '}'
 func (p *Parser) fstringReplacementField() (ast.FStringPart, error) {
+	fmt.Printf("[DEBUG] fstringReplacementField() entry, current token: %d %s at pos %d\n", p.Current, p.peek().Type, p.Current)
+
 	startBrace, err := p.consume(lexer.LeftBraceF, "expected '{'")
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Printf("[DEBUG] fstringReplacementField() calling annotatedRhs(), pos %d\n", p.Current)
 	// Parse the expression (annotated_rhs) - using existing method from assignment.go
 	expr, err := p.annotatedRhs()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("[DEBUG] fstringReplacementField() annotatedRhs() returned, pos %d\n", p.Current)
 
 	// Check for optional debugging equals (=)
 	var hasEqual bool
@@ -108,6 +113,7 @@ func (p *Parser) fstringReplacementField() (ast.FStringPart, error) {
 		return nil, err
 	}
 
+	fmt.Printf("[DEBUG] fstringReplacementField() exit, pos %d\n", p.Current)
 	return &ast.FStringReplacementField{
 		Expression: expr,
 		Equal:      hasEqual,
