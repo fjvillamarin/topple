@@ -59,6 +59,7 @@ class Element:
           • str/int/float (text to escape)
       - attrs     : a dict of attribute→value for this tag
       - self_close: if True, renders as a self-closing tag "<tag attrs />"
+      - _html_cache: cached HTML string to prevent re-rendering
     """
 
     def __init__(
@@ -73,6 +74,7 @@ class Element:
         self.tag = tag
         self.self_close = self_close
         self.attrs = attrs or {}
+        self._html_cache: Optional[str] = None  # Cache for rendered HTML
 
         # Normalize children to a list
         if isinstance(children, list):
@@ -83,28 +85,35 @@ class Element:
     def __str__(self) -> str:
         """
         Render this Element (and all nested children) as a single HTML string.
-        Escapes only literal text; embeds nested Elements/BaseViews without escaping.
+        Uses caching to ensure each element is only rendered once.
         """
+        # Return cached result if available
+        if self._html_cache is not None:
+            return self._html_cache
+
         attrs_str = _render_attrs(self.attrs)
 
         if self.self_close:
-            return f"<{self.tag}{attrs_str} />"
+            self._html_cache = f"<{self.tag}{attrs_str} />"
+            return self._html_cache
 
         parts: List[str] = []
         for child in self.children:
             if child is None:
                 continue
             if isinstance(child, Element):
-                print("Child is an Element:", child)
+                # Removed debug print and use cached rendering
                 parts.append(str(child))
             elif isinstance(child, BaseView):
-                # child.render() will return str, because BaseView.render() wraps _render()
+                # child.render() will return str and is now cached in BaseView
                 parts.append(child.render())
             else:
                 # Literal text or number: escape it
                 parts.append(escape(child))
+        
         inner_html = "".join(parts)
-        return f"<{self.tag}{attrs_str}>{inner_html}</{self.tag}>"
+        self._html_cache = f"<{self.tag}{attrs_str}>{inner_html}</{self.tag}>"
+        return self._html_cache
 
 
 # -----------------------------------------------------------------------------
@@ -129,8 +138,12 @@ class FragmentElement(Element):
     def __str__(self) -> str:
         """
         Render this FragmentElement as just its concatenated children
-        without any wrapper tags.
+        without any wrapper tags. Uses caching to prevent re-rendering.
         """
+        # Return cached result if available
+        if self._html_cache is not None:
+            return self._html_cache
+
         parts: List[str] = []
         for child in self.children:
             if child is None:
@@ -138,12 +151,14 @@ class FragmentElement(Element):
             if isinstance(child, Element):
                 parts.append(str(child))
             elif isinstance(child, BaseView):
-                # child.render() will return str, because BaseView.render() wraps _render()
+                # child.render() will return str and is now cached in BaseView
                 parts.append(child.render())
             else:
                 # Literal text or number: escape it
                 parts.append(escape(child))
-        return "".join(parts)
+        
+        self._html_cache = "".join(parts)
+        return self._html_cache
 
 
 # -----------------------------------------------------------------------------
@@ -154,15 +169,15 @@ def render_child(child: Union["BaseView", Element, str, int, float, None]) -> Un
     """
     If `child` is:
       - None        → return "" (empty string)
-      - BaseView    → call child.render(); that returns a string (HTML)
+      - BaseView    → call child._get_rendered() (which uses caching)
       - Element     → return it unchanged
       - str/int/etc → return raw literal; will be escaped when placed in Element
     """
     if child is None:
         return ""
     if isinstance(child, BaseView):
-        # BaseView._render() returns an Element or a string
-        return child._render()
+        # Use cached rendering method to prevent multiple _render() calls
+        return child._get_rendered()
     if isinstance(child, Element):
         return child
     # Literal text → return as string; escaping happens when that string is placed inside an Element
@@ -204,7 +219,7 @@ def el(
 
 
 # -----------------------------------------------------------------------------
-# 7) BaseView: minimal abstract base class
+# 7) BaseView: minimal abstract base class with caching
 # -----------------------------------------------------------------------------
 class BaseView(ABC):
     """
@@ -212,6 +227,7 @@ class BaseView(ABC):
     Subclasses must implement _render() → Element or str.
 
     BaseView.render() wraps _render(), ensuring a final string is returned.
+    Uses caching to ensure _render() is only called once per instance.
     """
 
     @abstractmethod
@@ -222,18 +238,43 @@ class BaseView(ABC):
           - a plain string (already-escaped HTML or literal text)
 
         The generated code should implement _render() rather than render().
+        This method will only be called once per instance due to caching.
         """
         ...
 
+    def _get_rendered(self) -> Union[Element, str]:
+        """
+        Get the rendered result, using cache if available.
+        This ensures _render() is only called once per instance.
+        """
+        # Lazy initialization of cache attribute
+        if not hasattr(self, '_render_cache'):
+            self._render_cache = None
+        
+        if self._render_cache is None:
+            self._render_cache = self._render()
+        return self._render_cache
+
     def render(self) -> str:
         """
-        Calls _render(), then ensures the result is a string. If an Element,
-        convert to str (which escapes and concatenates children appropriately).
+        Calls _render() (with caching), then ensures the result is a string.
+        If an Element, convert to str (which escapes and concatenates children appropriately).
+        This method uses caching to ensure the final HTML is only generated once.
         """
-        result = self._render()
+        # Lazy initialization of cache attribute
+        if not hasattr(self, '_html_cache'):
+            self._html_cache = None
+            
+        if self._html_cache is not None:
+            return self._html_cache
+
+        result = self._get_rendered()
         if isinstance(result, Element):
-            return str(result)
-        return str(result)
+            self._html_cache = str(result)
+        else:
+            self._html_cache = str(result)
+        
+        return self._html_cache
 
     def __str__(self) -> str:
         return self.render()
