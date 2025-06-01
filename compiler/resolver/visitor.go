@@ -589,6 +589,13 @@ func (r *Resolver) VisitAsPattern(ap *ast.AsPattern) ast.Visitor             { r
 func (r *Resolver) VisitOrPattern(op *ast.OrPattern) ast.Visitor             { return r }
 
 func (r *Resolver) VisitHTMLElement(h *ast.HTMLElement) ast.Visitor {
+	// Visit all attributes first - they contain expressions that need resolution
+	for _, attr := range h.Attributes {
+		if attr.Value != nil {
+			attr.Value.Accept(r)
+		}
+	}
+
 	// Visit all content inside the HTML element
 	for _, content := range h.Content {
 		if content != nil {

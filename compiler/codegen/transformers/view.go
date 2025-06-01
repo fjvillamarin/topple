@@ -456,6 +456,16 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 	// Extract the actual tag name
 	tagName := element.TagName.Lexeme
 
+	// Transform attributes
+	var attrsExpr ast.Expr
+	if len(element.Attributes) > 0 {
+		transformedAttrs, err := vm.transformHTMLAttributes(element.Attributes)
+		if err != nil {
+			return nil, err
+		}
+		attrsExpr = transformedAttrs
+	}
+
 	// Store the parent context before potentially creating a new one
 	parentContext := vm.currentContext
 	var elCall ast.Expr
@@ -492,7 +502,7 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 		elCall = vm.createElCall(tagName, &ast.Name{
 			Token: lexer.Token{Lexeme: elementChildrenName, Type: lexer.Identifier},
 			Span:  lexer.Span{},
-		}, nil)
+		}, attrsExpr)
 
 	} else if len(element.Content) > 0 {
 		// Simple content - transform directly without children arrays
@@ -501,7 +511,7 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 			return nil, err
 		}
 
-		elCall = vm.createElCall(tagName, contentExpr, nil)
+		elCall = vm.createElCall(tagName, contentExpr, attrsExpr)
 
 	} else {
 		// Empty element - create directly
@@ -509,7 +519,7 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 			Type:  ast.LiteralTypeString,
 			Value: "",
 			Span:  lexer.Span{},
-		}, nil)
+		}, attrsExpr)
 	}
 
 	// Handle the element based on whether we have a parent context
@@ -624,16 +634,85 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 	// Extract the actual tag name
 	tagName := element.TagName.Lexeme
 
+	// Transform attributes
+	var attrsExpr ast.Expr
+	if len(element.Attributes) > 0 {
+		transformedAttrs, err := vm.transformHTMLAttributes(element.Attributes)
+		if err != nil {
+			return nil, err
+		}
+		attrsExpr = transformedAttrs
+	}
+
 	// Transform the content
 	contentExpr, err := vm.transformHTMLContent(element.Content)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Handle attributes when needed
-	// For now, pass nil for attributes
+	return vm.createElCall(tagName, contentExpr, attrsExpr), nil
+}
 
-	return vm.createElCall(tagName, contentExpr, nil), nil
+// transformHTMLAttributes transforms HTML attributes into a Python dictionary expression
+func (vm *ViewTransformer) transformHTMLAttributes(attributes []ast.HTMLAttribute) (ast.Expr, error) {
+	if len(attributes) == 0 {
+		return nil, nil
+	}
+
+	var dictPairs []ast.DictPair
+
+	for _, attr := range attributes {
+		// Create the key (attribute name)
+		keyExpr := &ast.Literal{
+			Type:  ast.LiteralTypeString,
+			Value: attr.Name.Lexeme,
+			Span:  lexer.Span{Start: attr.Name.Start(), End: attr.Name.End()},
+		}
+
+		var valueExpr ast.Expr
+
+		if attr.Value == nil {
+			// Boolean attribute (no value) - use True
+			valueExpr = &ast.Literal{
+				Type:  ast.LiteralTypeBool,
+				Value: true,
+				Span:  attr.Span,
+			}
+		} else {
+			// Transform the attribute value, applying view parameter transformation
+			transformedValue := vm.transformExpression(attr.Value)
+
+			// Check if this is a static string literal - no need to escape
+			if literal, ok := attr.Value.(*ast.Literal); ok && literal.Type == ast.LiteralTypeString {
+				valueExpr = transformedValue
+			} else {
+				// Dynamic expression - wrap with escape() for security
+				valueExpr = &ast.Call{
+					Callee: &ast.Name{
+						Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+						Span:  attr.Span,
+					},
+					Arguments: []*ast.Argument{{Value: transformedValue, Span: attr.Span}},
+					Span:      attr.Span,
+				}
+			}
+		}
+
+		// Create the key-value pair
+		pair := &ast.KeyValuePair{
+			Key:   keyExpr,
+			Value: valueExpr,
+			Span:  attr.Span,
+		}
+
+		dictPairs = append(dictPairs, pair)
+	}
+
+	// Create the dictionary expression
+	return &ast.DictExpr{
+		Pairs: dictPairs,
+		Span:  lexer.Span{},
+	}, nil
 }
 
 // transformHTMLContent transforms HTML content (nested elements, text, etc.) into appropriate expressions
