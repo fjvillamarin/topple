@@ -3,7 +3,6 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // viewStatement parses a view statement according to the grammar:
@@ -117,7 +116,6 @@ func (p *Parser) viewStatement() (ast.Stmt, error) {
 
 // viewBlock parses a view block which can contain Python statements and HTML elements
 func (p *Parser) viewBlock() ([]ast.Stmt, error) {
-	fmt.Printf("[DEBUG] viewBlock()\n")
 	// Check if this is a simple statement block (single line)
 	if !p.check(lexer.Newline) {
 		stmt, err := p.viewStatement_inner()
@@ -126,8 +124,6 @@ func (p *Parser) viewBlock() ([]ast.Stmt, error) {
 		}
 		return []ast.Stmt{stmt}, nil
 	}
-
-	fmt.Printf("[DEBUG] viewBlock() simple statement block\n")
 
 	// Otherwise expect NEWLINE INDENT statements DEDENT
 	_, err := p.consume(lexer.Newline, "expected newline")
@@ -147,7 +143,6 @@ func (p *Parser) viewBlock() ([]ast.Stmt, error) {
 
 	statements := []ast.Stmt{}
 	for !p.isAtEnd() && !p.check(lexer.Dedent) {
-		fmt.Printf("[DEBUG] viewBlock() statement\n")
 		stmt, err := p.viewStatement_inner()
 		if err != nil {
 			return nil, err
@@ -171,14 +166,10 @@ func (p *Parser) viewBlock() ([]ast.Stmt, error) {
 
 // viewStatement_inner parses statements that can appear inside a view body
 func (p *Parser) viewStatement_inner() (ast.Stmt, error) {
-	fmt.Printf("[DEBUG] viewStatement_inner()\n")
 	// Check for HTML elements first
 	if p.check(lexer.TagOpen) {
-		fmt.Printf("[DEBUG] viewStatement_inner() html element\n")
 		return p.htmlElement()
 	}
-
-	fmt.Printf("[DEBUG] viewStatement_inner() compound statement\n")
 
 	// Check for compound statements
 	switch p.peek().Type {
@@ -236,8 +227,6 @@ func (p *Parser) htmlElement() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Print name of the tag
-	fmt.Printf("[DEBUG] htmlElement() tag name: %s\n", tagNameToken.Lexeme)
 
 	// Parse attributes
 	var attributes []ast.HTMLAttribute
@@ -285,7 +274,6 @@ func (p *Parser) htmlElement() (ast.Stmt, error) {
 
 // htmlElementContent parses the content of an HTML element and determines if it's single-line or multiline
 func (p *Parser) htmlElementContent(tagNameToken lexer.Token) ([]ast.Stmt, ast.HTMLElementType, error) {
-	fmt.Printf("[DEBUG] htmlElementContent()\n")
 	var content []ast.Stmt
 
 	// Check if this is immediately followed by a closing tag (empty element)
@@ -302,8 +290,6 @@ func (p *Parser) htmlElementContent(tagNameToken lexer.Token) ([]ast.Stmt, ast.H
 		return p.parseMultilineContent(tagNameToken)
 	}
 
-	fmt.Printf("[DEBUG] htmlElementContent() single line content\n")
-
 	// Parse single-line content
 	return p.parseSingleLineContent(tagNameToken)
 }
@@ -318,8 +304,6 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 		return nil, ast.HTMLMultilineElement, err
 	}
 
-	fmt.Printf("[DEBUG] htmlElementContent() multiline content\n")
-
 	// Consume all remaining newlines
 	for p.check(lexer.Newline) {
 		p.advance()
@@ -333,15 +317,11 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 
 	// Parse content until dedent
 	for !p.isAtEnd() && !p.check(lexer.Dedent) {
-		fmt.Printf("[DEBUG] htmlElementContent() multiline content loop\n")
-		fmt.Printf("[DEBUG] htmlElementContent() peek: %s\n", p.peek().Type)
 		// Skip empty lines
 		if p.check(lexer.Newline) {
 			p.advance()
 			continue
 		}
-
-		fmt.Printf("[DEBUG] htmlElementContent() multiline content loop stmt\n")
 
 		// Handle nested HTML elements or Python statements only
 		// Multiline HTML does NOT support raw HTML text
@@ -349,8 +329,6 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 		if err != nil {
 			return nil, ast.HTMLMultilineElement, err
 		}
-
-		fmt.Printf("[DEBUG] htmlElementContent() multiline content loop stmt: %s\n", stmt)
 
 		if stmt != nil {
 			content = append(content, stmt)

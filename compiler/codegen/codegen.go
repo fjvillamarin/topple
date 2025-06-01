@@ -76,15 +76,35 @@ func (cg *CodeGenerator) VisitName(n *ast.Name) ast.Visitor {
 }
 
 func (cg *CodeGenerator) VisitLiteral(l *ast.Literal) ast.Visitor {
-	switch l.Type {
-	case ast.LiteralTypeString:
-		cg.write(fmt.Sprintf("\"%s\"", l.Value))
-	case ast.LiteralTypeNumber:
-		cg.write(fmt.Sprintf("%v", l.Value))
-	case ast.LiteralTypeBool:
-		cg.write(fmt.Sprintf("%v", l.Value))
-	case ast.LiteralTypeNone:
-		cg.write("None")
+	// Handle the case where literal type might be wrong - check actual value type
+	switch v := l.Value.(type) {
+	case string:
+		if l.Type == ast.LiteralTypeString {
+			// Correct string literal
+			cg.write(fmt.Sprintf("\"%s\"", v))
+		} else {
+			// String value but wrong type - treat as string anyway
+			cg.write(fmt.Sprintf("\"%s\"", v))
+		}
+	case int:
+		cg.write(fmt.Sprintf("%d", v))
+	case int64:
+		cg.write(fmt.Sprintf("%d", v))
+	case float64:
+		cg.write(fmt.Sprintf("%g", v))
+	case bool:
+		if v {
+			cg.write("True")
+		} else {
+			cg.write("False")
+		}
+	default:
+		// Fallback for other types
+		if l.Type == ast.LiteralTypeNone {
+			cg.write("None")
+		} else {
+			cg.write(fmt.Sprintf("%v", v))
+		}
 	}
 	return cg
 }

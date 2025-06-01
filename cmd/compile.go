@@ -126,6 +126,9 @@ func compileFile(fs filesystem.FileSystem, cmp compiler.Compiler, inputPath, out
 	}
 	pythonCode, errors := cmp.Compile(ctx, file)
 	if len(errors) > 0 {
+		for _, err := range errors {
+			log.ErrorContext(ctx, "Error compiling file", slog.String("error", err.Error()))
+		}
 		return fmt.Errorf("error compiling file: %d errors", len(errors))
 	}
 

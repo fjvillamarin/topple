@@ -2,13 +2,12 @@ package transformers
 
 import (
 	"biscuit/compiler/ast"
+	"biscuit/compiler/resolver"
 	"fmt"
 )
 
 // TransformerVisitor is a visitor that transforms PSX-specific AST nodes into Python AST nodes
 type TransformerVisitor struct {
-	viewMutator *ViewTransformer
-
 	// Track transformations
 	hasTransformed bool
 	errors         []error
@@ -18,25 +17,27 @@ type TransformerVisitor struct {
 }
 
 // NewTransformerVisitor creates a new TransformerVisitor
-func NewTransformerVisitor(viewMutator *ViewTransformer) *TransformerVisitor {
+func NewTransformerVisitor() *TransformerVisitor {
 	return &TransformerVisitor{
-		viewMutator:    viewMutator,
 		hasTransformed: false,
 		errors:         []error{},
 	}
 }
 
 // TransformModule transforms a module by replacing ViewStmt nodes with Class nodes
-func (mv *TransformerVisitor) TransformModule(module *ast.Module) (*ast.Module, error) {
+func (mv *TransformerVisitor) TransformModule(module *ast.Module, resolutionTable *resolver.ResolutionTable) (*ast.Module, error) {
+	// Create view transformer with resolution table
+	viewTransformer := NewViewTransformer(resolutionTable)
+
 	// Transform the module body
-	transformedBody, err := mv.transformStatements(module.Body)
+	transformedBody, err := mv.transformStatements(module.Body, viewTransformer)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add required imports if any views were transformed
 	if mv.hasTransformed {
-		imports := mv.viewMutator.GetRequiredImports()
+		imports := viewTransformer.GetRequiredImports()
 		// Prepend imports to the module body
 		allStmts := make([]ast.Stmt, 0, len(imports)+len(transformedBody))
 		for _, imp := range imports {
@@ -53,14 +54,14 @@ func (mv *TransformerVisitor) TransformModule(module *ast.Module) (*ast.Module, 
 }
 
 // transformStatements transforms a slice of statements, replacing ViewStmt with Class
-func (mv *TransformerVisitor) transformStatements(stmts []ast.Stmt) ([]ast.Stmt, error) {
+func (mv *TransformerVisitor) transformStatements(stmts []ast.Stmt, viewTransformer *ViewTransformer) ([]ast.Stmt, error) {
 	var transformed []ast.Stmt
 
 	for _, stmt := range stmts {
 		switch s := stmt.(type) {
 		case *ast.ViewStmt:
-			// Transform ViewStmt to Class
-			class, err := mv.viewMutator.TransformViewToClass(s)
+			// Transform ViewStmt to Class using the configured view transformer
+			class, err := viewTransformer.TransformViewToClass(s)
 			if err != nil {
 				return nil, fmt.Errorf("failed to transform view %s: %w", s.Name.Token.Lexeme, err)
 			}

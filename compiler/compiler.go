@@ -9,6 +9,7 @@ import (
 	"biscuit/compiler/codegen/transformers"
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/parser"
+	"biscuit/compiler/resolver"
 )
 
 // File represents a file in the Biscuit compiler
@@ -46,8 +47,21 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []er
 		return nil, errors
 	}
 
-	transformerVisitor := transformers.NewTransformerVisitor(transformers.NewViewTransformer())
-	ast, err := transformerVisitor.TransformModule(ast)
+	// Variable resolution phase
+	r := resolver.NewResolver()
+	resolutionTable, err := r.Resolve(ast)
+	if err != nil {
+		return nil, []error{err}
+	}
+	if len(resolutionTable.Errors) > 0 {
+		return nil, resolutionTable.Errors
+	}
+
+	resolver.DebugPrintResolutionTable(resolutionTable)
+
+	// Transformation phase with resolution information
+	transformerVisitor := transformers.NewTransformerVisitor()
+	ast, err = transformerVisitor.TransformModule(ast, resolutionTable)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -70,12 +84,6 @@ func Parse(src []byte) (*ast.Module, []error) {
 
 	parser := parser.NewParser(tokens)
 	program, errors := parser.Parse()
-
-	transformerVisitor := transformers.NewTransformerVisitor(transformers.NewViewTransformer())
-	program, err := transformerVisitor.TransformModule(program)
-	if err != nil {
-		return nil, []error{err}
-	}
 
 	if len(errors) > 0 {
 		return nil, errors

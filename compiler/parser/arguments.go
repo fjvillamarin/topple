@@ -3,7 +3,6 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
-	"fmt"
 )
 
 // arguments parses function call arguments according to the grammar:
@@ -108,7 +107,6 @@ func (p *Parser) kwargs() ([]*ast.Argument, error) {
 	} else {
 		// Parse a kwarg_or_starred
 		arg, err := p.parseKwargOrStar()
-		fmt.Println("arg", arg)
 		if err != nil {
 			return nil, err
 		}
@@ -144,11 +142,8 @@ func (p *Parser) kwargs() ([]*ast.Argument, error) {
 				}
 			}
 			args = append(args, arg)
-			fmt.Println("args", args)
 		}
 	}
-
-	fmt.Println("args", args)
 
 	return args, nil
 }
@@ -238,8 +233,6 @@ func (p *Parser) parseKwargOrStar() (*ast.Argument, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("expr", name, " ", expr)
 
 	return &ast.Argument{
 		Name:         name,

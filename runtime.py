@@ -108,7 +108,46 @@ class Element:
 
 
 # -----------------------------------------------------------------------------
-# 4) render_child: normalize nested content (BaseView, Element, or literal) to
+# 4) FragmentElement class: represents a fragment (no wrapper element)
+# -----------------------------------------------------------------------------
+class FragmentElement(Element):
+    """
+    A special Element that renders its children without any wrapper tag.
+    This is similar to React fragments - it just concatenates the children
+    without adding any containing HTML element.
+    """
+
+    def __init__(
+        self,
+        children: Union[
+            str, "BaseView", "Element", List[Union[str, "BaseView", "Element"]]
+        ] = "",
+    ):
+        # Initialize with no tag, no attributes, no self-closing
+        super().__init__("", children, {}, False)
+
+    def __str__(self) -> str:
+        """
+        Render this FragmentElement as just its concatenated children
+        without any wrapper tags.
+        """
+        parts: List[str] = []
+        for child in self.children:
+            if child is None:
+                continue
+            if isinstance(child, Element):
+                parts.append(str(child))
+            elif isinstance(child, BaseView):
+                # child.render() will return str, because BaseView.render() wraps _render()
+                parts.append(child.render())
+            else:
+                # Literal text or number: escape it
+                parts.append(escape(child))
+        return "".join(parts)
+
+
+# -----------------------------------------------------------------------------
+# 5) render_child: normalize nested content (BaseView, Element, or literal) to
 #    either an Element or a literal string (to be escaped later)
 # -----------------------------------------------------------------------------
 def render_child(child: Union["BaseView", Element, str, int, float, None]) -> Union[Element, str]:
@@ -131,7 +170,7 @@ def render_child(child: Union["BaseView", Element, str, int, float, None]) -> Un
 
 
 # -----------------------------------------------------------------------------
-# 5) el(): a factory function that produces an Element instance
+# 6) el(): a factory function that produces an Element instance
 # -----------------------------------------------------------------------------
 def el(
     tag: str,
@@ -165,7 +204,7 @@ def el(
 
 
 # -----------------------------------------------------------------------------
-# 6) BaseView: minimal abstract base class
+# 7) BaseView: minimal abstract base class
 # -----------------------------------------------------------------------------
 class BaseView(ABC):
     """
@@ -198,3 +237,19 @@ class BaseView(ABC):
 
     def __str__(self) -> str:
         return self.render()
+
+
+# -----------------------------------------------------------------------------
+# 8) fragment(): a function that renders multiple children without a wrapper element
+# -----------------------------------------------------------------------------
+def fragment(children: List[Union["BaseView", Element, str]]) -> FragmentElement:
+    """
+    Create a FragmentElement that renders multiple children without a wrapper element.
+    This is similar to React fragments - it just concatenates the children
+    without adding any containing HTML element.
+    
+    - children: a list of BaseView instances, Element instances, or strings
+    
+    Returns a FragmentElement that when rendered produces the concatenated HTML.
+    """
+    return FragmentElement(children)

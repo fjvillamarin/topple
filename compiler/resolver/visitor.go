@@ -372,19 +372,73 @@ func (r *Resolver) AnalyzeAssignmentTarget(target ast.Expr) {
 // ===== Placeholder visitors for other nodes =====
 // TODO: Implement these as needed
 
-func (r *Resolver) VisitAssignExpr(a *ast.AssignExpr) ast.Visitor       { return r }
-func (r *Resolver) VisitStarExpr(s *ast.StarExpr) ast.Visitor           { return r }
-func (r *Resolver) VisitTernaryExpr(t *ast.TernaryExpr) ast.Visitor     { return r }
-func (r *Resolver) VisitListExpr(l *ast.ListExpr) ast.Visitor           { return r }
-func (r *Resolver) VisitTupleExpr(t *ast.TupleExpr) ast.Visitor         { return r }
-func (r *Resolver) VisitSetExpr(s *ast.SetExpr) ast.Visitor             { return r }
-func (r *Resolver) VisitDictExpr(d *ast.DictExpr) ast.Visitor           { return r }
-func (r *Resolver) VisitListComp(lc *ast.ListComp) ast.Visitor          { return r }
-func (r *Resolver) VisitSetComp(sc *ast.SetComp) ast.Visitor            { return r }
-func (r *Resolver) VisitDictComp(dc *ast.DictComp) ast.Visitor          { return r }
-func (r *Resolver) VisitGenExpr(ge *ast.GenExpr) ast.Visitor            { return r }
-func (r *Resolver) VisitYieldExpr(y *ast.YieldExpr) ast.Visitor         { return r }
-func (r *Resolver) VisitGroupExpr(g *ast.GroupExpr) ast.Visitor         { return r }
+func (r *Resolver) VisitAssignExpr(a *ast.AssignExpr) ast.Visitor { return r }
+func (r *Resolver) VisitStarExpr(s *ast.StarExpr) ast.Visitor     { return r }
+func (r *Resolver) VisitTernaryExpr(t *ast.TernaryExpr) ast.Visitor {
+	// Visit condition, true expression, and false expression
+	if t.Condition != nil {
+		t.Condition.Accept(r)
+	}
+	if t.TrueExpr != nil {
+		t.TrueExpr.Accept(r)
+	}
+	if t.FalseExpr != nil {
+		t.FalseExpr.Accept(r)
+	}
+	return r
+}
+func (r *Resolver) VisitListExpr(l *ast.ListExpr) ast.Visitor {
+	// Visit all elements in the list
+	for _, element := range l.Elements {
+		if element != nil {
+			element.Accept(r)
+		}
+	}
+	return r
+}
+func (r *Resolver) VisitTupleExpr(t *ast.TupleExpr) ast.Visitor {
+	// Visit all elements in the tuple
+	for _, element := range t.Elements {
+		if element != nil {
+			element.Accept(r)
+		}
+	}
+	return r
+}
+func (r *Resolver) VisitSetExpr(s *ast.SetExpr) ast.Visitor { return r }
+func (r *Resolver) VisitDictExpr(d *ast.DictExpr) ast.Visitor {
+	// Visit all key-value pairs in the dictionary
+	for _, pair := range d.Pairs {
+		if pair != nil {
+			switch p := pair.(type) {
+			case *ast.KeyValuePair:
+				if p.Key != nil {
+					p.Key.Accept(r)
+				}
+				if p.Value != nil {
+					p.Value.Accept(r)
+				}
+			case *ast.DoubleStarredPair:
+				if p.Expr != nil {
+					p.Expr.Accept(r)
+				}
+			}
+		}
+	}
+	return r
+}
+func (r *Resolver) VisitListComp(lc *ast.ListComp) ast.Visitor  { return r }
+func (r *Resolver) VisitSetComp(sc *ast.SetComp) ast.Visitor    { return r }
+func (r *Resolver) VisitDictComp(dc *ast.DictComp) ast.Visitor  { return r }
+func (r *Resolver) VisitGenExpr(ge *ast.GenExpr) ast.Visitor    { return r }
+func (r *Resolver) VisitYieldExpr(y *ast.YieldExpr) ast.Visitor { return r }
+func (r *Resolver) VisitGroupExpr(g *ast.GroupExpr) ast.Visitor {
+	// Visit the grouped expression
+	if g.Expression != nil {
+		g.Expression.Accept(r)
+	}
+	return r
+}
 func (r *Resolver) VisitParameterList(p *ast.ParameterList) ast.Visitor { return r }
 func (r *Resolver) VisitParameter(p *ast.Parameter) ast.Visitor         { return r }
 func (r *Resolver) VisitTypeParamExpr(t *ast.TypeParam) ast.Visitor     { return r }
@@ -444,9 +498,80 @@ func (r *Resolver) VisitMultiStmt(m *ast.MultiStmt) ast.Visitor {
 	return r
 }
 
-func (r *Resolver) VisitIf(i *ast.If) ast.Visitor           { return r }
-func (r *Resolver) VisitWhile(w *ast.While) ast.Visitor     { return r }
-func (r *Resolver) VisitFor(f *ast.For) ast.Visitor         { return r }
+func (r *Resolver) VisitIf(i *ast.If) ast.Visitor {
+	// Visit the condition
+	if i.Condition != nil {
+		i.Condition.Accept(r)
+	}
+
+	// Visit the body
+	for _, stmt := range i.Body {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	// Visit the else clause if present
+	for _, stmt := range i.Else {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	return r
+}
+
+func (r *Resolver) VisitWhile(w *ast.While) ast.Visitor {
+	// Visit the test condition
+	if w.Test != nil {
+		w.Test.Accept(r)
+	}
+
+	// Visit the body
+	for _, stmt := range w.Body {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	// Visit the else clause if present
+	for _, stmt := range w.Else {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	return r
+}
+
+func (r *Resolver) VisitFor(f *ast.For) ast.Visitor {
+	// Visit the iterable first
+	if f.Iterable != nil {
+		f.Iterable.Accept(r)
+	}
+
+	// Visit the target (loop variable)
+	if f.Target != nil {
+		f.Target.Accept(r)
+	}
+
+	// Visit the body
+	for _, stmt := range f.Body {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	// Visit the else clause if present
+	for _, stmt := range f.Else {
+		if stmt != nil {
+			stmt.Accept(r)
+		}
+	}
+
+	return r
+}
+
 func (r *Resolver) VisitWith(w *ast.With) ast.Visitor       { return r }
 func (r *Resolver) VisitTry(t *ast.Try) ast.Visitor         { return r }
 func (r *Resolver) VisitMatch(m *ast.MatchStmt) ast.Visitor { return r }
