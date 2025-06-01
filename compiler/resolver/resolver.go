@@ -39,7 +39,7 @@ type Resolver struct {
 	ast.Visitor
 }
 
-// NewResolver creates a new variable resolver
+// NewResolver constructs and initializes a new Resolver for variable and view resolution within a module.
 func NewResolver() *Resolver {
 	resolver := &Resolver{
 		Scopes:        []*Environment{},
