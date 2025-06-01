@@ -648,8 +648,42 @@ func (vm *ViewTransformer) processViewStatement(stmt ast.Stmt) ([]ast.Stmt, erro
 		// Handle if statements in HTML context
 		return vm.processIfStatement(s)
 
+	case *ast.ExprStmt:
+		// Handle expression statements in HTML context
+		if vm.currentContext != "" {
+			// We're in an HTML context - only treat string-like expressions as content
+			if vm.isStringLikeExpression(s.Expr) {
+				// Transform the expression and wrap it with escape() for security
+				transformedExpr := vm.transformExpression(s.Expr)
+
+				// Wrap with escape() call
+				escapedExpr := &ast.Call{
+					Callee: &ast.Name{
+						Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+						Span:  s.Span,
+					},
+					Arguments: []*ast.Argument{{
+						Value: transformedExpr,
+						Span:  s.Span,
+					}},
+					Span: s.Span,
+				}
+
+				// Append to current HTML context
+				appendStmt := vm.createAppendStatement(vm.currentContext, escapedExpr)
+				return []ast.Stmt{appendStmt}, nil
+			} else {
+				// Non-string expression in HTML context - ignore it (don't treat as content)
+				return []ast.Stmt{}, nil
+			}
+		} else {
+			// Not in HTML context - treat as regular Python statement
+			transformedStmt := vm.transformStatement(s)
+			return []ast.Stmt{transformedStmt}, nil
+		}
+
 	default:
-		// For non-HTML statements, transform them and keep as Python code
+		// For other non-HTML statements, transform them and keep as Python code
 		transformedStmt := vm.transformStatement(stmt)
 		return []ast.Stmt{transformedStmt}, nil
 	}
@@ -683,23 +717,221 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 			return nil, err
 		}
 
-		// This is a view composition - create a view instantiation call with slot support
-		viewCall, err := vm.transformViewCallWithSlots(viewStmt, element)
+		// This is a view composition - we need to process slot content in the current context first
+		// Collect slot content from the element's children
+		slotContent, err := vm.collectSlotContent(element.Content)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid slot usage in view %s: %v", viewStmt.Name.Token.Lexeme, err)
 		}
+
+		// Process slot content in the current context to handle control structures
+		var processedSlotArgs []*ast.Argument
+
+		for slotName, content := range slotContent {
+			// Skip empty content arrays
+			if len(content) == 0 {
+				continue
+			}
+
+			var paramName string
+			if slotName == "" {
+				paramName = "children"
+			} else {
+				paramName = slotName
+			}
+
+			// Process the slot content in the current context
+			var slotContentExpr ast.Expr
+
+			if len(content) == 1 {
+				// Single content item - check what it is
+				switch stmt := content[0].(type) {
+				case *ast.HTMLElement:
+					// Single HTML element - but it might contain complex nested content
+					// We need to process it properly instead of just transforming it
+
+					// Create a temporary children array for this slot content
+					slotContextName := vm.generateContextName("slot")
+
+					// Add the children array declaration
+					childrenArray := &ast.AssignStmt{
+						Targets: []ast.Expr{&ast.Name{
+							Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+							Span:  element.Span,
+						}},
+						Value: &ast.ListExpr{Elements: []ast.Expr{}, Span: element.Span},
+						Span:  element.Span,
+					}
+					statements = append(statements, childrenArray)
+
+					// Temporarily set this as the current context
+					oldContext := vm.currentContext
+					vm.currentContext = slotContextName
+
+					// Process the HTML element in this context (this will handle nested control structures)
+					processedStmts, err := vm.processViewStatement(stmt)
+					if err != nil {
+						vm.currentContext = oldContext
+						continue // Skip this slot if processing fails
+					}
+					statements = append(statements, processedStmts...)
+
+					// Restore the old context
+					vm.currentContext = oldContext
+
+					// Use fragment to wrap the processed content
+					slotContentExpr = &ast.Call{
+						Callee: &ast.Name{
+							Token: lexer.Token{Lexeme: "fragment", Type: lexer.Identifier},
+							Span:  element.Span,
+						},
+						Arguments: []*ast.Argument{{
+							Value: &ast.Name{
+								Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+								Span:  element.Span,
+							},
+							Span: element.Span,
+						}},
+						Span: element.Span,
+					}
+				case *ast.HTMLContent:
+					// HTML content - transform it directly
+					transformedContent, err := vm.transformHTMLContentParts(stmt.Parts)
+					if err != nil {
+						continue // Skip this slot if transformation fails
+					}
+					slotContentExpr = transformedContent
+				default:
+					// Complex statement (for loop, if statement, etc.) - process in current context
+					// Create a temporary children array for this slot content
+					slotContextName := vm.generateContextName("slot")
+
+					// Add the children array declaration
+					childrenArray := &ast.AssignStmt{
+						Targets: []ast.Expr{&ast.Name{
+							Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+							Span:  element.Span,
+						}},
+						Value: &ast.ListExpr{Elements: []ast.Expr{}, Span: element.Span},
+						Span:  element.Span,
+					}
+					statements = append(statements, childrenArray)
+
+					// Temporarily set this as the current context
+					oldContext := vm.currentContext
+					vm.currentContext = slotContextName
+
+					// Process the content in this context
+					for _, contentStmt := range content {
+						processedStmts, err := vm.processViewStatement(contentStmt)
+						if err != nil {
+							vm.currentContext = oldContext
+							continue // Skip this content if processing fails
+						}
+						statements = append(statements, processedStmts...)
+					}
+
+					// Restore the old context
+					vm.currentContext = oldContext
+
+					// Use fragment to wrap the processed content
+					slotContentExpr = &ast.Call{
+						Callee: &ast.Name{
+							Token: lexer.Token{Lexeme: "fragment", Type: lexer.Identifier},
+							Span:  element.Span,
+						},
+						Arguments: []*ast.Argument{{
+							Value: &ast.Name{
+								Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+								Span:  element.Span,
+							},
+							Span: element.Span,
+						}},
+						Span: element.Span,
+					}
+				}
+			} else {
+				// Multiple content items - process them all in a temporary context
+				slotContextName := vm.generateContextName("slot")
+
+				// Add the children array declaration
+				childrenArray := &ast.AssignStmt{
+					Targets: []ast.Expr{&ast.Name{
+						Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+						Span:  element.Span,
+					}},
+					Value: &ast.ListExpr{Elements: []ast.Expr{}, Span: element.Span},
+					Span:  element.Span,
+				}
+				statements = append(statements, childrenArray)
+
+				// Temporarily set this as the current context
+				oldContext := vm.currentContext
+				vm.currentContext = slotContextName
+
+				// Process all content in this context
+				for _, contentStmt := range content {
+					processedStmts, err := vm.processViewStatement(contentStmt)
+					if err != nil {
+						vm.currentContext = oldContext
+						continue // Skip this content if processing fails
+					}
+					statements = append(statements, processedStmts...)
+				}
+
+				// Restore the old context
+				vm.currentContext = oldContext
+
+				// Use fragment to wrap the processed content
+				slotContentExpr = &ast.Call{
+					Callee: &ast.Name{
+						Token: lexer.Token{Lexeme: "fragment", Type: lexer.Identifier},
+						Span:  element.Span,
+					},
+					Arguments: []*ast.Argument{{
+						Value: &ast.Name{
+							Token: lexer.Token{Lexeme: slotContextName, Type: lexer.Identifier},
+							Span:  element.Span,
+						},
+						Span: element.Span,
+					}},
+					Span: element.Span,
+				}
+			}
+
+			// Create the slot argument
+			slotArg := &ast.Argument{
+				Name: &ast.Name{
+					Token: lexer.Token{
+						Lexeme: paramName,
+						Type:   lexer.Identifier,
+					},
+					Span: element.Span,
+				},
+				Value: slotContentExpr,
+				Span:  element.Span,
+			}
+
+			processedSlotArgs = append(processedSlotArgs, slotArg)
+		}
+
+		// Create the base view call with regular attributes
+		baseCall := vm.transformViewCall(viewStmt, element.Attributes)
+
+		// Add the processed slot arguments
+		baseCall.Arguments = append(baseCall.Arguments, processedSlotArgs...)
 
 		// Store the parent context before handling the view call
 		parentContext := vm.currentContext
 
 		if parentContext != "" {
 			// Append view call to parent context
-			appendStmt := vm.createAppendStatement(parentContext, viewCall)
+			appendStmt := vm.createAppendStatement(parentContext, baseCall)
 			statements = append(statements, appendStmt)
 		} else {
 			// No parent context - this is a root element, return it directly
 			returnStmt := &ast.ReturnStmt{
-				Value: viewCall,
+				Value: baseCall,
 				Span:  element.Span,
 			}
 			statements = append(statements, returnStmt)
@@ -1024,6 +1256,30 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 	case *ast.HTMLContent:
 		// HTML content with text and interpolations
 		return vm.transformHTMLContentParts(content.Parts)
+
+	case *ast.ExprStmt:
+		// Expression statement - only treat string-like expressions as content
+		if vm.isStringLikeExpression(content.Expr) {
+			transformedExpr := vm.transformExpression(content.Expr)
+			return &ast.Call{
+				Callee: &ast.Name{
+					Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+					Span:  content.Span,
+				},
+				Arguments: []*ast.Argument{{
+					Value: transformedExpr,
+					Span:  content.Span,
+				}},
+				Span: content.Span,
+			}, nil
+		} else {
+			// Non-string expression - return empty string (ignore it)
+			return &ast.Literal{
+				Type:  ast.LiteralTypeString,
+				Value: "",
+				Span:  content.Span,
+			}, nil
+		}
 
 	default:
 		// Other statements (if/for blocks, etc.) - for now, skip them
@@ -1737,11 +1993,60 @@ func (vm *ViewTransformer) transformViewCallWithSlots(viewStmt *ast.ViewStmt, el
 			paramName = slotName
 		}
 
-		// Transform the slot content into an element
-		contentExpr, err := vm.transformHTMLContent(content)
+		// For slot content that might contain control structures,
+		// we need to create an element that can handle complex statements
+		var contentExpr ast.Expr
+
+		// Use the proper view body transformation to handle control structures
+		transformedContent, err := vm.transformViewBody(content)
 		if err != nil {
 			// If transformation fails, skip this slot
 			continue
+		}
+
+		// If we have transformed content, we need to wrap it in a way that can be passed as an argument
+		if len(transformedContent) == 1 {
+			// Single statement - check if it's directly usable
+			if exprStmt, ok := transformedContent[0].(*ast.ExprStmt); ok {
+				contentExpr = exprStmt.Expr
+			} else {
+				// Complex statement - we need to wrap it in a lambda or similar
+				// For now, fall back to fragment approach
+				tempContext := vm.generateContextName("slot")
+				fragmentCall := &ast.Call{
+					Callee: &ast.Name{
+						Token: lexer.Token{Lexeme: "fragment", Type: lexer.Identifier},
+						Span:  element.Span,
+					},
+					Arguments: []*ast.Argument{{
+						Value: &ast.Name{
+							Token: lexer.Token{Lexeme: tempContext, Type: lexer.Identifier},
+							Span:  element.Span,
+						},
+						Span: element.Span,
+					}},
+					Span: element.Span,
+				}
+				contentExpr = fragmentCall
+			}
+		} else {
+			// Multiple statements - use fragment approach
+			tempContext := vm.generateContextName("slot")
+			fragmentCall := &ast.Call{
+				Callee: &ast.Name{
+					Token: lexer.Token{Lexeme: "fragment", Type: lexer.Identifier},
+					Span:  element.Span,
+				},
+				Arguments: []*ast.Argument{{
+					Value: &ast.Name{
+						Token: lexer.Token{Lexeme: tempContext, Type: lexer.Identifier},
+						Span:  element.Span,
+					},
+					Span: element.Span,
+				}},
+				Span: element.Span,
+			}
+			contentExpr = fragmentCall
 		}
 
 		slotArg := &ast.Argument{
@@ -2037,5 +2342,21 @@ func (vm *ViewTransformer) processSlotElement(slotElement *ast.HTMLElement) ([]a
 			Span:  slotElement.Span,
 		}
 		return []ast.Stmt{returnStmt}, nil
+	}
+}
+
+// isStringLikeExpression determines if an expression should be treated as HTML content
+// Only string-like expressions should be rendered as HTML content
+func (vm *ViewTransformer) isStringLikeExpression(expr ast.Expr) bool {
+	switch e := expr.(type) {
+	case *ast.Literal:
+		// Only string literals should be treated as content
+		return e.Type == ast.LiteralTypeString || e.Type == ast.LiteralTypeNumber
+	case *ast.FString:
+		// F-strings are definitely string content
+		return true
+	default:
+		// For other expression types, be conservative and don't treat as content
+		return false
 	}
 }

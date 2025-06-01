@@ -3,6 +3,7 @@ package codegen
 import (
 	"biscuit/compiler/ast"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -80,11 +81,11 @@ func (cg *CodeGenerator) VisitLiteral(l *ast.Literal) ast.Visitor {
 	switch v := l.Value.(type) {
 	case string:
 		if l.Type == ast.LiteralTypeString {
-			// Correct string literal
-			cg.write(fmt.Sprintf("\"%s\"", v))
+			// Correct string literal - use strconv.Quote to properly escape all special characters
+			cg.write(strconv.Quote(v))
 		} else {
 			// String value but wrong type - treat as string anyway
-			cg.write(fmt.Sprintf("\"%s\"", v))
+			cg.write(strconv.Quote(v))
 		}
 	case int:
 		cg.write(fmt.Sprintf("%d", v))
@@ -390,7 +391,18 @@ func (cg *CodeGenerator) VisitFString(f *ast.FString) ast.Visitor {
 }
 
 func (cg *CodeGenerator) VisitFStringMiddle(f *ast.FStringMiddle) ast.Visitor {
-	cg.write(f.Value)
+	// Escape special characters for f-string content
+	value := f.Value
+	// Escape backslashes first
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	// Escape curly braces
+	value = strings.ReplaceAll(value, "{", "{{")
+	value = strings.ReplaceAll(value, "}", "}}")
+	// Escape newlines
+	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\r", "\\r")
+	value = strings.ReplaceAll(value, "\t", "\\t")
+	cg.write(value)
 	return cg
 }
 
@@ -422,7 +434,18 @@ func (cg *CodeGenerator) VisitFStringFormatSpec(f *ast.FStringFormatSpec) ast.Vi
 }
 
 func (cg *CodeGenerator) VisitFStringFormatMiddle(f *ast.FStringFormatMiddle) ast.Visitor {
-	cg.write(f.Value)
+	// Escape special characters for f-string format spec content
+	value := f.Value
+	// Escape backslashes first
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	// Escape curly braces
+	value = strings.ReplaceAll(value, "{", "{{")
+	value = strings.ReplaceAll(value, "}", "}}")
+	// Escape newlines
+	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strings.ReplaceAll(value, "\r", "\\r")
+	value = strings.ReplaceAll(value, "\t", "\\t")
+	cg.write(value)
 	return cg
 }
 
