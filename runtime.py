@@ -230,6 +230,14 @@ class BaseView(ABC):
     Uses caching to ensure _render() is only called once per instance.
     """
 
+    def __init__(self):
+        """
+        Initialize cache attributes to prevent pylint W0201 warnings.
+        Subclasses should call super().__init__() to maintain proper initialization.
+        """
+        self._render_cache: Optional[Union[Element, str]] = None
+        self._html_cache: Optional[str] = None
+
     @abstractmethod
     def _render(self) -> Union[Element, str]:
         """
@@ -247,10 +255,6 @@ class BaseView(ABC):
         Get the rendered result, using cache if available.
         This ensures _render() is only called once per instance.
         """
-        # Lazy initialization of cache attribute
-        if not hasattr(self, '_render_cache'):
-            self._render_cache = None
-        
         if self._render_cache is None:
             self._render_cache = self._render()
         return self._render_cache
@@ -261,10 +265,6 @@ class BaseView(ABC):
         If an Element, convert to str (which escapes and concatenates children appropriately).
         This method uses caching to ensure the final HTML is only generated once.
         """
-        # Lazy initialization of cache attribute
-        if not hasattr(self, '_html_cache'):
-            self._html_cache = None
-            
         if self._html_cache is not None:
             return self._html_cache
 

@@ -347,6 +347,30 @@ func (vm *ViewTransformer) createInitMethod(viewStmt *ast.ViewStmt) (*ast.Functi
 
 	// Create assignment statements for each view parameter
 	var initBody []ast.Stmt
+
+	// Add super().__init__() call as the first statement
+	superCall := &ast.ExprStmt{
+		Expr: &ast.Call{
+			Callee: &ast.Attribute{
+				Object: &ast.Call{
+					Callee: &ast.Name{
+						Token: lexer.Token{Lexeme: "super", Type: lexer.Identifier},
+						Span:  viewStmt.Span,
+					},
+					Arguments: []*ast.Argument{},
+					Span:      viewStmt.Span,
+				},
+				Name: lexer.Token{Lexeme: "__init__", Type: lexer.Identifier},
+				Span: viewStmt.Span,
+			},
+			Arguments: []*ast.Argument{},
+			Span:      viewStmt.Span,
+		},
+		Span: viewStmt.Span,
+	}
+	initBody = append(initBody, superCall)
+
+	// Add view parameter assignments
 	if viewStmt.Params != nil && len(viewStmt.Params.Parameters) > 0 {
 		for _, param := range viewStmt.Params.Parameters {
 			// Skip parameters with nil names
