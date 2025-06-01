@@ -79,7 +79,7 @@ type ResolutionTable struct {
 	ViewElements map[*ast.HTMLElement]*ast.ViewStmt // HTMLElement → ViewStmt mapping (for composition)
 }
 
-// NewResolutionTable creates a new empty resolution table
+// NewResolutionTable returns a new ResolutionTable with all internal maps and slices initialized for variable resolution and view composition.
 func NewResolutionTable() *ResolutionTable {
 	return &ResolutionTable{
 		Variables:      make(map[*ast.Name]*Variable),
