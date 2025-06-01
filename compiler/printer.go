@@ -1530,8 +1530,7 @@ func (p *ASTPrinter) VisitClass(node *ast.Class) ast.Visitor {
 		for i, arg := range node.Args {
 			p.result.WriteString(fmt.Sprintf("%sarg %d:\n", p.indent(), i))
 			p.indentLevel++
-			argCopy := arg // Create a copy of the argument
-			p.VisitArgument(&argCopy)
+			arg.Accept(p)
 			p.indentLevel--
 		}
 		p.indentLevel--

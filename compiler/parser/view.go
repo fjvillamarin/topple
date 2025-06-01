@@ -109,7 +109,9 @@ func (p *Parser) viewStatement() (ast.Stmt, error) {
 		ReturnType: returnType,
 		Body:       body,
 		IsAsync:    false, // Views are not async in this POC
-		Span:       lexer.Span{Start: viewToken.Start(), End: endPos},
+		Kind:       ast.ViewKindServerView,
+
+		Span: lexer.Span{Start: viewToken.Start(), End: endPos},
 	}, nil
 }
 

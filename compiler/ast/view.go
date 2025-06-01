@@ -5,6 +5,13 @@ import (
 	"fmt"
 )
 
+type ViewKind string
+
+const (
+	ViewKindServerView ViewKind = "server_view"
+	ViewKindClientView ViewKind = "client_view"
+)
+
 // ViewStmt represents a view definition statement
 type ViewStmt struct {
 	Name       *Name          // View name
@@ -13,6 +20,7 @@ type ViewStmt struct {
 	ReturnType Expr           // Return type annotation (optional)
 	Body       []Stmt         // View body containing Python statements and HTML elements
 	IsAsync    bool           // Whether it's an async view
+	Kind       ViewKind       // View kind
 
 	Span lexer.Span
 }

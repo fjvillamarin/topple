@@ -90,14 +90,10 @@ func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
 	}
 
 	// Convert []ast.Argument to []ast.Expr for the Call node
-	argExprs := make([]ast.Expr, len(args))
-	for i, arg := range args {
-		argExprs[i] = arg.Value
-	}
 
 	return &ast.Call{
 		Callee:    callee,
-		Arguments: argExprs,
+		Arguments: args,
 
 		Span: lexer.Span{Start: callee.GetSpan().Start, End: right.End()},
 	}, nil

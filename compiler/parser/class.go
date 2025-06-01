@@ -52,7 +52,7 @@ func (p *Parser) classStatement() (ast.Stmt, error) {
 	}
 
 	// Parse optional parent classes/arguments
-	var args []ast.Argument
+	var args []*ast.Argument
 	if p.match(lexer.LeftParen) {
 		// Check for empty argument list
 		if !p.check(lexer.RightParen) {

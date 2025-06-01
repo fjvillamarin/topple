@@ -754,6 +754,7 @@ func (cg *CodeGenerator) VisitDecorator(d *ast.Decorator) ast.Visitor {
 	cg.write("@")
 	d.Expr.Accept(cg)
 	cg.newline()
+	d.Stmt.Accept(cg)
 	return cg
 }
 
@@ -836,6 +837,30 @@ func (cg *CodeGenerator) VisitParameterList(p *ast.ParameterList) ast.Visitor {
 		}
 		param.Accept(cg)
 	}
+	return cg
+}
+
+func (cg *CodeGenerator) VisitParameter(p *ast.Parameter) ast.Visitor {
+	if p.IsStar {
+		cg.write("*")
+	} else if p.IsDoubleStar {
+		cg.write("**")
+	}
+
+	if p.Name != nil {
+		p.Name.Accept(cg)
+	}
+
+	if p.Annotation != nil {
+		cg.write(": ")
+		p.Annotation.Accept(cg)
+	}
+
+	if p.Default != nil {
+		cg.write(" = ")
+		p.Default.Accept(cg)
+	}
+
 	return cg
 }
 
@@ -974,4 +999,30 @@ func (cg *CodeGenerator) VisitOrPattern(op *ast.OrPattern) ast.Visitor {
 		pattern.Accept(cg)
 	}
 	return cg
+}
+
+// PSX-specific visitors that should not be called after mutation
+func (cg *CodeGenerator) VisitViewStmt(v *ast.ViewStmt) ast.Visitor {
+	// This should never be called since ViewStmt nodes are transformed to Class nodes by the mutator
+	panic("ViewStmt nodes should be transformed to Class nodes before code generation")
+}
+
+func (cg *CodeGenerator) VisitHTMLElement(h *ast.HTMLElement) ast.Visitor {
+	// This should never be called since HTML elements are transformed by the mutator
+	panic("HTMLElement nodes should be transformed before code generation")
+}
+
+func (cg *CodeGenerator) VisitHTMLContent(h *ast.HTMLContent) ast.Visitor {
+	// This should never be called since HTML content is transformed by the mutator
+	panic("HTMLContent nodes should be transformed before code generation")
+}
+
+func (cg *CodeGenerator) VisitHTMLText(h *ast.HTMLText) ast.Visitor {
+	// This should never be called since HTML text is transformed by the mutator
+	panic("HTMLText nodes should be transformed before code generation")
+}
+
+func (cg *CodeGenerator) VisitHTMLInterpolation(h *ast.HTMLInterpolation) ast.Visitor {
+	// This should never be called since HTML interpolation is transformed by the mutator
+	panic("HTMLInterpolation nodes should be transformed before code generation")
 }

@@ -8,7 +8,7 @@ import (
 type Class struct {
 	Name       *Name
 	TypeParams []TypeParam
-	Args       []Argument
+	Args       []*Argument
 	Body       []Stmt
 
 	Span lexer.Span

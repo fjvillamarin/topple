@@ -8,7 +8,7 @@ import (
 // Call represents a function call expression (func(args))
 type Call struct {
 	Callee    Expr
-	Arguments []Expr
+	Arguments []*Argument
 
 	Span lexer.Span
 }

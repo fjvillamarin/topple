@@ -3,6 +3,7 @@ package parser
 import (
 	"biscuit/compiler/ast"
 	"biscuit/compiler/lexer"
+	"fmt"
 )
 
 // arguments parses function call arguments according to the grammar:
@@ -12,10 +13,10 @@ import (
 //	| args [','] &')'
 //
 // This is used when parsing function calls in expressions.
-func (p *Parser) arguments() ([]ast.Argument, error) {
+func (p *Parser) arguments() ([]*ast.Argument, error) {
 	// Empty argument list
 	if p.check(lexer.RightParen) {
-		return []ast.Argument{}, nil
+		return []*ast.Argument{}, nil
 	}
 
 	return p.args()
@@ -27,14 +28,14 @@ func (p *Parser) arguments() ([]ast.Argument, error) {
 //
 //	| ','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ [',' kwargs]
 //	| kwargs
-func (p *Parser) args() ([]ast.Argument, error) {
+func (p *Parser) args() ([]*ast.Argument, error) {
 	// Try to parse as kwargs first
 	if p.check(lexer.StarStar) || (p.check(lexer.Identifier) && p.checkNext(lexer.Equal)) {
 		return p.kwargs()
 	}
 
 	// Parse regular arguments or starred expressions
-	args := []ast.Argument{}
+	args := []*ast.Argument{}
 
 	// Parse the first argument
 	arg, err := p.parseArg()
@@ -79,8 +80,8 @@ func (p *Parser) args() ([]ast.Argument, error) {
 //	| ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
 //	| ','.kwarg_or_starred+
 //	| ','.kwarg_or_double_starred+
-func (p *Parser) kwargs() ([]ast.Argument, error) {
-	args := []ast.Argument{}
+func (p *Parser) kwargs() ([]*ast.Argument, error) {
+	args := []*ast.Argument{}
 
 	// Check if we start with a double-starred expression
 	if p.check(lexer.StarStar) {
@@ -107,6 +108,7 @@ func (p *Parser) kwargs() ([]ast.Argument, error) {
 	} else {
 		// Parse a kwarg_or_starred
 		arg, err := p.parseKwargOrStar()
+		fmt.Println("arg", arg)
 		if err != nil {
 			return nil, err
 		}
@@ -142,15 +144,18 @@ func (p *Parser) kwargs() ([]ast.Argument, error) {
 				}
 			}
 			args = append(args, arg)
+			fmt.Println("args", args)
 		}
 	}
+
+	fmt.Println("args", args)
 
 	return args, nil
 }
 
 // parseArg parses a single argument (non-keyword)
 // This handles: starred_expression | expression
-func (p *Parser) parseArg() (ast.Argument, error) {
+func (p *Parser) parseArg() (*ast.Argument, error) {
 	startPos := p.peek().Start()
 
 	// Check for starred expression: '*' expression
@@ -158,10 +163,10 @@ func (p *Parser) parseArg() (ast.Argument, error) {
 		star := p.previous()
 		expr, err := p.expression()
 		if err != nil {
-			return ast.Argument{}, err
+			return nil, err
 		}
 
-		return ast.Argument{
+		return &ast.Argument{
 			Value:        expr,
 			IsStar:       true,
 			IsDoubleStar: false,
@@ -172,15 +177,15 @@ func (p *Parser) parseArg() (ast.Argument, error) {
 	// Regular expression
 	expr, err := p.expression()
 	if err != nil {
-		return ast.Argument{}, err
+		return nil, err
 	}
 
 	// Check that it's not followed by '=' (which would make it a keyword arg)
 	if p.check(lexer.Equal) {
-		return ast.Argument{}, p.error(p.peek(), "unexpected '=' in argument")
+		return nil, p.error(p.peek(), "unexpected '=' in argument")
 	}
 
-	return ast.Argument{
+	return &ast.Argument{
 		Value:        expr,
 		IsStar:       false,
 		IsDoubleStar: false,
@@ -194,7 +199,7 @@ func (p *Parser) parseArg() (ast.Argument, error) {
 //
 //	| NAME '=' expression
 //	| starred_expression
-func (p *Parser) parseKwargOrStar() (ast.Argument, error) {
+func (p *Parser) parseKwargOrStar() (*ast.Argument, error) {
 	startPos := p.peek().Start()
 
 	// Check for starred expression: '*' expression
@@ -202,10 +207,10 @@ func (p *Parser) parseKwargOrStar() (ast.Argument, error) {
 		star := p.previous()
 		expr, err := p.expression()
 		if err != nil {
-			return ast.Argument{}, err
+			return nil, err
 		}
 
-		return ast.Argument{
+		return &ast.Argument{
 			Value:        expr,
 			IsStar:       true,
 			IsDoubleStar: false,
@@ -215,7 +220,7 @@ func (p *Parser) parseKwargOrStar() (ast.Argument, error) {
 
 	// Must be a keyword argument: NAME '=' expression
 	if !p.check(lexer.Identifier) {
-		return ast.Argument{}, p.error(p.peek(), "expected identifier or '*' in argument")
+		return nil, p.error(p.peek(), "expected identifier or '*' in argument")
 	}
 
 	nameToken := p.advance()
@@ -226,15 +231,17 @@ func (p *Parser) parseKwargOrStar() (ast.Argument, error) {
 
 	_, err := p.consume(lexer.Equal, "expected '=' after identifier in keyword argument")
 	if err != nil {
-		return ast.Argument{}, err
+		return nil, err
 	}
 
 	expr, err := p.expression()
 	if err != nil {
-		return ast.Argument{}, err
+		return nil, err
 	}
 
-	return ast.Argument{
+	fmt.Println("expr", name, " ", expr)
+
+	return &ast.Argument{
 		Name:         name,
 		Value:        expr,
 		IsStar:       false,
@@ -249,7 +256,7 @@ func (p *Parser) parseKwargOrStar() (ast.Argument, error) {
 //
 //	| NAME '=' expression
 //	| '**' expression
-func (p *Parser) parseKwargOrDoubleStar() (ast.Argument, error) {
+func (p *Parser) parseKwargOrDoubleStar() (*ast.Argument, error) {
 	startPos := p.peek().Start()
 
 	// Check for double-starred expression: '**' expression
@@ -257,10 +264,10 @@ func (p *Parser) parseKwargOrDoubleStar() (ast.Argument, error) {
 		star := p.previous()
 		expr, err := p.expression()
 		if err != nil {
-			return ast.Argument{}, err
+			return nil, err
 		}
 
-		return ast.Argument{
+		return &ast.Argument{
 			Value:        expr,
 			IsStar:       false,
 			IsDoubleStar: true,
@@ -270,7 +277,7 @@ func (p *Parser) parseKwargOrDoubleStar() (ast.Argument, error) {
 
 	// Must be a keyword argument: NAME '=' expression
 	if !p.check(lexer.Identifier) {
-		return ast.Argument{}, p.error(p.peek(), "expected identifier or '**' in argument")
+		return nil, p.error(p.peek(), "expected identifier or '**' in argument")
 	}
 
 	nameToken := p.advance()
@@ -281,15 +288,15 @@ func (p *Parser) parseKwargOrDoubleStar() (ast.Argument, error) {
 
 	_, err := p.consume(lexer.Equal, "expected '=' after identifier in keyword argument")
 	if err != nil {
-		return ast.Argument{}, err
+		return nil, err
 	}
 
 	expr, err := p.expression()
 	if err != nil {
-		return ast.Argument{}, err
+		return nil, err
 	}
 
-	return ast.Argument{
+	return &ast.Argument{
 		Name:         name,
 		Value:        expr,
 		IsStar:       false,

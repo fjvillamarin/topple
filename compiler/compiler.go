@@ -6,6 +6,7 @@ import (
 
 	"biscuit/compiler/ast"
 	"biscuit/compiler/codegen"
+	"biscuit/compiler/codegen/transformers"
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/parser"
 )
@@ -45,6 +46,12 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []er
 		return nil, errors
 	}
 
+	transformerVisitor := transformers.NewTransformerVisitor(transformers.NewViewTransformer())
+	ast, err := transformerVisitor.TransformModule(ast)
+	if err != nil {
+		return nil, []error{err}
+	}
+
 	generator := codegen.NewCodeGenerator()
 	result := generator.Generate(ast)
 
@@ -63,6 +70,12 @@ func Parse(src []byte) (*ast.Module, []error) {
 
 	parser := parser.NewParser(tokens)
 	program, errors := parser.Parse()
+
+	transformerVisitor := transformers.NewTransformerVisitor(transformers.NewViewTransformer())
+	program, err := transformerVisitor.TransformModule(program)
+	if err != nil {
+		return nil, []error{err}
+	}
 
 	if len(errors) > 0 {
 		return nil, errors
