@@ -660,7 +660,10 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 		}
 
 		// This is a view composition - create a view instantiation call with slot support
-		viewCall := vm.transformViewCallWithSlots(viewStmt, element)
+		viewCall, err := vm.transformViewCallWithSlots(viewStmt, element)
+		if err != nil {
+			return nil, err
+		}
 
 		// Store the parent context before handling the view call
 		parentContext := vm.currentContext
@@ -1686,12 +1689,15 @@ func (vm *ViewTransformer) transformViewCall(viewStmt *ast.ViewStmt, attributes 
 }
 
 // transformViewCallWithSlots creates a view instantiation call with slot content support
-func (vm *ViewTransformer) transformViewCallWithSlots(viewStmt *ast.ViewStmt, element *ast.HTMLElement) *ast.Call {
+func (vm *ViewTransformer) transformViewCallWithSlots(viewStmt *ast.ViewStmt, element *ast.HTMLElement) (*ast.Call, error) {
 	// Get the base call without slot content
 	baseCall := vm.transformViewCall(viewStmt, element.Attributes)
 
 	// Collect slot content from the element's children
-	slotContent := vm.collectSlotContent(element.Content)
+	slotContent, err := vm.collectSlotContent(element.Content)
+	if err != nil {
+		return nil, fmt.Errorf("invalid slot usage in view %s: %v", viewStmt.Name.Token.Lexeme, err)
+	}
 
 	// Add slot arguments to the call
 	for slotName, content := range slotContent {
@@ -1729,11 +1735,11 @@ func (vm *ViewTransformer) transformViewCallWithSlots(viewStmt *ast.ViewStmt, el
 		baseCall.Arguments = append(baseCall.Arguments, slotArg)
 	}
 
-	return baseCall
+	return baseCall, nil
 }
 
 // collectSlotContent groups the element's content by slot name
-func (vm *ViewTransformer) collectSlotContent(content []ast.Stmt) map[string][]ast.Stmt {
+func (vm *ViewTransformer) collectSlotContent(content []ast.Stmt) (map[string][]ast.Stmt, error) {
 	slotContent := make(map[string][]ast.Stmt)
 
 	for _, stmt := range content {
@@ -1749,23 +1755,21 @@ func (vm *ViewTransformer) collectSlotContent(content []ast.Stmt) map[string][]a
 			} else {
 				// Element without slot attribute - check for nested slots which should be invalid
 				if vm.hasNestedSlotAttributes(htmlElement) {
-					// This should trigger an error - we have slot attributes nested inside this element
-					// For now, we'll continue but this indicates an invalid structure
+					return nil, fmt.Errorf("slot attributes found nested inside HTML element <%s>. Slot attributes can only be used on direct children of view elements", htmlElement.TagName.Lexeme)
 				}
 				slotContent[""] = append(slotContent[""], stmt)
 			}
 		} else {
 			// Check for nested slot attributes in control structures
 			if vm.hasNestedSlotAttributesInStmt(stmt) {
-				// This should trigger an error - slot attributes in control structures
-				// For now, we'll continue but this indicates an invalid structure
+				return nil, fmt.Errorf("slot attributes found inside control structures. Slot attributes can only be used on direct children of view elements, not within if/for/while statements")
 			}
 			// Non-HTML elements go to the default slot
 			slotContent[""] = append(slotContent[""], stmt)
 		}
 	}
 
-	return slotContent
+	return slotContent, nil
 }
 
 // hasSlotAttribute checks if an HTML element has a slot attribute
