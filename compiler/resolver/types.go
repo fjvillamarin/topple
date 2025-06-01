@@ -73,6 +73,10 @@ type ResolutionTable struct {
 	CellVars       map[string]bool         // Variables needing cells
 	FreeVars       map[string]bool         // Free variables
 	Errors         []error                 // Resolution errors
+
+	// View composition support
+	Views        map[string]*ast.ViewStmt           // View name → ViewStmt mapping (module level views)
+	ViewElements map[*ast.HTMLElement]*ast.ViewStmt // HTMLElement → ViewStmt mapping (for composition)
 }
 
 // NewResolutionTable creates a new empty resolution table
@@ -84,5 +88,7 @@ func NewResolutionTable() *ResolutionTable {
 		CellVars:       make(map[string]bool),
 		FreeVars:       make(map[string]bool),
 		Errors:         []error{},
+		Views:          make(map[string]*ast.ViewStmt),
+		ViewElements:   make(map[*ast.HTMLElement]*ast.ViewStmt),
 	}
 }

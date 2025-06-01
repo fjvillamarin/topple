@@ -235,6 +235,11 @@ func (r *Resolver) VisitViewStmt(v *ast.ViewStmt) ast.Visitor {
 		variable.State = VariableDefined // Mark view as defined, not just declared
 		r.Variables[v.Name] = variable
 		r.ScopeDepths[v.Name] = len(r.Scopes) - 1 // Current scope depth
+
+		// Track view definition for composition (only at module level)
+		if r.Current != nil && r.Current.ScopeType == ModuleScopeType {
+			r.Views[v.Name.Token.Lexeme] = v
+		}
 	}
 
 	// View body has its own scope
@@ -589,6 +594,13 @@ func (r *Resolver) VisitAsPattern(ap *ast.AsPattern) ast.Visitor             { r
 func (r *Resolver) VisitOrPattern(op *ast.OrPattern) ast.Visitor             { return r }
 
 func (r *Resolver) VisitHTMLElement(h *ast.HTMLElement) ast.Visitor {
+	// Check if this HTML element references a view (for composition)
+	tagName := h.TagName.Lexeme
+	if viewStmt, exists := r.Views[tagName]; exists {
+		// This HTML element is actually a view reference - bind it
+		r.ViewElements[h] = viewStmt
+	}
+
 	// Visit all attributes first - they contain expressions that need resolution
 	for _, attr := range h.Attributes {
 		if attr.Value != nil {

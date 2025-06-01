@@ -30,6 +30,10 @@ func DebugPrintResolutionTable(table *ResolutionTable) {
 		fmt.Println()
 	}
 
+	// Print view composition information
+	printViewComposition(table.Views, table.ViewElements)
+	fmt.Println()
+
 	// Print closure information
 	printClosureInfo(table.CellVars, table.FreeVars)
 	fmt.Println()
@@ -146,6 +150,25 @@ func printViewParameters(viewParams map[string]*Variable) {
 		flags := formatVariableFlags(variable)
 		fmt.Printf("  %-20s %s\n", name, flags)
 	}
+}
+
+// printViewComposition displays view composition information
+func printViewComposition(views map[string]*ast.ViewStmt, viewElements map[*ast.HTMLElement]*ast.ViewStmt) {
+	fmt.Println("🔧 VIEW COMPOSITION:")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━")
+	if len(views) > 0 {
+		fmt.Printf("  Views defined: %d\n", len(views))
+		for viewName := range views {
+			fmt.Printf("    • %s\n", viewName)
+		}
+		fmt.Printf("  View elements bound: %d\n", len(viewElements))
+		for _, viewStmt := range viewElements {
+			fmt.Printf("    • <HTML> → %s view\n", viewStmt.Name.Token.Lexeme)
+		}
+	} else {
+		fmt.Println("  (No views defined)")
+	}
+	fmt.Println()
 }
 
 // printClosureInfo displays closure analysis information

@@ -433,16 +433,14 @@ func (vm *ViewTransformer) processViewStatement(stmt ast.Stmt) ([]ast.Stmt, erro
 // needsHierarchicalProcessing analyzes content to determine if it requires children arrays
 func (vm *ViewTransformer) needsHierarchicalProcessing(content []ast.Stmt) bool {
 	for _, stmt := range content {
-		switch stmt.(type) {
+		switch s := stmt.(type) {
 		case *ast.For, *ast.If, *ast.While, *ast.With, *ast.Try:
 			// Compound statements that can generate multiple elements need hierarchical processing
 			return true
 		case *ast.HTMLElement:
 			// Nested HTML elements might need hierarchical processing
-			if htmlElement, ok := stmt.(*ast.HTMLElement); ok {
-				if vm.needsHierarchicalProcessing(htmlElement.Content) {
-					return true
-				}
+			if vm.needsHierarchicalProcessing(s.Content) {
+				return true
 			}
 		}
 	}
@@ -453,6 +451,31 @@ func (vm *ViewTransformer) needsHierarchicalProcessing(content []ast.Stmt) bool 
 func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.Stmt, error) {
 	var statements []ast.Stmt
 
+	// Check if this element is actually a view composition
+	if viewStmt, isView := vm.isViewElement(element); isView {
+		// This is a view composition - create a view instantiation call
+		viewCall := vm.transformViewCall(viewStmt, element.Attributes)
+
+		// Store the parent context before handling the view call
+		parentContext := vm.currentContext
+
+		if parentContext != "" {
+			// Append view call to parent context
+			appendStmt := vm.createAppendStatement(parentContext, viewCall)
+			statements = append(statements, appendStmt)
+		} else {
+			// No parent context - this is a root element, return it directly
+			returnStmt := &ast.ReturnStmt{
+				Value: viewCall,
+				Span:  element.Span,
+			}
+			statements = append(statements, returnStmt)
+		}
+
+		return statements, nil
+	}
+
+	// Regular HTML element processing...
 	// Extract the actual tag name
 	tagName := element.TagName.Lexeme
 
@@ -631,6 +654,13 @@ func (vm *ViewTransformer) createAppendStatement(arrayName string, element ast.E
 
 // transformHTMLElement transforms an HTMLElement into an el() call
 func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.Expr, error) {
+	// Check if this element is actually a view composition
+	if viewStmt, isView := vm.isViewElement(element); isView {
+		// This is a view composition - create a view instantiation call
+		return vm.transformViewCall(viewStmt, element.Attributes), nil
+	}
+
+	// Regular HTML element processing...
 	// Extract the actual tag name
 	tagName := element.TagName.Lexeme
 
@@ -1268,4 +1298,82 @@ func (vm *ViewTransformer) processHTMLContent(content *ast.HTMLContent) ([]ast.S
 		Expr: contentExpr,
 		Span: content.Span,
 	}}, nil
+}
+
+// isViewElement checks if an HTML element is bound to a view using the resolution table
+func (vm *ViewTransformer) isViewElement(element *ast.HTMLElement) (*ast.ViewStmt, bool) {
+	if vm.resolutionTable == nil {
+		return nil, false
+	}
+
+	if viewStmt, exists := vm.resolutionTable.ViewElements[element]; exists {
+		return viewStmt, true
+	}
+
+	return nil, false
+}
+
+// transformViewCall creates a view instantiation call from an HTML element and its attributes
+func (vm *ViewTransformer) transformViewCall(viewStmt *ast.ViewStmt, attributes []ast.HTMLAttribute) *ast.Call {
+	// Create the view class name reference
+	viewName := &ast.Name{
+		Token: lexer.Token{
+			Lexeme: viewStmt.Name.Token.Lexeme,
+			Type:   lexer.Identifier,
+		},
+		Span: viewStmt.Span,
+	}
+
+	// Transform attributes into constructor arguments
+	var args []*ast.Argument
+
+	// If the view has parameters, try to match attributes to parameters
+	if viewStmt.Params != nil && len(viewStmt.Params.Parameters) > 0 {
+		for _, param := range viewStmt.Params.Parameters {
+			if param.Name == nil {
+				continue
+			}
+
+			paramName := param.Name.Token.Lexeme
+
+			// Look for matching attribute
+			var attrValue ast.Expr
+			found := false
+
+			for _, attr := range attributes {
+				if attr.Name.Lexeme == paramName {
+					if attr.Value == nil {
+						// Boolean attribute - use True
+						attrValue = &ast.Literal{
+							Type:  ast.LiteralTypeBool,
+							Value: true,
+							Span:  attr.Span,
+						}
+					} else {
+						// Transform the attribute value, applying view parameter transformation
+						// NO ESCAPING - these are constructor arguments, not HTML attributes
+						attrValue = vm.transformExpression(attr.Value)
+					}
+					found = true
+					break
+				}
+			}
+
+			if found {
+				// Add as positional argument (matching parameter order)
+				args = append(args, &ast.Argument{
+					Value: attrValue,
+					Span:  viewStmt.Span,
+				})
+			}
+			// TODO: Could add support for keyword arguments and default values later
+		}
+	}
+
+	// Create the view instantiation call
+	return &ast.Call{
+		Callee:    viewName,
+		Arguments: args,
+		Span:      viewStmt.Span,
+	}
 }

@@ -21,6 +21,10 @@ type Resolver struct {
 	CellVars map[string]bool // Variables needing cells
 	FreeVars map[string]bool // Free variables
 
+	// View composition support
+	Views        map[string]*ast.ViewStmt           // View name → ViewStmt mapping
+	ViewElements map[*ast.HTMLElement]*ast.ViewStmt // HTMLElement → ViewStmt mapping
+
 	// Error tracking
 	Errors []error
 
@@ -45,6 +49,8 @@ func NewResolver() *Resolver {
 		CellVars:      make(map[string]bool),
 		FreeVars:      make(map[string]bool),
 		Errors:        []error{},
+		Views:         make(map[string]*ast.ViewStmt),
+		ViewElements:  make(map[*ast.HTMLElement]*ast.ViewStmt),
 	}
 
 	// Begin with module scope
@@ -66,6 +72,8 @@ func (r *Resolver) Resolve(module *ast.Module) (*ResolutionTable, error) {
 		CellVars:       r.CellVars,
 		FreeVars:       r.FreeVars,
 		Errors:         r.Errors,
+		Views:          r.Views,
+		ViewElements:   r.ViewElements,
 	}
 
 	// Extract view parameters
