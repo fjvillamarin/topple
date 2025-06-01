@@ -1324,50 +1324,54 @@ func (vm *ViewTransformer) transformViewCall(viewStmt *ast.ViewStmt, attributes 
 		Span: viewStmt.Span,
 	}
 
-	// Transform attributes into constructor arguments
+	// Transform attributes into keyword constructor arguments
 	var args []*ast.Argument
 
-	// If the view has parameters, try to match attributes to parameters
-	if viewStmt.Params != nil && len(viewStmt.Params.Parameters) > 0 {
+	// Create a map of valid parameter names for validation
+	validParams := make(map[string]bool)
+	if viewStmt.Params != nil {
 		for _, param := range viewStmt.Params.Parameters {
-			if param.Name == nil {
-				continue
+			if param.Name != nil {
+				validParams[param.Name.Token.Lexeme] = true
 			}
-
-			paramName := param.Name.Token.Lexeme
-
-			// Look for matching attribute
-			var attrValue ast.Expr
-			found := false
-
-			for _, attr := range attributes {
-				if attr.Name.Lexeme == paramName {
-					if attr.Value == nil {
-						// Boolean attribute - use True
-						attrValue = &ast.Literal{
-							Type:  ast.LiteralTypeBool,
-							Value: true,
-							Span:  attr.Span,
-						}
-					} else {
-						// Transform the attribute value, applying view parameter transformation
-						// NO ESCAPING - these are constructor arguments, not HTML attributes
-						attrValue = vm.transformExpression(attr.Value)
-					}
-					found = true
-					break
-				}
-			}
-
-			if found {
-				// Add as positional argument (matching parameter order)
-				args = append(args, &ast.Argument{
-					Value: attrValue,
-					Span:  viewStmt.Span,
-				})
-			}
-			// TODO: Could add support for keyword arguments and default values later
 		}
+	}
+
+	// Process each attribute as a keyword argument
+	for _, attr := range attributes {
+		attrName := attr.Name.Lexeme
+
+		// Only process attributes that match valid view parameters
+		if !validParams[attrName] {
+			continue
+		}
+
+		var attrValue ast.Expr
+		if attr.Value == nil {
+			// Boolean attribute - use True
+			attrValue = &ast.Literal{
+				Type:  ast.LiteralTypeBool,
+				Value: true,
+				Span:  attr.Span,
+			}
+		} else {
+			// Transform the attribute value, applying view parameter transformation
+			// NO ESCAPING - these are constructor arguments, not HTML attributes
+			attrValue = vm.transformExpression(attr.Value)
+		}
+
+		// Create keyword argument
+		args = append(args, &ast.Argument{
+			Name: &ast.Name{
+				Token: lexer.Token{
+					Lexeme: attrName,
+					Type:   lexer.Identifier,
+				},
+				Span: attr.Span,
+			},
+			Value: attrValue,
+			Span:  attr.Span,
+		})
 	}
 
 	// Create the view instantiation call
