@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// DebugPrintResolutionTable prints a nicely formatted resolution table for debugging
+// DebugPrintResolutionTable outputs a comprehensive, formatted debug report of the given resolution table, including errors, variable states, view parameters, view composition, closure variables, and summary statistics.
 func DebugPrintResolutionTable(table *ResolutionTable) {
 	fmt.Println("╔══════════════════════════════════════════════════════════════╗")
 	fmt.Println("║                    RESOLUTION TABLE DEBUG                   ║")
@@ -29,6 +29,10 @@ func DebugPrintResolutionTable(table *ResolutionTable) {
 		printViewParameters(table.ViewParameters)
 		fmt.Println()
 	}
+
+	// Print view composition information
+	printViewComposition(table.Views, table.ViewElements)
+	fmt.Println()
 
 	// Print closure information
 	printClosureInfo(table.CellVars, table.FreeVars)
@@ -124,7 +128,8 @@ func printVariablesTable(variables map[*ast.Name]*Variable, scopeDepths map[*ast
 	}
 }
 
-// printViewParameters displays view parameters information
+// printViewParameters prints a formatted list of view parameters and their flags for debugging purposes.
+// If no view parameters are present, it indicates this explicitly.
 func printViewParameters(viewParams map[string]*Variable) {
 	fmt.Println("🎯 VIEW PARAMETERS:")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━")
@@ -148,7 +153,26 @@ func printViewParameters(viewParams map[string]*Variable) {
 	}
 }
 
-// printClosureInfo displays closure analysis information
+// printViewComposition prints information about defined views and their associated HTML element bindings for debugging purposes.
+func printViewComposition(views map[string]*ast.ViewStmt, viewElements map[*ast.HTMLElement]*ast.ViewStmt) {
+	fmt.Println("🔧 VIEW COMPOSITION:")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━")
+	if len(views) > 0 {
+		fmt.Printf("  Views defined: %d\n", len(views))
+		for viewName := range views {
+			fmt.Printf("    • %s\n", viewName)
+		}
+		fmt.Printf("  View elements bound: %d\n", len(viewElements))
+		for _, viewStmt := range viewElements {
+			fmt.Printf("    • <HTML> → %s view\n", viewStmt.Name.Token.Lexeme)
+		}
+	} else {
+		fmt.Println("  (No views defined)")
+	}
+	fmt.Println()
+}
+
+// printClosureInfo prints closure analysis details, listing cell variables captured by nested functions and free variables from enclosing scopes. If no closure variables are present, it indicates so.
 func printClosureInfo(cellVars, freeVars map[string]bool) {
 	fmt.Println("🔗 CLOSURE ANALYSIS:")
 	fmt.Println("━━━━━━━━━━━━━━━━━━━━")
