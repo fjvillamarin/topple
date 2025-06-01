@@ -1695,6 +1695,11 @@ func (vm *ViewTransformer) transformViewCallWithSlots(viewStmt *ast.ViewStmt, el
 
 	// Add slot arguments to the call
 	for slotName, content := range slotContent {
+		// Skip empty content arrays
+		if len(content) == 0 {
+			continue
+		}
+
 		var paramName string
 		if slotName == "" {
 			paramName = "children"
