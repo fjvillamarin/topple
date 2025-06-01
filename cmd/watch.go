@@ -187,7 +187,7 @@ func clearTerminal() {
 // isBiscuitRelatedFile checks if a file is a .bsct file or a .py file that was generated from a .bsct file
 func isBiscuitRelatedFile(path string) bool {
 	ext := filepath.Ext(path)
-	if ext == ".bsct" {
+	if ext == ".psx" {
 		return true
 	}
 	// if ext == ".py" {
