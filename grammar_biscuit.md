@@ -1,3 +1,108 @@
+# Introduction
+
+Biscuit is a templating language designed to seamlessly blend Python's programming capabilities with HTML for creating dynamic web views. It allows developers to write UI components using familiar Python syntax directly within HTML-like structures, offering a development experience similar to JSX/TSX in the JavaScript ecosystem.
+
+Key benefits of using Biscuit include:
+
+-   **Leveraging Python's full power within templates**: Utilize Python's control flow (if/else, loops), data structures (lists, dictionaries), functions, and even classes directly in your views.
+-   **Creating reusable UI components (views)**: Build modular and maintainable user interfaces by encapsulating markup and logic into reusable views.
+-   **Direct integration with FastAPI**: Biscuit views can be used directly as FastAPI route handlers, simplifying the development of web applications.
+-   **Support for HTMX**: Enhance interactivity and create modern user experiences with minimal JavaScript, thanks to built-in support for HTMX attributes.
+
+# Getting Started: A Simple Example
+
+This tutorial will guide you through creating a basic "Hello, World!" application using Biscuit with FastAPI. We'll define a simple view, set up a FastAPI server, and render our view.
+
+The complete code for this example can be found in `examples/biscuit/01_hello_world/01_hello_world.bsct`.
+
+Let's break down the code step-by-step:
+
+### 1. Define a Biscuit View
+
+A Biscuit view is defined using the `view` keyword, followed by a name (typically PascalCase) and parentheses for parameters (if any). Inside the view, you write HTML markup mixed with Python expressions.
+
+```python
+view HelloWorld():
+    <div>
+        <h1>Hello, World!</h1>
+        <p>This is my first Biscuit view.</p>
+    </div>
+```
+In this example, `HelloWorld` is a simple view that renders a heading and a paragraph.
+
+### 2. Import Necessary Libraries
+
+To run a Biscuit application with FastAPI, you need to import a few things:
+- `FastAPI` from `fastapi` for creating the web application.
+- `HTMLResponse` from `fastapi.responses` to indicate that your endpoint will return HTML.
+- `uvicorn` to serve your FastAPI application.
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+```
+
+### 3. Create a FastAPI Application Instance
+
+Instantiate `FastAPI`. You can optionally give it a title.
+
+```python
+app = FastAPI(title="Biscuit Example: Hello World")
+```
+
+### 4. Create a Route and Render the View
+
+Define a route using FastAPI's decorators (e.g., `@app.get("/")`). In the route function, you render your Biscuit view by calling its `.render()` method. The result of `.render()` is an HTML string, which should be returned wrapped in an `HTMLResponse`.
+
+```python
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return HelloWorld().render()
+```
+Here, when a user visits the root path (`/`), the `index` function is called, which renders the `HelloWorld` view and returns it as HTML.
+
+### 5. Run the Application
+
+The standard Python `if __name__ == "__main__":` block is used to run the application using `uvicorn`.
+
+```python
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+This makes your application accessible at `http://0.0.0.0:8000` (or `http://localhost:8000`).
+
+**Complete Example (`01_hello_world.bsct`)**
+
+Here's the full code putting all the pieces together:
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+# 1. Define a Biscuit View
+view HelloWorld():
+    <div>
+        <h1>Hello, World!</h1>
+        <p>This is my first Biscuit view.</p>
+    </div>
+
+# 3. Create a FastAPI Application Instance
+app = FastAPI(title="Biscuit Example: Hello World")
+
+# 4. Create a Route and Render the View
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return HelloWorld().render()
+
+# 5. Run the Application
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+This simple example demonstrates the core workflow of a Biscuit application. To explore more advanced features and complex use cases, please check out the other examples in the `examples/` directory.
+
 # Biscuit Language Grammar
 
 Biscuit is a templating language that combines Python syntax with HTML-like markup to create reusable UI views. This document explains the core grammar and syntax of the Biscuit language.
@@ -39,6 +144,112 @@ Three types of HTML tag structures are supported:
    </div>
    ```
 
+    **Important Note on Text Content and Expressions:** In Biscuit, how text and Python expressions are included as children of multiline HTML elements follows specific rules to ensure everything aligns with Python's syntax and evaluation model.
+
+    1.  **Plain String Literals**:
+        A Python string literal (e.g., `"Hello"`, `'World'`) placed on its own line as a child of a multiline HTML element is treated directly as a text node. **It does not require surrounding curly braces `{}`.**
+        ```python
+        <div>
+            "This is a plain string."
+            'This is another plain string.'
+        </div>
+        ```
+
+    2.  **F-Strings as Direct Text Nodes**:
+        An f-string (e.g., `f"Hello, {name}"`) placed on its own line as a child of a multiline HTML element can also be treated directly as a text node without requiring surrounding curly braces.
+        ```python
+        view MyView(name: str = "User"):
+            <div>
+                f"Welcome, {name}!"
+            </div>
+        ```
+
+    3.  **Rendering Other Python Expressions as Text**:
+        General Python expressions (e.g., a variable `my_var`, a function call `get_data()`) are **not** directly rendered as text content on their own line by simply wrapping them in curly braces like `{my_var}`. This syntax, when used for a standalone line intended as a text node, is invalid in Biscuit.
+
+        To render the string representation of such an expression's value as a text node on its own line, it **must be embedded within an f-string**. This resulting f-string can then appear on its own line without needing additional, outer curly braces.
+        ```python
+        # Assuming user_name, items, and get_greeting are defined in scope
+        view MyOtherView(user_name: str, items: list):
+            # data_summary is already an f-string, so it can be used directly later
+            data_summary = f"User: {user_name}, Items: {len(items)}"
+
+            <div>
+                f"{user_name.upper()}"        # Method call embedded in an f-string
+                f"{len(items) * 10}"          # Operation embedded in an f-string
+                f"{get_greeting(user_name)}"  # Function call embedded in an f-string
+                data_summary                   # This f-string variable is used directly
+            </div>
+        ```
+        (*Assuming `get_greeting` is a function that returns a string or an object with a suitable string representation.*)
+
+    4.  **Expressions in HTML Attributes**:
+        Setting HTML attribute values using Python expressions (including variables, function calls, f-strings, etc.) follows specific rules. These are detailed in the main "Attributes" section. Generally, direct Python expressions are enclosed in `{}` (e.g., `value={my_var}`), and complex string constructions use f-strings (e.g., `class=f"base {extra_class}"`).
+
+    **Rationale**:
+    The core principle is that all content must be parsable and evaluatable as Python, integrating naturally with HTML-like structures.
+    - Plain Python strings and f-strings on their own lines are directly recognized by the Biscuit parser as text content for convenience.
+    - To render the value of other Python expressions (variables, function calls, etc.) as standalone text nodes, they must be explicitly converted/formatted into strings using f-strings. This ensures that what appears on its own line is clearly either a literal string, an f-string, or an HTML tag/component. The syntax `{expression}` on its own line is not used for this purpose to maintain clarity and avoid ambiguity with potential future block-level expression syntaxes.
+    - Curly braces `{}` remain the dedicated syntax for embedding expressions *within HTML attributes*.
+    - Raw, unquoted text (not a Python string) is invalid as it doesn't conform to Python's expression syntax. This overall approach aids in unambiguous parsing.
+
+    *Correct Usage Summary (within a view body):*
+    ```python
+    # Assuming 'variable', 'user_name', 'items', and 'get_greeting' are defined
+    # variable = "world"
+    # user_name = "Alice"
+    # items = [1, 2, 3]
+    # def get_greeting(name: str) -> str: return f"Hi, {name}!"
+
+    view MyComponent(variable: str = "world", user_name: str = "Alice", items: list = [1,2,3]):
+        my_local_string_var = "local string content"
+        # Assume get_greeting returns a string.
+        # If get_greeting could return non-string, it should be f"{get_greeting(user_name)}"
+
+        <div>
+            "This is a plain string."
+            f"An f-string: Hello, {variable}!"
+            f"{user_name.capitalize()}"     # Method call on a variable, in an f-string
+            f"{len(items)}"                 # Function call, in an f-string
+            f"{my_local_string_var}"        # A local variable, in an f-string
+            f"{get_greeting(user_name)}"    # Function call returning a string, in an f-string
+        </div>
+    ```
+
+    *Incorrect Usage (raw, unquoted text):*
+    ```html
+    <div>
+        This raw text is problematic. <!-- This will cause a parsing error. -->
+        <p>
+            So is this unquoted text. <!-- Also an error. -->
+        </p>
+    </div>
+    ```
+    *Incorrect Usage (standalone expressions not in f-strings for text nodes):*
+    ```python
+    # view MyFailingComponent(user_name: str = "Bob"):
+    #    is_active = True
+    #    <div>
+    #        {user_name}  # INVALID for a standalone text node
+    #        {is_active}  # INVALID for a standalone text node
+    #    </div>
+    ```
+    The above should be:
+    ```python
+    # view MyWorkingComponent(user_name: str = "Bob"):
+    #    is_active = True
+    #    <div>
+    #        f"{user_name}"
+    #        f"{is_active}"
+    #    </div>
+    ```
+    Text within HTML *attributes* always requires curly braces for dynamic Python expressions if using Rule 2 (Direct Python Expressions), or f-strings (Rule 3) for combined literal/expression content. See the "Attributes" section for full details.
+    ```html
+    <div class="static-class {dynamic_variable}" id=f"prefix-{item_id}">
+        "Content string"
+    </div>
+    ```
+
 2. **Single-line HTML tags**:
    ```html
    <span>Some text</span>
@@ -51,10 +262,60 @@ Three types of HTML tag structures are supported:
 
 ### Attributes
 
-HTML tags can have two types of attributes:
+HTML tag attributes in Biscuit can be set in three ways, offering flexibility for static values, direct Python expressions, and complex string constructions.
 
-1. **Value attributes**: `<div class="container" id="main">`
-2. **Boolean attributes**: `<button disabled>`
+1.  **Static Strings**:
+    For literal string values, enclose the value in double quotes.
+    ```html
+    <div class="container" id="main-content" data-fixed-value="this-is-literal">
+        ...
+    </div>
+    ```
+
+2.  **Direct Python Expressions**:
+    To bind the result of a Python expression directly as an attribute's value, use curly braces `{}`. The expression is evaluated, and its result becomes the attribute value. This is suitable for boolean attributes, numeric types, or binding variables and function/method results directly. No quotes should surround the curly braces.
+    ```python
+    # Assuming in-scope variables: is_user_active = True, item_count = 10
+    # And a function: def get_item_id(item): return item.id
+    # And an object: current_item with an attribute id = "xyz123"
+
+    view AttributeExamples(is_user_active: bool, item_count: int, current_item):
+        <input type="checkbox" name="active" checked={is_user_active} />
+        <button type="button" disabled={not is_user_active}>Submit</button>
+        <div data-count={item_count} data-item-id={get_item_id(current_item)}>
+            f"Item: {current_item.name}"
+        </div>
+        <MyComponent visible={True} />
+    ```
+    For boolean attributes, if the expression evaluates to `True`, the attribute is rendered (e.g., `checked`). If `False`, `None`, or an empty string, the attribute is typically omitted from the rendered HTML, which is the standard way to represent a "false" boolean attribute.
+
+3.  **Interpolated Strings (f-strings)**:
+    When you need to construct an attribute value by mixing literal strings with Python expressions, the entire assignment must be an f-string literal assigned directly to the attribute (e.g., `class=f"..."`). The Python expressions *within* this f-string use the standard curly braces for interpolation.
+    ```python
+    # Assuming in-scope variables: item_type = "book", item_id = "123", is_selected = True
+
+    view FStringAttributeExamples(item_type: str, item_id: str, is_selected: bool):
+        <div class=f"item item-{item_type} {'selected' if is_selected else ''}" id=f"item-id-{item_id}">
+            "F-string attributes"
+        </div>
+        <a href=f"/details/{item_type}/{item_id}">Details</a>
+    ```
+    **Incorrect usage** (trying to interpolate without an f-string prefix for the whole value):
+    ```html
+    <!-- This is WRONG and will not work as expected: -->
+    <!-- <div class="prefix-{variable}" id="item-id-{item_id}">Incorrect</div> -->
+    ```
+    Always use the `f"..."` syntax when combining literals and expressions for an attribute value.
+
+**Note on Boolean Attributes:**
+A common use of direct Python expressions (Rule 2) is for boolean attributes like `checked`, `disabled`, `selected`, `readonly`, etc.
+- If the expression evaluates to `True`, the attribute is rendered, usually without a value (e.g., `<input checked />`).
+- If it evaluates to `False`, `None`, or an empty string, the attribute is omitted from the rendered HTML.
+```python
+view BooleanAttrExample(is_editable: bool = False):
+    <input type="text" readonly={not is_editable} />
+    <button disabled={is_editable}>Edit</button>
+```
 
 ### String Interpolation
 
@@ -100,7 +361,7 @@ if not items:
     return
 ```
 
-### View Composition
+## View Composition
 
 Biscuit uses a JSX-like syntax for view composition with Vue-inspired slots:
 
@@ -172,7 +433,7 @@ Key features of view composition:
   - If a PascalCase tag is not in scope, it's treated as a regular HTML element
   - lowercase tags (`<div>`) are always treated as HTML elements
 
-#### Multiple Root Elements
+### Multiple Root Elements
 
 Unlike components in most UI frameworks, Biscuit views can have multiple root-level elements:
 
@@ -187,105 +448,197 @@ view UserGreeting(user):
         </div>
 ```
 
-#### Slots System
+### Slots System
 
-Biscuit provides a Vue.js-inspired slot system for flexible content distribution:
+Biscuit provides a Vue.js-inspired slot system for flexible content distribution. Slots allow you to pass markup and other views into a component from its parent, enabling greater component reusability and composition.
+
+Within the component defining the slots (the child), you use the `<slot>` element. To pass content into these slots from the parent component, you can use direct children (for the default slot) or the `<template>` tag with a `slot` attribute for named slots. Alternatively, any HTML element can have a `slot` attribute to direct its content to a specific named slot.
 
 ##### Basic Default Slot
 
-The simplest form is the default (unnamed) slot:
+Content passed directly as children to a component, without a `slot` attribute, populates the default (unnamed) slot.
 
 ```python
 # Defining a view with a default slot
 view Card():
     <div class="card">
-        <slot />
+        <div class="card-header">
+            <slot name="header"> <!-- Named slot for header -->
+                <h4>Default Header</h4>
+            </slot>
+        </div>
+        <div class="card-body">
+            <slot /> <!-- Default slot for main content -->
+        </div>
     </div>
 
 # Using the view with default slot content
 <Card>
-    <p>This content goes in the default slot</p>
+    <template slot="header">
+        <h1>My Custom Card Header</h1>
+    </template>
+
+    <!-- This content goes into the default slot -->
+    <p>This is the main content of the card.</p>
+    <p>It can contain multiple elements.</p>
+</Card>
+
+# Alternative usage for default slot (implicit)
+<Card>
+    <!-- This content also goes into the default slot -->
+    <p>This is the main content of the card.</p>
+    <p>It can contain multiple elements.</p>
+    <!-- To also use the named "header" slot here, you'd add a <template slot="header"> -->
 </Card>
 ```
 
 ##### Named Slots
 
-For more complex layouts, named slots allow multiple content areas:
+For more complex layouts, named slots allow multiple content areas within a component. You define a named slot in your view using `<slot name="your_slot_name" />`.
+
+To provide content to a named slot, you add a `slot="your_slot_name"` attribute to any HTML element or Biscuit view that you want to inject into the corresponding slot. The entire element or view with the `slot` attribute will be passed to the named slot.
+
+If you need to pass a group of multiple elements into a single named slot without a wrapping element, you can optionally use the `<template slot="your_slot_name">` tag. The `<template>` tag itself doesn't render; only its content is passed to the slot.
 
 ```python
-# Defining a view with named slots
+# Defining a view with named slots (and a Biscuit view for the example)
+view AnotherView(text: str):
+    <p style="color: blue;">Content from AnotherView: {text}</p>
+
 view PageLayout():
     <div class="layout">
-        <header><slot name="header" /></header>
-        <main><slot /></main>
-        <footer><slot name="footer" /></footer>
+        <header>
+            <slot name="header">
+                <p>Default header content</p> <!-- Fallback content -->
+            </slot>
+        </header>
+        <main>
+            <slot /> <!-- Default slot -->
+        </main>
+        <footer>
+            <slot name="footer">
+                <p>Default footer content</p> <!-- Fallback content -->
+            </slot>
+        </footer>
     </div>
 
-# Using named slots
+# Using named slots with different elements and views
 <PageLayout>
-    <h1 slot="header">Page Title</h1>
+    <!-- An h1 element provides content for the "header" slot -->
+    <h1 slot="header">My Custom Page Title</h1>
     
-    <p>Main content goes in the default slot</p>
+    <!-- Content for the default slot -->
+    <p>This is the primary content of the page, going into the default slot.</p>
+    <AnotherView text="This is also part of the default slot." />
     
-    <p slot="footer">Footer content</p>
+    <!-- A div element provides content for the "footer" slot -->
+    <div slot="footer" class="footer-content">
+        <p>&copy; 2024 My Application</p>
+        <AnotherView text="Custom footer text from AnotherView" />
+    </div>
+</PageLayout>
+
+# Using <template> to group multiple elements for a named slot
+<PageLayout>
+    <template slot="header">
+        <h2>Complex Header</h2>
+        <p>With a subtitle</p>
+    </template>
+
+    <p>Main content for the default slot.</p>
+
+    <p slot="footer">A simple paragraph for the footer.</p>
 </PageLayout>
 ```
+This approach gives you flexibility: use direct elements when they naturally fit the content being passed, or use `<template>` when you need to group multiple elements for a slot without adding an extra wrapper div/span.
 
 ##### Fallback Content
 
-Slots can provide fallback content when none is supplied:
+Slots can provide fallback (default) content that is rendered if no content is provided for that slot by the parent.
 
 ```python
 # Defining fallback content in slots
-view Alert(type="info"):
+view Alert(type: str = "info"):
     <div class="alert alert-{type}">
         <div class="alert-icon">
             <slot name="icon">
-                <DefaultIcon type={type} />
+                <!-- Fallback icon content -->
+                <img src="/icons/default-{type}-icon.png" alt="Icon" />
             </slot>
         </div>
         <div class="alert-content">
             <slot>
-                <p>Default alert message</p>
+                <!-- Fallback default slot content -->
+                <p>This is a default alert message.</p>
             </slot>
         </div>
     </div>
 
-# Usage with or without providing content
+# Usage:
+# 1. Providing custom content for the default slot, icon slot uses fallback
 <Alert type="warning">
-    <p>Custom warning message</p>
+    <p>This is a custom warning message.</p>
 </Alert>
 
-<Alert type="error" />  <!-- Will use default content -->
+# 2. Providing custom content for both icon and default slots
+<Alert type="error">
+    <template slot="icon">
+        <img src="/icons/custom-error-icon.png" alt="Error Icon" />
+    </template>
+    <p>A critical error has occurred!</p>
+</Alert>
+
+# 3. Using fallback content for all slots
+<Alert type="success" />
 ```
 
 ##### Conditional Slot Rendering
 
-Conditionally render elements based on whether a slot has content:
+You can conditionally render elements based on whether a slot has been provided with content from the parent, using the `has_slot("slot_name")` function. For the default slot, use `has_slot("default")` or simply `has_slot()`.
 
 ```python
-view Panel(title):
+view Panel(title: str):
     <div class="panel">
-        <h3>{title}</h3>
+        <div class="panel-header">
+            <h3>{title}</h3>
+            if has_slot("actions"): # Check for a named slot "actions"
+                <div class="panel-actions">
+                    <slot name="actions" />
+                </div>
+        </div>
         <div class="panel-body">
-            <slot />
+            <slot /> <!-- Default slot -->
         </div>
         
-        if has_slot("footer"):
+        if has_slot("footer"): # Check for a named slot "footer"
             <div class="panel-footer">
                 <slot name="footer" />
             </div>
+        else:
+            <div class="panel-footer text-muted">
+                <p>No footer content provided.</p>
+            </div>
     </div>
+
+# Usage:
+# 1. Panel with default content and footer
+<Panel title="My Panel">
+    <p>This is the main content of the panel.</p>
+    <template slot="footer">
+        <button>Save</button>
+    </template>
+</Panel>
+
+# 2. Panel with actions, default content, but no footer (will show "No footer content provided")
+<Panel title="Another Panel">
+    <template slot="actions">
+        <button>Edit</button>
+        <button>Delete</button>
+    </template>
+    <p>Some information here.</p>
+</Panel>
 ```
-
-## Compilation Process
-
-Biscuit files (`.bsct`) are compiled to Python code through:
-1. Parsing the Biscuit syntax tree using tree-sitter
-2. Transforming views into Python classes
-3. Creating render methods that output HTML strings
-4. Handling interpolation via Python f-strings
-5. Resolving view references based on imports and scope
+The `has_slot()` function checks if any content (even empty content like `<template slot="footer"></template>`) has been passed to the slot.
 
 ## Key Syntax Elements
 
@@ -307,7 +660,16 @@ Biscuit provides full access to Python features including:
 - Lambda expressions
 - Python operators and expressions
 
-## HTMX Integration
+## Compilation Process
+
+Biscuit files (`.bsct`) are compiled to Python code through:
+1. Parsing the Biscuit syntax tree using tree-sitter
+2. Transforming views into Python classes
+3. Creating render methods that output HTML strings
+4. Handling interpolation via Python f-strings
+5. Resolving view references based on imports and scope
+
+# HTMX Integration
 
 Biscuit provides first-class support for HTMX, enabling rich, dynamic interactions with minimal JavaScript:
 
@@ -339,9 +701,9 @@ view TodoList(todos, user_id):
     </div>
 ```
 
-#### HTMX Endpoint Views
+### Creating HTMX Partial Views
 
-You can create views that serve as HTMX endpoints, returning only the HTML fragments needed:
+You can create views that serve as HTMX endpoints, returning only the HTML fragments needed for partial page updates:
 
 ```python
 view TodoItem(todo):
@@ -367,7 +729,7 @@ view NewTodoResponse(todo):
     <TodoItem todo={todo} />
 ```
 
-#### Dynamic Loading with HTMX
+### Dynamic Loading with HTMX
 
 ```python
 view LazyLoadingSection(url, trigger="revealed"):
@@ -380,7 +742,7 @@ view LazyLoadingSection(url, trigger="revealed"):
     </div>
 ```
 
-#### Form Processing with HTMX
+### Form Processing with HTMX
 
 HTMX works great for forms with validation and dynamic responses:
 
@@ -408,7 +770,7 @@ view ContactForm():
     </div>
 ```
 
-#### Form Validation Response
+### Form Validation Response
 
 ```python
 view FormValidationError(errors):
@@ -421,7 +783,7 @@ view FormValidationError(errors):
     </div>
 ```
 
-#### Infinite Scroll with HTMX
+### Infinite Scroll with HTMX
 
 ```python
 view ArticleList(articles, page=1):
@@ -442,7 +804,7 @@ view ArticleList(articles, page=1):
         </div>
 ```
 
-#### Active Search with HTMX
+### Active Search with HTMX
 
 ```python
 view SearchInterface():
@@ -462,7 +824,7 @@ view SearchInterface():
     </div>
 ```
 
-#### Tabs with HTMX
+### Tabs with HTMX
 
 ```python
 view TabInterface(tabs):
@@ -485,7 +847,7 @@ view TabInterface(tabs):
     </div>
 ```
 
-## Error Management
+# Error Management
 
 Biscuit supports standard Python exception handling within views:
 
@@ -519,11 +881,11 @@ Error handling best practices in views:
 - Use the finally block for cleanup operations
 - Avoid swallowing exceptions without proper handling
 
-## FastAPI Integration
+# FastAPI Integration
 
 Biscuit seamlessly integrates with FastAPI to create HTML responses:
 
-### Basic Route Handlers
+## Basic Route Handlers
 
 Views can be directly used as FastAPI route handlers and automatically return HTMLResponse:
 
@@ -545,7 +907,7 @@ view HomePage(request: Request):
     </html>
 ```
 
-### Path Parameters
+## Path Parameters
 
 FastAPI path parameters work directly with Biscuit views:
 
@@ -561,7 +923,7 @@ view ProductDetail(product_id: int, db: Session = Depends(get_db)):
     </div>
 ```
 
-### Query Parameters
+## Query Parameters
 
 Query parameters are received as function arguments:
 
@@ -595,7 +957,7 @@ view SearchResults(
     </div>
 ```
 
-### Form Data
+## Form Data
 
 Handling POST requests with form data:
 
@@ -623,7 +985,7 @@ view ContactForm(
     </div>
 ```
 
-### Request Body
+## Request Body
 
 Working with JSON request bodies:
 
@@ -653,9 +1015,9 @@ view CreateUser(
     </div>
 ```
 
-### HTMX Integration
+## FastAPI Endpoints for HTMX Partials
 
-Biscuit works perfectly with HTMX for partial page updates:
+Biscuit works perfectly with HTMX for partial page updates when used with FastAPI. Endpoints can return HTML fragments generated by Biscuit views:
 
 ```python
 @app.get("/comments/{post_id}")
@@ -689,7 +1051,7 @@ view AddComment(
     </div>
 ```
 
-### Router Integration
+## Router Integration
 
 Views work with FastAPI's `APIRouter` for modular applications:
 
@@ -720,7 +1082,7 @@ view AdminDashboard(
     </div>
 ```
 
-### Automatic HTMLResponse
+## Automatic HTMLResponse
 
 All Biscuit views automatically return `HTMLResponse` without needing to specify `response_class`:
 
@@ -738,7 +1100,7 @@ def about():
 
 This simplifies route declarations while maintaining compatibility with FastAPI's response system.
 
-## Special Features
+# Special Features
 
 - **Decorators**: Views can be decorated with Python decorators, including FastAPI route decorators
 - **Typed parameters**: Full support for Python type annotations
