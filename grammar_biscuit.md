@@ -144,6 +144,112 @@ Three types of HTML tag structures are supported:
    </div>
    ```
 
+    **Important Note on Text Content and Expressions:** In Biscuit, how text and Python expressions are included as children of multiline HTML elements follows specific rules to ensure everything aligns with Python's syntax and evaluation model.
+
+    1.  **Plain String Literals**:
+        A Python string literal (e.g., `"Hello"`, `'World'`) placed on its own line as a child of a multiline HTML element is treated directly as a text node. **It does not require surrounding curly braces `{}`.**
+        ```python
+        <div>
+            "This is a plain string."
+            'This is another plain string.'
+        </div>
+        ```
+
+    2.  **F-Strings as Direct Text Nodes**:
+        An f-string (e.g., `f"Hello, {name}"`) placed on its own line as a child of a multiline HTML element can also be treated directly as a text node without requiring surrounding curly braces.
+        ```python
+        view MyView(name: str = "User"):
+            <div>
+                f"Welcome, {name}!"
+            </div>
+        ```
+
+    3.  **Rendering Other Python Expressions as Text**:
+        General Python expressions (e.g., a variable `my_var`, a function call `get_data()`) are **not** directly rendered as text content on their own line by simply wrapping them in curly braces like `{my_var}`. This syntax, when used for a standalone line intended as a text node, is invalid in Biscuit.
+
+        To render the string representation of such an expression's value as a text node on its own line, it **must be embedded within an f-string**. This resulting f-string can then appear on its own line without needing additional, outer curly braces.
+        ```python
+        # Assuming user_name, items, and get_greeting are defined in scope
+        view MyOtherView(user_name: str, items: list):
+            # data_summary is already an f-string, so it can be used directly later
+            data_summary = f"User: {user_name}, Items: {len(items)}"
+
+            <div>
+                f"{user_name.upper()}"        # Method call embedded in an f-string
+                f"{len(items) * 10}"          # Operation embedded in an f-string
+                f"{get_greeting(user_name)}"  # Function call embedded in an f-string
+                data_summary                   # This f-string variable is used directly
+            </div>
+        ```
+        (*Assuming `get_greeting` is a function that returns a string or an object with a suitable string representation.*)
+
+    4.  **Expressions in HTML Attributes**:
+        Setting HTML attribute values using Python expressions (including variables, function calls, f-strings, etc.) follows specific rules. These are detailed in the main "Attributes" section. Generally, direct Python expressions are enclosed in `{}` (e.g., `value={my_var}`), and complex string constructions use f-strings (e.g., `class=f"base {extra_class}"`).
+
+    **Rationale**:
+    The core principle is that all content must be parsable and evaluatable as Python, integrating naturally with HTML-like structures.
+    - Plain Python strings and f-strings on their own lines are directly recognized by the Biscuit parser as text content for convenience.
+    - To render the value of other Python expressions (variables, function calls, etc.) as standalone text nodes, they must be explicitly converted/formatted into strings using f-strings. This ensures that what appears on its own line is clearly either a literal string, an f-string, or an HTML tag/component. The syntax `{expression}` on its own line is not used for this purpose to maintain clarity and avoid ambiguity with potential future block-level expression syntaxes.
+    - Curly braces `{}` remain the dedicated syntax for embedding expressions *within HTML attributes*.
+    - Raw, unquoted text (not a Python string) is invalid as it doesn't conform to Python's expression syntax. This overall approach aids in unambiguous parsing.
+
+    *Correct Usage Summary (within a view body):*
+    ```python
+    # Assuming 'variable', 'user_name', 'items', and 'get_greeting' are defined
+    # variable = "world"
+    # user_name = "Alice"
+    # items = [1, 2, 3]
+    # def get_greeting(name: str) -> str: return f"Hi, {name}!"
+
+    view MyComponent(variable: str = "world", user_name: str = "Alice", items: list = [1,2,3]):
+        my_local_string_var = "local string content"
+        # Assume get_greeting returns a string.
+        # If get_greeting could return non-string, it should be f"{get_greeting(user_name)}"
+
+        <div>
+            "This is a plain string."
+            f"An f-string: Hello, {variable}!"
+            f"{user_name.capitalize()}"     # Method call on a variable, in an f-string
+            f"{len(items)}"                 # Function call, in an f-string
+            f"{my_local_string_var}"        # A local variable, in an f-string
+            f"{get_greeting(user_name)}"    # Function call returning a string, in an f-string
+        </div>
+    ```
+
+    *Incorrect Usage (raw, unquoted text):*
+    ```html
+    <div>
+        This raw text is problematic. <!-- This will cause a parsing error. -->
+        <p>
+            So is this unquoted text. <!-- Also an error. -->
+        </p>
+    </div>
+    ```
+    *Incorrect Usage (standalone expressions not in f-strings for text nodes):*
+    ```python
+    # view MyFailingComponent(user_name: str = "Bob"):
+    #    is_active = True
+    #    <div>
+    #        {user_name}  # INVALID for a standalone text node
+    #        {is_active}  # INVALID for a standalone text node
+    #    </div>
+    ```
+    The above should be:
+    ```python
+    # view MyWorkingComponent(user_name: str = "Bob"):
+    #    is_active = True
+    #    <div>
+    #        f"{user_name}"
+    #        f"{is_active}"
+    #    </div>
+    ```
+    Text within HTML *attributes* always requires curly braces for dynamic Python expressions if using Rule 2 (Direct Python Expressions), or f-strings (Rule 3) for combined literal/expression content. See the "Attributes" section for full details.
+    ```html
+    <div class="static-class {dynamic_variable}" id=f"prefix-{item_id}">
+        "Content string"
+    </div>
+    ```
+
 2. **Single-line HTML tags**:
    ```html
    <span>Some text</span>
@@ -156,10 +262,60 @@ Three types of HTML tag structures are supported:
 
 ### Attributes
 
-HTML tags can have two types of attributes:
+HTML tag attributes in Biscuit can be set in three ways, offering flexibility for static values, direct Python expressions, and complex string constructions.
 
-1. **Value attributes**: `<div class="container" id="main">`
-2. **Boolean attributes**: `<button disabled>`
+1.  **Static Strings**:
+    For literal string values, enclose the value in double quotes.
+    ```html
+    <div class="container" id="main-content" data-fixed-value="this-is-literal">
+        ...
+    </div>
+    ```
+
+2.  **Direct Python Expressions**:
+    To bind the result of a Python expression directly as an attribute's value, use curly braces `{}`. The expression is evaluated, and its result becomes the attribute value. This is suitable for boolean attributes, numeric types, or binding variables and function/method results directly. No quotes should surround the curly braces.
+    ```python
+    # Assuming in-scope variables: is_user_active = True, item_count = 10
+    # And a function: def get_item_id(item): return item.id
+    # And an object: current_item with an attribute id = "xyz123"
+
+    view AttributeExamples(is_user_active: bool, item_count: int, current_item):
+        <input type="checkbox" name="active" checked={is_user_active} />
+        <button type="button" disabled={not is_user_active}>Submit</button>
+        <div data-count={item_count} data-item-id={get_item_id(current_item)}>
+            f"Item: {current_item.name}"
+        </div>
+        <MyComponent visible={True} />
+    ```
+    For boolean attributes, if the expression evaluates to `True`, the attribute is rendered (e.g., `checked`). If `False`, `None`, or an empty string, the attribute is typically omitted from the rendered HTML, which is the standard way to represent a "false" boolean attribute.
+
+3.  **Interpolated Strings (f-strings)**:
+    When you need to construct an attribute value by mixing literal strings with Python expressions, the entire assignment must be an f-string literal assigned directly to the attribute (e.g., `class=f"..."`). The Python expressions *within* this f-string use the standard curly braces for interpolation.
+    ```python
+    # Assuming in-scope variables: item_type = "book", item_id = "123", is_selected = True
+
+    view FStringAttributeExamples(item_type: str, item_id: str, is_selected: bool):
+        <div class=f"item item-{item_type} {'selected' if is_selected else ''}" id=f"item-id-{item_id}">
+            "F-string attributes"
+        </div>
+        <a href=f"/details/{item_type}/{item_id}">Details</a>
+    ```
+    **Incorrect usage** (trying to interpolate without an f-string prefix for the whole value):
+    ```html
+    <!-- This is WRONG and will not work as expected: -->
+    <!-- <div class="prefix-{variable}" id="item-id-{item_id}">Incorrect</div> -->
+    ```
+    Always use the `f"..."` syntax when combining literals and expressions for an attribute value.
+
+**Note on Boolean Attributes:**
+A common use of direct Python expressions (Rule 2) is for boolean attributes like `checked`, `disabled`, `selected`, `readonly`, etc.
+- If the expression evaluates to `True`, the attribute is rendered, usually without a value (e.g., `<input checked />`).
+- If it evaluates to `False`, `None`, or an empty string, the attribute is omitted from the rendered HTML.
+```python
+view BooleanAttrExample(is_editable: bool = False):
+    <input type="text" readonly={not is_editable} />
+    <button disabled={is_editable}>Edit</button>
+```
 
 ### String Interpolation
 
@@ -338,49 +494,63 @@ view Card():
 
 ##### Named Slots
 
-For more complex layouts, named slots allow multiple content areas. Use the `name` attribute on the `<slot>` element to define a named slot. To provide content, use the `<template>` tag with a `slot` attribute matching the slot's name, or add a `slot` attribute to any HTML element.
+For more complex layouts, named slots allow multiple content areas within a component. You define a named slot in your view using `<slot name="your_slot_name" />`.
+
+To provide content to a named slot, you add a `slot="your_slot_name"` attribute to any HTML element or Biscuit view that you want to inject into the corresponding slot. The entire element or view with the `slot` attribute will be passed to the named slot.
+
+If you need to pass a group of multiple elements into a single named slot without a wrapping element, you can optionally use the `<template slot="your_slot_name">` tag. The `<template>` tag itself doesn't render; only its content is passed to the slot.
 
 ```python
-# Defining a view with named slots
+# Defining a view with named slots (and a Biscuit view for the example)
+view AnotherView(text: str):
+    <p style="color: blue;">Content from AnotherView: {text}</p>
+
 view PageLayout():
     <div class="layout">
         <header>
-            <slot name="header" />
+            <slot name="header">
+                <p>Default header content</p> <!-- Fallback content -->
+            </slot>
         </header>
         <main>
             <slot /> <!-- Default slot -->
         </main>
         <footer>
-            <slot name="footer" />
+            <slot name="footer">
+                <p>Default footer content</p> <!-- Fallback content -->
+            </slot>
         </footer>
     </div>
 
-# Using named slots with <template>
+# Using named slots with different elements and views
 <PageLayout>
-    <template slot="header">
-        <h1>Main Page Title</h1>
-    </template>
+    <!-- An h1 element provides content for the "header" slot -->
+    <h1 slot="header">My Custom Page Title</h1>
     
     <!-- Content for the default slot -->
-    <p>This is the primary content of the page.</p>
+    <p>This is the primary content of the page, going into the default slot.</p>
+    <AnotherView text="This is also part of the default slot." />
     
-    <template slot="footer">
+    <!-- A div element provides content for the "footer" slot -->
+    <div slot="footer" class="footer-content">
         <p>&copy; 2024 My Application</p>
-    </template>
+        <AnotherView text="Custom footer text from AnotherView" />
+    </div>
 </PageLayout>
 
-# Using named slots with direct HTML elements having a 'slot' attribute
+# Using <template> to group multiple elements for a named slot
 <PageLayout>
-    <h1 slot="header">Alternative Page Title</h1>
+    <template slot="header">
+        <h2>Complex Header</h2>
+        <p>With a subtitle</p>
+    </template>
 
     <p>Main content for the default slot.</p>
 
-    <div slot="footer" class="footer-content">
-        <p>&copy; 2024 My Application - Alternative Footer</p>
-    </div>
+    <p slot="footer">A simple paragraph for the footer.</p>
 </PageLayout>
 ```
-Using `<template slot="name">` is generally preferred for clarity, especially for complex slot content, as it doesn't introduce an extra HTML element into the slot's structure unless that element is part of the content itself. Using `<div slot="name">` (or any other tag) is a more direct way if that element is the intended wrapper.
+This approach gives you flexibility: use direct elements when they naturally fit the content being passed, or use `<template>` when you need to group multiple elements for a slot without adding an extra wrapper div/span.
 
 ##### Fallback Content
 
