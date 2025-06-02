@@ -1,0 +1,23 @@
+view Comprehensions(numbers: list, items: list):
+    squares = [x**2 for x in numbers if x % 2 == 0]
+    item_names = {item['id']: item['name'] for item in items if 'name' in item}
+    unique_lengths = {len(item['name']) for item in items if 'name' in item}
+    
+    <div>
+        <h2>Comprehensions Demo</h2>
+        
+        <h3>Even squares:</h3>
+        <ul>
+            for square in squares:
+                <li>{square}</li>
+        </ul>
+        
+        <h3>Item mapping:</h3>
+        <ul>
+            for item_id, name in item_names.items():
+                <li>{item_id}: {name}</li>
+        </ul>
+        
+        <h3>Unique name lengths:</h3>
+        <p>f"Lengths: {sorted(unique_lengths)}"</p>
+    </div>

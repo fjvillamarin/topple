@@ -1,0 +1,23 @@
+# Invalid view definitions
+
+# Missing colon
+view InvalidView()
+    <div>Missing colon</div>
+
+# Invalid parameter syntax
+view BadParams(name str, age: = 25):
+    <div>Bad parameters</div>
+
+# No content
+view EmptyView():
+
+# Invalid slot usage
+view BadSlots():
+    <div>
+        # Nested slot elements (invalid)
+        <div>
+            <slot name="nested">
+                <slot name="double-nested" />
+            </slot>
+        </div>
+    </div>

@@ -48,4 +48,7 @@ env/
 # Logs and databases
 *.log
 *.sql
-*.sqlite 
+*.sqlite
+
+# Generated test files (for local development comparison only)
+compiler/testdata/generated/ 

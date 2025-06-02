@@ -1,0 +1,63 @@
+from fastapi import FastAPI, Form, Request
+from typing import Optional
+
+app = FastAPI()
+
+@app.get("/contact")
+view ContactForm():
+    <div>
+        <h1>Contact Us</h1>
+        <form method="post" action="/contact">
+            <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required />
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required />
+            </div>
+            <div>
+                <label for="message">Message:</label>
+                <textarea id="message" name="message" required></textarea>
+            </div>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+
+@app.post("/contact")
+view ContactSubmit(
+    name: str = Form(...),
+    email: str = Form(...),
+    message: str = Form(...)
+):
+    <div>
+        <h1>Thank you, {name}!</h1>
+        <p>Your message has been received.</p>
+        <p>We'll respond to {email} shortly.</p>
+        <div class="message-preview">
+            <h3>Your message:</h3>
+            <blockquote>{message}</blockquote>
+        </div>
+        <a href="/contact">Send another message</a>
+    </div>
+
+@app.get("/search")
+view SearchResults(
+    q: str,
+    category: Optional[str] = None,
+    sort: str = "relevance",
+    page: int = 1
+):
+    <div>
+        <h1>Search Results for "{q}"</h1>
+        
+        if category:
+            <p>Category: {category}</p>
+        
+        <p>Sort: {sort}</p>
+        <p>Page: {page}</p>
+        
+        <div class="results">
+            <p>Search results would appear here...</p>
+        </div>
+    </div>

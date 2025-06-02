@@ -280,12 +280,12 @@ func TestFunctionScoping(t *testing.T) {
 		t.Errorf("Local variable should be defined, got %v", localVar.State)
 	}
 
-	// Check scope depths (both should be local scope = 0)
-	if table.ScopeDepths[paramUsage] != 0 {
-		t.Errorf("Parameter usage scope depth should be 0, got %d", table.ScopeDepths[paramUsage])
+	// Check scope depths (both should be in function scope = 1, since module is 0)
+	if table.ScopeDepths[paramUsage] != 1 {
+		t.Errorf("Parameter usage scope depth should be 1, got %d", table.ScopeDepths[paramUsage])
 	}
-	if table.ScopeDepths[localVarUsage] != 0 {
-		t.Errorf("Local variable usage scope depth should be 0, got %d", table.ScopeDepths[localVarUsage])
+	if table.ScopeDepths[localVarUsage] != 1 {
+		t.Errorf("Local variable usage scope depth should be 1, got %d", table.ScopeDepths[localVarUsage])
 	}
 }
 
@@ -486,8 +486,8 @@ func TestLEGBResolution(t *testing.T) {
 		t.Error("Local usage should resolve to local definition")
 	}
 
-	if table.ScopeDepths[localXUsage] != 0 {
-		t.Errorf("Local variable usage should have scope depth 0, got %d", table.ScopeDepths[localXUsage])
+	if table.ScopeDepths[localXUsage] != 2 {
+		t.Errorf("Local variable usage should have scope depth 2, got %d", table.ScopeDepths[localXUsage])
 	}
 
 	// Verify the three variables are distinct

@@ -1,0 +1,10 @@
+view DynamicAttributes(is_active: bool, user_id: int, css_class: str):
+    item_count = 42
+    
+    <div class={css_class} data-user-id={user_id} data-count={item_count}>
+        <input type="checkbox" checked={is_active} />
+        <button disabled={not is_active}>
+            {"Active" if is_active else "Inactive"}
+        </button>
+        <span data-value={user_id * 10}>Computed value</span>
+    </div>

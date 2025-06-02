@@ -1,0 +1,15 @@
+view FStringAttributes(item_type: str, item_id: str, is_selected: bool):
+    base_url = "/api/items"
+    
+    <div 
+        class=f"item item-{item_type} {'selected' if is_selected else 'unselected'}"
+        id=f"item-{item_id}"
+        data-url=f"{base_url}/{item_type}/{item_id}"
+    >
+        <a href=f"/details/{item_type}/{item_id}">
+            f"View {item_type} #{item_id}"
+        </a>
+        <span class=f"status-{'active' if is_selected else 'inactive'}">
+            f"Status: {item_type.upper()}"
+        </span>
+    </div>

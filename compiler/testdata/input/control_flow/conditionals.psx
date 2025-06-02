@@ -1,0 +1,17 @@
+view ConditionalView(user_type: str, is_admin: bool = False):
+    <div>
+        if user_type == "guest":
+            <p>Welcome, guest!</p>
+        elif user_type == "user":
+            <p>Hello, registered user!</p>
+        else:
+            <p>Welcome, {user_type}!</p>
+            
+        if is_admin:
+            <div class="admin-panel">
+                <h3>Admin Controls</h3>
+                <button>Admin Actions</button>
+            </div>
+        else:
+            <p>Regular user view</p>
+    </div>

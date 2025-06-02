@@ -1,0 +1,15 @@
+view TypeErrors(name: str, age: int):
+    # Type mismatches
+    result: str = 42  # int assigned to str
+    count: int = "hello"  # str assigned to int
+    
+    <div>
+        # Trying to format number as string method
+        <h1>{age.upper()}</h1>
+        
+        # Trying to do math on string
+        <p>Age in 10 years: {name + 10}</p>
+        
+        # Invalid type annotation in f-string
+        <span>f"Value: {age: invalid_format}"</span>
+    </div>

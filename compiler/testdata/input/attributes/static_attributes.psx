@@ -1,0 +1,6 @@
+view StaticAttributes():
+    <div class="container" id="main-content" data-testid="app">
+        <img src="/logo.png" alt="Company Logo" />
+        <input type="text" placeholder="Enter your name" readonly />
+        <button type="submit" disabled>Submit</button>
+    </div>

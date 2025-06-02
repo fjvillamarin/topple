@@ -5,8 +5,6 @@ import (
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/resolver"
 	"fmt"
-	"math/rand"
-	"time"
 )
 
 type ViewTransformer struct {
@@ -22,7 +20,8 @@ type ViewTransformer struct {
 	nextContextId  int      // Counter for generating unique context names
 
 	// Slot information
-	slots map[string]*SlotInfo // Map of slot name to slot info (empty string for default slot)
+	slots     map[string]*SlotInfo // Map of slot name to slot info (empty string for default slot)
+	slotOrder []string             // Order of slot names as they appear in view definition
 }
 
 // SlotInfo contains information about a slot in a view
@@ -38,6 +37,12 @@ type SlotContent struct {
 	Content  []ast.Stmt // Content for the slot
 }
 
+// SourceOrderSlot represents a slot's content in the order it appears in source
+type SourceOrderSlot struct {
+	SlotName string     // Target slot name (empty for default slot)
+	Content  []ast.Stmt // Content for the slot
+}
+
 // HTMLContext represents a context for collecting HTML children
 type HTMLContext struct {
 	ChildrenVarName string     // Name of the children array variable
@@ -46,9 +51,6 @@ type HTMLContext struct {
 
 // NewViewTransformer creates a new ViewTransformer with the given resolution table
 func NewViewTransformer(resolutionTable *resolver.ResolutionTable) *ViewTransformer {
-	// Initialize random seed for context ID generation
-	rand.Seed(time.Now().UnixNano())
-
 	return &ViewTransformer{
 		needsRuntimeImports: false,
 		resolutionTable:     resolutionTable,
@@ -56,13 +58,14 @@ func NewViewTransformer(resolutionTable *resolver.ResolutionTable) *ViewTransfor
 		currentContext:      "",
 		nextContextId:       1000,
 		slots:               make(map[string]*SlotInfo),
+		slotOrder:           []string{},
 	}
 }
 
 // generateContextName generates a unique name for a children array
 func (vm *ViewTransformer) generateContextName(prefix string) string {
 	name := fmt.Sprintf("_%s_children_%d", prefix, vm.nextContextId)
-	vm.nextContextId += rand.Intn(9000) + 1000 // Generate random IDs to avoid conflicts
+	vm.nextContextId += 1000 // Increment by fixed amount for deterministic output
 	return name
 }
 
@@ -89,6 +92,7 @@ func (vm *ViewTransformer) popContext() string {
 func (vm *ViewTransformer) TransformViewToClass(viewStmt *ast.ViewStmt) (*ast.Class, error) {
 	// Reset slots for each view transformation
 	vm.slots = make(map[string]*SlotInfo)
+	vm.slotOrder = []string{}
 
 	// Analyze slots in the view body
 	vm.analyzeSlots(viewStmt.Body)
@@ -161,6 +165,12 @@ func (vm *ViewTransformer) analyzeSlotInStatement(stmt ast.Stmt) {
 		if s.TagName.Lexeme == "slot" {
 			// Found a slot element
 			slotName := vm.getSlotName(s)
+			
+			// Only add to order if we haven't seen this slot before
+			if _, exists := vm.slots[slotName]; !exists {
+				vm.slotOrder = append(vm.slotOrder, slotName)
+			}
+			
 			vm.slots[slotName] = &SlotInfo{
 				Name:         slotName,
 				FallbackHTML: s.Content,
@@ -311,8 +321,8 @@ func (vm *ViewTransformer) createInitMethod(viewStmt *ast.ViewStmt) (*ast.Functi
 			initParams = append(initParams, childrenParam)
 		}
 
-		// Add named slot parameters
-		for slotName, _ := range vm.slots {
+		// Add named slot parameters in order
+		for _, slotName := range vm.slotOrder {
 			if slotName != "" { // Skip default slot (already added as children)
 				slotParam := &ast.Parameter{
 					Name: &ast.Name{
@@ -421,8 +431,8 @@ func (vm *ViewTransformer) createInitMethod(viewStmt *ast.ViewStmt) (*ast.Functi
 			initBody = append(initBody, assignment)
 		}
 
-		// Add named slot assignments
-		for slotName, _ := range vm.slots {
+		// Add named slot assignments in order
+		for _, slotName := range vm.slotOrder {
 			if slotName != "" { // Skip default slot
 				selfSlot := &ast.Attribute{
 					Object: &ast.Name{
@@ -648,6 +658,22 @@ func (vm *ViewTransformer) processViewStatement(stmt ast.Stmt) ([]ast.Stmt, erro
 		// Handle if statements in HTML context
 		return vm.processIfStatement(s)
 
+	case *ast.While:
+		// Handle while loops in HTML context
+		return vm.processWhileLoop(s)
+
+	case *ast.Try:
+		// Handle try statements in HTML context
+		return vm.processTryStatement(s)
+
+	case *ast.MatchStmt:
+		// Handle match statements in HTML context
+		return vm.processMatchStatement(s)
+
+	case *ast.With:
+		// Handle with statements in HTML context
+		return vm.processWithStatement(s)
+
 	case *ast.ExprStmt:
 		// Handle expression statements in HTML context
 		if vm.currentContext != "" {
@@ -718,26 +744,20 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 		}
 
 		// This is a view composition - we need to process slot content in the current context first
-		// Collect slot content from the element's children
-		slotContent, err := vm.collectSlotContent(element.Content)
-		if err != nil {
-			return nil, fmt.Errorf("invalid slot usage in view %s: %v", viewStmt.Name.Token.Lexeme, err)
-		}
-
 		// Process slot content in the current context to handle control structures
-		var processedSlotArgs []*ast.Argument
-
-		for slotName, content := range slotContent {
+		// We need to process content in source order for context creation, but create arguments in slot definition order
+		
+		// First, process all slot content in source order and collect the context expressions
+		slotContextExpressions := make(map[string]ast.Expr)
+		
+		// Process slot content in the order it appears in the source by re-parsing the element content
+		sourceOrderSlots := vm.collectSlotContentInSourceOrder(element.Content)
+		for _, slotInfo := range sourceOrderSlots {
+			slotName := slotInfo.SlotName
+			content := slotInfo.Content
 			// Skip empty content arrays
 			if len(content) == 0 {
 				continue
-			}
-
-			var paramName string
-			if slotName == "" {
-				paramName = "children"
-			} else {
-				paramName = slotName
 			}
 
 			// Process the slot content in the current context
@@ -899,6 +919,27 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 				}
 			}
 
+			// Store the content expression for this slot
+			slotContextExpressions[slotName] = slotContentExpr
+		}
+
+		// Now create arguments in source order (order slots appear in the input)
+		var processedSlotArgs []*ast.Argument
+		for _, slotInfo := range sourceOrderSlots {
+			slotName := slotInfo.SlotName
+			// Get the content expression we created earlier
+			slotContentExpr, exists := slotContextExpressions[slotName]
+			if !exists {
+				continue // Skip slots without content
+			}
+
+			var paramName string
+			if slotName == "" {
+				paramName = "children"
+			} else {
+				paramName = slotName
+			}
+
 			// Create the slot argument
 			slotArg := &ast.Argument{
 				Name: &ast.Name{
@@ -1033,7 +1074,8 @@ func (vm *ViewTransformer) processForLoop(loop *ast.For) ([]ast.Stmt, error) {
 	transformedIterable := vm.transformExpression(loop.Iterable)
 	transformedTarget := vm.transformExpression(loop.Target)
 
-	// Process the loop body
+	// Process the loop body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
 	var transformedBody []ast.Stmt
 	for _, stmt := range loop.Body {
 		processedStmts, err := vm.processViewStatement(stmt)
@@ -1043,12 +1085,22 @@ func (vm *ViewTransformer) processForLoop(loop *ast.For) ([]ast.Stmt, error) {
 		transformedBody = append(transformedBody, processedStmts...)
 	}
 
+	// Process the else clause if it exists
+	var transformedElse []ast.Stmt
+	for _, stmt := range loop.Else {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedElse = append(transformedElse, processedStmts...)
+	}
+
 	// Create the transformed for loop
 	transformedLoop := &ast.For{
 		Target:   transformedTarget,
 		Iterable: transformedIterable,
 		Body:     transformedBody,
-		Else:     []ast.Stmt{}, // TODO: Handle else clause if needed
+		Else:     transformedElse,
 		IsAsync:  loop.IsAsync,
 		Span:     loop.Span,
 	}
@@ -1061,7 +1113,8 @@ func (vm *ViewTransformer) processIfStatement(ifStmt *ast.If) ([]ast.Stmt, error
 	// Transform the condition
 	transformedCondition := vm.transformExpression(ifStmt.Condition)
 
-	// Process the if body
+	// Process the if body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
 	var transformedBody []ast.Stmt
 	for _, stmt := range ifStmt.Body {
 		processedStmts, err := vm.processViewStatement(stmt)
@@ -1071,7 +1124,8 @@ func (vm *ViewTransformer) processIfStatement(ifStmt *ast.If) ([]ast.Stmt, error
 		transformedBody = append(transformedBody, processedStmts...)
 	}
 
-	// Process the else body
+	// Process the else body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
 	var transformedElse []ast.Stmt
 	for _, stmt := range ifStmt.Else {
 		processedStmts, err := vm.processViewStatement(stmt)
@@ -1090,6 +1144,182 @@ func (vm *ViewTransformer) processIfStatement(ifStmt *ast.If) ([]ast.Stmt, error
 	}
 
 	return []ast.Stmt{transformedIf}, nil
+}
+
+// processWhileLoop processes a while loop in the context of an HTML context
+func (vm *ViewTransformer) processWhileLoop(loop *ast.While) ([]ast.Stmt, error) {
+	// Transform the test condition
+	transformedTest := vm.transformExpression(loop.Test)
+
+	// Process the while body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
+	var transformedBody []ast.Stmt
+	for _, stmt := range loop.Body {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedBody = append(transformedBody, processedStmts...)
+	}
+
+	// Process the else clause if it exists
+	var transformedElse []ast.Stmt
+	for _, stmt := range loop.Else {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedElse = append(transformedElse, processedStmts...)
+	}
+
+	// Create the transformed while loop
+	transformedLoop := &ast.While{
+		Test: transformedTest,
+		Body: transformedBody,
+		Else: transformedElse,
+		Span: loop.Span,
+	}
+
+	return []ast.Stmt{transformedLoop}, nil
+}
+
+// processTryStatement processes a try statement in the context of an HTML context
+func (vm *ViewTransformer) processTryStatement(tryStmt *ast.Try) ([]ast.Stmt, error) {
+	// Process the try body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
+	var transformedBody []ast.Stmt
+	for _, stmt := range tryStmt.Body {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedBody = append(transformedBody, processedStmts...)
+	}
+
+	// Process except clauses
+	var transformedExcepts []ast.Except
+	for _, except := range tryStmt.Excepts {
+		var transformedExceptBody []ast.Stmt
+		for _, stmt := range except.Body {
+			processedStmts, err := vm.processViewStatement(stmt)
+			if err != nil {
+				return nil, err
+			}
+			transformedExceptBody = append(transformedExceptBody, processedStmts...)
+		}
+
+		transformedExcept := ast.Except{
+			Type:   vm.transformExpression(except.Type),
+			Name:   except.Name, // Names don't need transformation in except clauses
+			Body:   transformedExceptBody,
+			IsStar: except.IsStar,
+			Span:   except.Span,
+		}
+		transformedExcepts = append(transformedExcepts, transformedExcept)
+	}
+
+	// Process the else clause if it exists
+	var transformedElse []ast.Stmt
+	for _, stmt := range tryStmt.Else {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedElse = append(transformedElse, processedStmts...)
+	}
+
+	// Process the finally clause if it exists
+	var transformedFinally []ast.Stmt
+	for _, stmt := range tryStmt.Finally {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedFinally = append(transformedFinally, processedStmts...)
+	}
+
+	// Create the transformed try statement
+	transformedTry := &ast.Try{
+		Body:    transformedBody,
+		Excepts: transformedExcepts,
+		Else:    transformedElse,
+		Finally: transformedFinally,
+		Span:    tryStmt.Span,
+	}
+
+	return []ast.Stmt{transformedTry}, nil
+}
+
+// processMatchStatement processes a match statement in the context of an HTML context
+func (vm *ViewTransformer) processMatchStatement(matchStmt *ast.MatchStmt) ([]ast.Stmt, error) {
+	// Transform the subject expression
+	transformedSubject := vm.transformExpression(matchStmt.Subject)
+
+	// Process each case block
+	var transformedCases []ast.CaseBlock
+	for _, caseBlock := range matchStmt.Cases {
+		// Process the case body - these statements should be processed in the current context
+		// so that HTML elements are properly appended to the current children array
+		var transformedCaseBody []ast.Stmt
+		for _, stmt := range caseBlock.Body {
+			processedStmts, err := vm.processViewStatement(stmt)
+			if err != nil {
+				return nil, err
+			}
+			transformedCaseBody = append(transformedCaseBody, processedStmts...)
+		}
+
+		transformedCase := ast.CaseBlock{
+			Patterns: caseBlock.Patterns, // Patterns don't need transformation for view parameters
+			Guard:    vm.transformExpression(caseBlock.Guard),
+			Body:     transformedCaseBody,
+			Span:     caseBlock.Span,
+		}
+		transformedCases = append(transformedCases, transformedCase)
+	}
+
+	// Create the transformed match statement
+	transformedMatch := &ast.MatchStmt{
+		Subject: transformedSubject,
+		Cases:   transformedCases,
+		Span:    matchStmt.Span,
+	}
+
+	return []ast.Stmt{transformedMatch}, nil
+}
+
+// processWithStatement processes a with statement in the context of an HTML context
+func (vm *ViewTransformer) processWithStatement(withStmt *ast.With) ([]ast.Stmt, error) {
+	// Transform the with items
+	var transformedItems []ast.WithItem
+	for _, item := range withStmt.Items {
+		transformedItem := ast.WithItem{
+			Expr: vm.transformExpression(item.Expr),
+			As:   vm.transformExpression(item.As),
+		}
+		transformedItems = append(transformedItems, transformedItem)
+	}
+
+	// Process the with body - these statements should be processed in the current context
+	// so that HTML elements are properly appended to the current children array
+	var transformedBody []ast.Stmt
+	for _, stmt := range withStmt.Body {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			return nil, err
+		}
+		transformedBody = append(transformedBody, processedStmts...)
+	}
+
+	// Create the transformed with statement
+	transformedWith := &ast.With{
+		Items:   transformedItems,
+		IsAsync: withStmt.IsAsync,
+		Body:    transformedBody,
+		Span:    withStmt.Span,
+	}
+
+	return []ast.Stmt{transformedWith}, nil
 }
 
 // createAppendStatement creates a statement that appends an element to a children array
@@ -2074,10 +2304,9 @@ func (vm *ViewTransformer) collectSlotContent(content []ast.Stmt) (map[string][]
 	for _, stmt := range content {
 		if htmlElement, ok := stmt.(*ast.HTMLElement); ok {
 			// Check if this element has a slot attribute
-			slotName := vm.getElementSlotName(htmlElement)
-
-			// If this element has a slot attribute, it must be a direct child
-			if slotName != "" || vm.hasSlotAttribute(htmlElement) {
+			if vm.hasSlotAttribute(htmlElement) {
+				// Element has a slot attribute - get the slot name and place in that slot
+				slotName := vm.getElementSlotName(htmlElement)
 				// Remove the slot attribute from the element before adding to content
 				filteredElement := vm.removeSlotAttribute(htmlElement)
 				slotContent[slotName] = append(slotContent[slotName], filteredElement)
@@ -2099,6 +2328,61 @@ func (vm *ViewTransformer) collectSlotContent(content []ast.Stmt) (map[string][]
 	}
 
 	return slotContent, nil
+}
+
+// collectSlotContentInSourceOrder groups the element's content by slot name in source order
+func (vm *ViewTransformer) collectSlotContentInSourceOrder(content []ast.Stmt) []SourceOrderSlot {
+	var sourceOrderSlots []SourceOrderSlot
+	var currentSlotContent []ast.Stmt
+	var currentSlotName *string // Use pointer to distinguish between "" and unset
+
+	for _, stmt := range content {
+		var stmtSlotName string
+		var processedStmt ast.Stmt = stmt
+
+		if htmlElement, ok := stmt.(*ast.HTMLElement); ok {
+			// Check if this element has a slot attribute
+			if vm.hasSlotAttribute(htmlElement) {
+				// Element has a slot attribute
+				stmtSlotName = vm.getElementSlotName(htmlElement)
+				// Remove the slot attribute from the element before adding to content
+				processedStmt = vm.removeSlotAttribute(htmlElement)
+			} else {
+				// Element without slot attribute - goes to default slot
+				stmtSlotName = ""
+			}
+		} else {
+			// Non-HTML elements go to default slot
+			stmtSlotName = ""
+		}
+
+		// Check if we're starting a new slot or continuing the current one
+		if currentSlotName == nil || *currentSlotName != stmtSlotName {
+			// Starting a new slot - finish the current one if it exists
+			if currentSlotName != nil && len(currentSlotContent) > 0 {
+				sourceOrderSlots = append(sourceOrderSlots, SourceOrderSlot{
+					SlotName: *currentSlotName,
+					Content:  currentSlotContent,
+				})
+			}
+			// Start new slot
+			currentSlotName = &stmtSlotName
+			currentSlotContent = []ast.Stmt{processedStmt}
+		} else {
+			// Continuing current slot
+			currentSlotContent = append(currentSlotContent, processedStmt)
+		}
+	}
+
+	// Add final slot if there's remaining content
+	if currentSlotName != nil && len(currentSlotContent) > 0 {
+		sourceOrderSlots = append(sourceOrderSlots, SourceOrderSlot{
+			SlotName: *currentSlotName,
+			Content:  currentSlotContent,
+		})
+	}
+
+	return sourceOrderSlots
 }
 
 // hasSlotAttribute checks if an HTML element has a slot attribute
@@ -2358,5 +2642,103 @@ func (vm *ViewTransformer) isStringLikeExpression(expr ast.Expr) bool {
 	default:
 		// For other expression types, be conservative and don't treat as content
 		return false
+	}
+}
+
+// getOrderedSlotNames returns slot names in the correct order:
+// 1. children (default slot) first
+// 2. named slots in the order they were defined in the view
+func (vm *ViewTransformer) getOrderedSlotNames(slotContent map[string][]ast.Stmt) []string {
+	var orderedNames []string
+	
+	// Add children (default slot) first if it exists in the content
+	if _, hasDefault := slotContent[""]; hasDefault {
+		orderedNames = append(orderedNames, "")
+	}
+	
+	// Add named slots in the order they were defined in the view
+	for _, slotName := range vm.slotOrder {
+		// Skip default slot (already added) and slots not present in content
+		if slotName != "" {
+			if _, hasSlot := slotContent[slotName]; hasSlot {
+				orderedNames = append(orderedNames, slotName)
+			}
+		}
+	}
+	
+	return orderedNames
+}
+
+// getOrderedSlotNamesForView returns slot names in the correct order for a specific view:
+// 1. children (default slot) first
+// 2. named slots in the order they were defined in the target view
+func (vm *ViewTransformer) getOrderedSlotNamesForView(slotContent map[string][]ast.Stmt, targetView *ast.ViewStmt) []string {
+	var orderedNames []string
+	
+	// Add children (default slot) first if it exists in the content
+	if _, hasDefault := slotContent[""]; hasDefault {
+		orderedNames = append(orderedNames, "")
+	}
+	
+	// Analyze the target view to get its slot order
+	targetSlotOrder := vm.analyzeViewSlotOrder(targetView)
+	
+	// Add named slots in the order they were defined in the target view
+	for _, slotName := range targetSlotOrder {
+		// Skip default slot (already added) and slots not present in content
+		if slotName != "" {
+			if _, hasSlot := slotContent[slotName]; hasSlot {
+				orderedNames = append(orderedNames, slotName)
+			}
+		}
+	}
+	
+	return orderedNames
+}
+
+// analyzeViewSlotOrder analyzes a view's body to determine the order of slot definitions
+func (vm *ViewTransformer) analyzeViewSlotOrder(viewStmt *ast.ViewStmt) []string {
+	var slotOrder []string
+	slots := make(map[string]bool)
+	
+	// Recursively analyze the view body to find slots in order
+	vm.analyzeSlotOrderInStatements(viewStmt.Body, &slotOrder, slots)
+	
+	return slotOrder
+}
+
+// analyzeSlotOrderInStatements recursively analyzes statements to find slot elements in order
+func (vm *ViewTransformer) analyzeSlotOrderInStatements(stmts []ast.Stmt, slotOrder *[]string, slots map[string]bool) {
+	for _, stmt := range stmts {
+		vm.analyzeSlotOrderInStatement(stmt, slotOrder, slots)
+	}
+}
+
+// analyzeSlotOrderInStatement recursively looks for slot elements in a statement
+func (vm *ViewTransformer) analyzeSlotOrderInStatement(stmt ast.Stmt, slotOrder *[]string, slots map[string]bool) {
+	switch s := stmt.(type) {
+	case *ast.HTMLElement:
+		if s.TagName.Lexeme == "slot" {
+			// Found a slot element
+			slotName := vm.getSlotName(s)
+			
+			// Only add to order if we haven't seen this slot before
+			if !slots[slotName] {
+				*slotOrder = append(*slotOrder, slotName)
+				slots[slotName] = true
+			}
+		} else {
+			// Recursively check content of non-slot elements
+			vm.analyzeSlotOrderInStatements(s.Content, slotOrder, slots)
+		}
+	case *ast.For:
+		vm.analyzeSlotOrderInStatements(s.Body, slotOrder, slots)
+		vm.analyzeSlotOrderInStatements(s.Else, slotOrder, slots)
+	case *ast.If:
+		vm.analyzeSlotOrderInStatements(s.Body, slotOrder, slots)
+		vm.analyzeSlotOrderInStatements(s.Else, slotOrder, slots)
+	case *ast.While:
+		vm.analyzeSlotOrderInStatements(s.Body, slotOrder, slots)
+		vm.analyzeSlotOrderInStatements(s.Else, slotOrder, slots)
 	}
 }

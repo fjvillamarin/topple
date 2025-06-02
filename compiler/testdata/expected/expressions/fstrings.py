@@ -1,0 +1,1 @@
+COMPILATION_ERRORS: [Error: invalid int literal: strconv.ParseInt: parsing ".2": invalid syntax at position L7:29 Error: invalid int literal: strconv.ParseInt: parsing ".1": invalid syntax at position L8:34 Error: invalid int literal: strconv.ParseInt: parsing ".2": invalid syntax at position L9:52]

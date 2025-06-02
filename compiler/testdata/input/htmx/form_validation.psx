@@ -1,0 +1,68 @@
+view ValidationErrors(errors: dict):
+    <div class="error-banner">
+        <h3>Please correct the following errors:</h3>
+        <ul>
+            for field, error in errors.items():
+                <li>{field}: {error}</li>
+        </ul>
+    </div>
+
+view ContactForm():
+    <div>
+        <h1>Contact Us</h1>
+        
+        <form 
+            hx-post="/api/contact"
+            hx-swap="outerHTML"
+            hx-target="this"
+        >
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required
+                    hx-post="/api/validate/name"
+                    hx-trigger="blur"
+                    hx-target="next .validation-message"
+                />
+                <div class="validation-message"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    hx-post="/api/validate/email"
+                    hx-trigger="blur"
+                    hx-target="next .validation-message"
+                />
+                <div class="validation-message"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Message *</label>
+                <textarea 
+                    id="message" 
+                    name="message" 
+                    required
+                    hx-post="/api/validate/message"
+                    hx-trigger="blur"
+                    hx-target="next .validation-message"
+                ></textarea>
+                <div class="validation-message"></div>
+            </div>
+            
+            <button 
+                type="submit"
+                hx-indicator=".submit-spinner"
+            >
+                Send Message
+            </button>
+            <span class="submit-spinner" style="display:none;">Sending...</span>
+        </form>
+    </div>

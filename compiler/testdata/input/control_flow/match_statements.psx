@@ -1,0 +1,20 @@
+view MatchView(status: str, data: dict):
+    <div>
+        match status:
+            case "loading":
+                <div class="spinner">Loading...</div>
+            case "success":
+                <div class="success">
+                    <h2>Success!</h2>
+                    <p>Data loaded: {len(data)} items</p>
+                </div>
+            case "error":
+                <div class="error">
+                    <h2>Error occurred</h2>
+                    <p>Failed to load data</p>
+                </div>
+            case _:
+                <div class="unknown">
+                    <p>Unknown status: {status}</p>
+                </div>
+    </div>

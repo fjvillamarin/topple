@@ -1,0 +1,45 @@
+from functools import wraps
+
+def cache_result(func):
+    cache = {}
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        key = str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = func(*args, **kwargs)
+        return cache[key]
+    return wrapper
+
+@cache_result
+def expensive_operation(n: int) -> int:
+    return n ** 2 + n * 10
+
+def logged(cls):
+    original_init = cls.__init__
+    def new_init(self, *args, **kwargs):
+        print(f"Creating {cls.__name__}")
+        original_init(self, *args, **kwargs)
+    cls.__init__ = new_init
+    return cls
+
+@logged
+class DataProcessor:
+    def __init__(self, name: str):
+        self.name = name
+    
+    def process(self, data: list) -> list:
+        return [expensive_operation(x) for x in data if x > 0]
+
+view DecoratorDemo(values: list):
+    processor = DataProcessor("MyProcessor")
+    results = processor.process(values)
+    
+    <div>
+        <h1>Decorator Demo</h1>
+        <p>Processor: {processor.name}</p>
+        <p>Input values: {values}</p>
+        <p>Results: {results}</p>
+        
+        for i, result in enumerate(results):
+            <div>f"Result {i}: {result}"</div>
+    </div>

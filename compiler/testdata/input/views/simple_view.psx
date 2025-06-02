@@ -1,0 +1,2 @@
+view SimpleView():
+    <div>Simple view content</div>
