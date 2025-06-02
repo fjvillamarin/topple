@@ -17,7 +17,7 @@ The complete code for this example can be found in `examples/biscuit/01_hello_wo
 
 Let's break down the code step-by-step:
 
-**1. Define a Biscuit View**
+### 1. Define a Biscuit View
 
 A Biscuit view is defined using the `view` keyword, followed by a name (typically PascalCase) and parentheses for parameters (if any). Inside the view, you write HTML markup mixed with Python expressions.
 
@@ -30,7 +30,7 @@ view HelloWorld():
 ```
 In this example, `HelloWorld` is a simple view that renders a heading and a paragraph.
 
-**2. Import Necessary Libraries**
+### 2. Import Necessary Libraries
 
 To run a Biscuit application with FastAPI, you need to import a few things:
 - `FastAPI` from `fastapi` for creating the web application.
@@ -43,7 +43,7 @@ from fastapi.responses import HTMLResponse
 import uvicorn
 ```
 
-**3. Create a FastAPI Application Instance**
+### 3. Create a FastAPI Application Instance
 
 Instantiate `FastAPI`. You can optionally give it a title.
 
@@ -62,7 +62,7 @@ async def index():
 ```
 Here, when a user visits the root path (`/`), the `index` function is called, which renders the `HelloWorld` view and returns it as HTML.
 
-**5. Run the Application**
+### 5. Run the Application
 
 The standard Python `if __name__ == "__main__":` block is used to run the application using `uvicorn`.
 
