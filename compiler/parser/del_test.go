@@ -6,6 +6,15 @@ import (
 	"testing"
 )
 
+// parseStmt is a test helper that scans and parses the given source string
+func parseStmt(t *testing.T, source string) (ast.Stmt, error) {
+	t.Helper()
+	scanner := lexer.NewScanner([]byte(source))
+	tokens := scanner.ScanTokens()
+	parser := NewParser(tokens)
+	return parser.statement()
+}
+
 func TestSimpleDelStatements(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -50,10 +59,7 @@ func TestSimpleDelStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -112,10 +118,7 @@ func TestDelAttributeAccess(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -186,10 +189,7 @@ func TestDelSubscriptAccess(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -256,10 +256,7 @@ func TestDelMultipleTargets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -344,10 +341,7 @@ func TestDelParenthesizedTargets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -429,10 +423,7 @@ func TestDelListTargets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -493,10 +484,7 @@ func TestDelComplexExpressions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			stmt, err := parser.statement()
+			stmt, err := parseStmt(t, tt.input)
 
 			if tt.hasError {
 				if err == nil {
@@ -548,10 +536,7 @@ func TestDelErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := lexer.NewScanner([]byte(tt.input))
-			tokens := scanner.ScanTokens()
-			parser := NewParser(tokens)
-			_, err := parser.statement()
+			_, err := parseStmt(t, tt.input)
 
 			if err == nil {
 				t.Errorf("Expected error but got none for input: %s", tt.input)
