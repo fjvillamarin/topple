@@ -1,3 +1,108 @@
+# Introduction
+
+Biscuit is a templating language designed to seamlessly blend Python's programming capabilities with HTML for creating dynamic web views. It allows developers to write UI components using familiar Python syntax directly within HTML-like structures, offering a development experience similar to JSX/TSX in the JavaScript ecosystem.
+
+Key benefits of using Biscuit include:
+
+-   **Leveraging Python's full power within templates**: Utilize Python's control flow (if/else, loops), data structures (lists, dictionaries), functions, and even classes directly in your views.
+-   **Creating reusable UI components (views)**: Build modular and maintainable user interfaces by encapsulating markup and logic into reusable views.
+-   **Direct integration with FastAPI**: Biscuit views can be used directly as FastAPI route handlers, simplifying the development of web applications.
+-   **Support for HTMX**: Enhance interactivity and create modern user experiences with minimal JavaScript, thanks to built-in support for HTMX attributes.
+
+# Getting Started: A Simple Example
+
+This tutorial will guide you through creating a basic "Hello, World!" application using Biscuit with FastAPI. We'll define a simple view, set up a FastAPI server, and render our view.
+
+The complete code for this example can be found in `examples/biscuit/01_hello_world/01_hello_world.bsct`.
+
+Let's break down the code step-by-step:
+
+**1. Define a Biscuit View**
+
+A Biscuit view is defined using the `view` keyword, followed by a name (typically PascalCase) and parentheses for parameters (if any). Inside the view, you write HTML markup mixed with Python expressions.
+
+```python
+view HelloWorld():
+    <div>
+        <h1>Hello, World!</h1>
+        <p>This is my first Biscuit view.</p>
+    </div>
+```
+In this example, `HelloWorld` is a simple view that renders a heading and a paragraph.
+
+**2. Import Necessary Libraries**
+
+To run a Biscuit application with FastAPI, you need to import a few things:
+- `FastAPI` from `fastapi` for creating the web application.
+- `HTMLResponse` from `fastapi.responses` to indicate that your endpoint will return HTML.
+- `uvicorn` to serve your FastAPI application.
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+```
+
+**3. Create a FastAPI Application Instance**
+
+Instantiate `FastAPI`. You can optionally give it a title.
+
+```python
+app = FastAPI(title="Biscuit Example: Hello World")
+```
+
+**4. Create a Route and Render the View**
+
+Define a route using FastAPI's decorators (e.g., `@app.get("/")`). In the route function, you render your Biscuit view by calling its `.render()` method. The result of `.render()` is an HTML string, which should be returned wrapped in an `HTMLResponse`.
+
+```python
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return HelloWorld().render()
+```
+Here, when a user visits the root path (`/`), the `index` function is called, which renders the `HelloWorld` view and returns it as HTML.
+
+**5. Run the Application**
+
+The standard Python `if __name__ == "__main__":` block is used to run the application using `uvicorn`.
+
+```python
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+This makes your application accessible at `http://0.0.0.0:8000` (or `http://localhost:8000`).
+
+**Complete Example (`01_hello_world.bsct`)**
+
+Here's the full code putting all the pieces together:
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+# 1. Define a Biscuit View
+view HelloWorld():
+    <div>
+        <h1>Hello, World!</h1>
+        <p>This is my first Biscuit view.</p>
+    </div>
+
+# 3. Create a FastAPI Application Instance
+app = FastAPI(title="Biscuit Example: Hello World")
+
+# 4. Create a Route and Render the View
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return HelloWorld().render()
+
+# 5. Run the Application
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+This simple example demonstrates the core workflow of a Biscuit application. To explore more advanced features and complex use cases, please check out the other examples in the `examples/` directory.
+
 # Biscuit Language Grammar
 
 Biscuit is a templating language that combines Python syntax with HTML-like markup to create reusable UI views. This document explains the core grammar and syntax of the Biscuit language.
@@ -100,7 +205,7 @@ if not items:
     return
 ```
 
-### View Composition
+## View Composition
 
 Biscuit uses a JSX-like syntax for view composition with Vue-inspired slots:
 
@@ -172,7 +277,7 @@ Key features of view composition:
   - If a PascalCase tag is not in scope, it's treated as a regular HTML element
   - lowercase tags (`<div>`) are always treated as HTML elements
 
-#### Multiple Root Elements
+### Multiple Root Elements
 
 Unlike components in most UI frameworks, Biscuit views can have multiple root-level elements:
 
@@ -187,105 +292,183 @@ view UserGreeting(user):
         </div>
 ```
 
-#### Slots System
+### Slots System
 
-Biscuit provides a Vue.js-inspired slot system for flexible content distribution:
+Biscuit provides a Vue.js-inspired slot system for flexible content distribution. Slots allow you to pass markup and other views into a component from its parent, enabling greater component reusability and composition.
+
+Within the component defining the slots (the child), you use the `<slot>` element. To pass content into these slots from the parent component, you can use direct children (for the default slot) or the `<template>` tag with a `slot` attribute for named slots. Alternatively, any HTML element can have a `slot` attribute to direct its content to a specific named slot.
 
 ##### Basic Default Slot
 
-The simplest form is the default (unnamed) slot:
+Content passed directly as children to a component, without a `slot` attribute, populates the default (unnamed) slot.
 
 ```python
 # Defining a view with a default slot
 view Card():
     <div class="card">
-        <slot />
+        <div class="card-header">
+            <slot name="header"> <!-- Named slot for header -->
+                <h4>Default Header</h4>
+            </slot>
+        </div>
+        <div class="card-body">
+            <slot /> <!-- Default slot for main content -->
+        </div>
     </div>
 
 # Using the view with default slot content
 <Card>
-    <p>This content goes in the default slot</p>
+    <template slot="header">
+        <h1>My Custom Card Header</h1>
+    </template>
+
+    <!-- This content goes into the default slot -->
+    <p>This is the main content of the card.</p>
+    <p>It can contain multiple elements.</p>
+</Card>
+
+# Alternative usage for default slot (implicit)
+<Card>
+    <!-- This content also goes into the default slot -->
+    <p>This is the main content of the card.</p>
+    <p>It can contain multiple elements.</p>
+    <!-- To also use the named "header" slot here, you'd add a <template slot="header"> -->
 </Card>
 ```
 
 ##### Named Slots
 
-For more complex layouts, named slots allow multiple content areas:
+For more complex layouts, named slots allow multiple content areas. Use the `name` attribute on the `<slot>` element to define a named slot. To provide content, use the `<template>` tag with a `slot` attribute matching the slot's name, or add a `slot` attribute to any HTML element.
 
 ```python
 # Defining a view with named slots
 view PageLayout():
     <div class="layout">
-        <header><slot name="header" /></header>
-        <main><slot /></main>
-        <footer><slot name="footer" /></footer>
+        <header>
+            <slot name="header" />
+        </header>
+        <main>
+            <slot /> <!-- Default slot -->
+        </main>
+        <footer>
+            <slot name="footer" />
+        </footer>
     </div>
 
-# Using named slots
+# Using named slots with <template>
 <PageLayout>
-    <h1 slot="header">Page Title</h1>
+    <template slot="header">
+        <h1>Main Page Title</h1>
+    </template>
     
-    <p>Main content goes in the default slot</p>
+    <!-- Content for the default slot -->
+    <p>This is the primary content of the page.</p>
     
-    <p slot="footer">Footer content</p>
+    <template slot="footer">
+        <p>&copy; 2024 My Application</p>
+    </template>
+</PageLayout>
+
+# Using named slots with direct HTML elements having a 'slot' attribute
+<PageLayout>
+    <h1 slot="header">Alternative Page Title</h1>
+
+    <p>Main content for the default slot.</p>
+
+    <div slot="footer" class="footer-content">
+        <p>&copy; 2024 My Application - Alternative Footer</p>
+    </div>
 </PageLayout>
 ```
+Using `<template slot="name">` is generally preferred for clarity, especially for complex slot content, as it doesn't introduce an extra HTML element into the slot's structure unless that element is part of the content itself. Using `<div slot="name">` (or any other tag) is a more direct way if that element is the intended wrapper.
 
 ##### Fallback Content
 
-Slots can provide fallback content when none is supplied:
+Slots can provide fallback (default) content that is rendered if no content is provided for that slot by the parent.
 
 ```python
 # Defining fallback content in slots
-view Alert(type="info"):
+view Alert(type: str = "info"):
     <div class="alert alert-{type}">
         <div class="alert-icon">
             <slot name="icon">
-                <DefaultIcon type={type} />
+                <!-- Fallback icon content -->
+                <img src="/icons/default-{type}-icon.png" alt="Icon" />
             </slot>
         </div>
         <div class="alert-content">
             <slot>
-                <p>Default alert message</p>
+                <!-- Fallback default slot content -->
+                <p>This is a default alert message.</p>
             </slot>
         </div>
     </div>
 
-# Usage with or without providing content
+# Usage:
+# 1. Providing custom content for the default slot, icon slot uses fallback
 <Alert type="warning">
-    <p>Custom warning message</p>
+    <p>This is a custom warning message.</p>
 </Alert>
 
-<Alert type="error" />  <!-- Will use default content -->
+# 2. Providing custom content for both icon and default slots
+<Alert type="error">
+    <template slot="icon">
+        <img src="/icons/custom-error-icon.png" alt="Error Icon" />
+    </template>
+    <p>A critical error has occurred!</p>
+</Alert>
+
+# 3. Using fallback content for all slots
+<Alert type="success" />
 ```
 
 ##### Conditional Slot Rendering
 
-Conditionally render elements based on whether a slot has content:
+You can conditionally render elements based on whether a slot has been provided with content from the parent, using the `has_slot("slot_name")` function. For the default slot, use `has_slot("default")` or simply `has_slot()`.
 
 ```python
-view Panel(title):
+view Panel(title: str):
     <div class="panel">
-        <h3>{title}</h3>
+        <div class="panel-header">
+            <h3>{title}</h3>
+            if has_slot("actions"): # Check for a named slot "actions"
+                <div class="panel-actions">
+                    <slot name="actions" />
+                </div>
+        </div>
         <div class="panel-body">
-            <slot />
+            <slot /> <!-- Default slot -->
         </div>
         
-        if has_slot("footer"):
+        if has_slot("footer"): # Check for a named slot "footer"
             <div class="panel-footer">
                 <slot name="footer" />
             </div>
+        else:
+            <div class="panel-footer text-muted">
+                <p>No footer content provided.</p>
+            </div>
     </div>
+
+# Usage:
+# 1. Panel with default content and footer
+<Panel title="My Panel">
+    <p>This is the main content of the panel.</p>
+    <template slot="footer">
+        <button>Save</button>
+    </template>
+</Panel>
+
+# 2. Panel with actions, default content, but no footer (will show "No footer content provided")
+<Panel title="Another Panel">
+    <template slot="actions">
+        <button>Edit</button>
+        <button>Delete</button>
+    </template>
+    <p>Some information here.</p>
+</Panel>
 ```
-
-## Compilation Process
-
-Biscuit files (`.bsct`) are compiled to Python code through:
-1. Parsing the Biscuit syntax tree using tree-sitter
-2. Transforming views into Python classes
-3. Creating render methods that output HTML strings
-4. Handling interpolation via Python f-strings
-5. Resolving view references based on imports and scope
+The `has_slot()` function checks if any content (even empty content like `<template slot="footer"></template>`) has been passed to the slot.
 
 ## Key Syntax Elements
 
@@ -307,7 +490,16 @@ Biscuit provides full access to Python features including:
 - Lambda expressions
 - Python operators and expressions
 
-## HTMX Integration
+## Compilation Process
+
+Biscuit files (`.bsct`) are compiled to Python code through:
+1. Parsing the Biscuit syntax tree using tree-sitter
+2. Transforming views into Python classes
+3. Creating render methods that output HTML strings
+4. Handling interpolation via Python f-strings
+5. Resolving view references based on imports and scope
+
+# HTMX Integration
 
 Biscuit provides first-class support for HTMX, enabling rich, dynamic interactions with minimal JavaScript:
 
@@ -339,9 +531,9 @@ view TodoList(todos, user_id):
     </div>
 ```
 
-#### HTMX Endpoint Views
+### Creating HTMX Partial Views
 
-You can create views that serve as HTMX endpoints, returning only the HTML fragments needed:
+You can create views that serve as HTMX endpoints, returning only the HTML fragments needed for partial page updates:
 
 ```python
 view TodoItem(todo):
@@ -367,7 +559,7 @@ view NewTodoResponse(todo):
     <TodoItem todo={todo} />
 ```
 
-#### Dynamic Loading with HTMX
+### Dynamic Loading with HTMX
 
 ```python
 view LazyLoadingSection(url, trigger="revealed"):
@@ -380,7 +572,7 @@ view LazyLoadingSection(url, trigger="revealed"):
     </div>
 ```
 
-#### Form Processing with HTMX
+### Form Processing with HTMX
 
 HTMX works great for forms with validation and dynamic responses:
 
@@ -408,7 +600,7 @@ view ContactForm():
     </div>
 ```
 
-#### Form Validation Response
+### Form Validation Response
 
 ```python
 view FormValidationError(errors):
@@ -421,7 +613,7 @@ view FormValidationError(errors):
     </div>
 ```
 
-#### Infinite Scroll with HTMX
+### Infinite Scroll with HTMX
 
 ```python
 view ArticleList(articles, page=1):
@@ -442,7 +634,7 @@ view ArticleList(articles, page=1):
         </div>
 ```
 
-#### Active Search with HTMX
+### Active Search with HTMX
 
 ```python
 view SearchInterface():
@@ -462,7 +654,7 @@ view SearchInterface():
     </div>
 ```
 
-#### Tabs with HTMX
+### Tabs with HTMX
 
 ```python
 view TabInterface(tabs):
@@ -485,7 +677,7 @@ view TabInterface(tabs):
     </div>
 ```
 
-## Error Management
+# Error Management
 
 Biscuit supports standard Python exception handling within views:
 
@@ -519,11 +711,11 @@ Error handling best practices in views:
 - Use the finally block for cleanup operations
 - Avoid swallowing exceptions without proper handling
 
-## FastAPI Integration
+# FastAPI Integration
 
 Biscuit seamlessly integrates with FastAPI to create HTML responses:
 
-### Basic Route Handlers
+## Basic Route Handlers
 
 Views can be directly used as FastAPI route handlers and automatically return HTMLResponse:
 
@@ -545,7 +737,7 @@ view HomePage(request: Request):
     </html>
 ```
 
-### Path Parameters
+## Path Parameters
 
 FastAPI path parameters work directly with Biscuit views:
 
@@ -561,7 +753,7 @@ view ProductDetail(product_id: int, db: Session = Depends(get_db)):
     </div>
 ```
 
-### Query Parameters
+## Query Parameters
 
 Query parameters are received as function arguments:
 
@@ -595,7 +787,7 @@ view SearchResults(
     </div>
 ```
 
-### Form Data
+## Form Data
 
 Handling POST requests with form data:
 
@@ -623,7 +815,7 @@ view ContactForm(
     </div>
 ```
 
-### Request Body
+## Request Body
 
 Working with JSON request bodies:
 
@@ -653,9 +845,9 @@ view CreateUser(
     </div>
 ```
 
-### HTMX Integration
+## FastAPI Endpoints for HTMX Partials
 
-Biscuit works perfectly with HTMX for partial page updates:
+Biscuit works perfectly with HTMX for partial page updates when used with FastAPI. Endpoints can return HTML fragments generated by Biscuit views:
 
 ```python
 @app.get("/comments/{post_id}")
@@ -689,7 +881,7 @@ view AddComment(
     </div>
 ```
 
-### Router Integration
+## Router Integration
 
 Views work with FastAPI's `APIRouter` for modular applications:
 
@@ -720,7 +912,7 @@ view AdminDashboard(
     </div>
 ```
 
-### Automatic HTMLResponse
+## Automatic HTMLResponse
 
 All Biscuit views automatically return `HTMLResponse` without needing to specify `response_class`:
 
@@ -738,7 +930,7 @@ def about():
 
 This simplifies route declarations while maintaining compatibility with FastAPI's response system.
 
-## Special Features
+# Special Features
 
 - **Decorators**: Views can be decorated with Python decorators, including FastAPI route decorators
 - **Typed parameters**: Full support for Python type annotations
