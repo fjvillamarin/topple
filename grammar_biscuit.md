@@ -51,7 +51,7 @@ Instantiate `FastAPI`. You can optionally give it a title.
 app = FastAPI(title="Biscuit Example: Hello World")
 ```
 
-**4. Create a Route and Render the View**
+### 4. Create a Route and Render the View
 
 Define a route using FastAPI's decorators (e.g., `@app.get("/")`). In the route function, you render your Biscuit view by calling its `.render()` method. The result of `.render()` is an HTML string, which should be returned wrapped in an `HTMLResponse`.
 
