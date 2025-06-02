@@ -11,8 +11,21 @@ import (
 func parseImportStatement(t *testing.T, input string) (ast.Stmt, error) {
 	scanner := lexer.NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
+	
+	// Check for lexer errors
+	if len(scanner.Errors) > 0 {
+		t.Fatalf("Lexer errors encountered: %v", scanner.Errors)
+	}
+	
 	parser := NewParser(tokens)
-	return parser.importStatement()
+	stmt, err := parser.importStatement()
+	
+	// Check for parser errors
+	if len(parser.Errors) > 0 {
+		t.Fatalf("Parser errors encountered: %v", parser.Errors)
+	}
+	
+	return stmt, err
 }
 
 // Helper function to validate import statement type and structure

@@ -6,26 +6,6 @@ import (
 	"testing"
 )
 
-// Helper function to parse a function call expression
-func parseCall(t *testing.T, input string) (*ast.Call, error) {
-	scanner := lexer.NewScanner([]byte(input))
-	tokens := scanner.ScanTokens()
-	parser := NewParser(tokens)
-	expr, err := parser.expression()
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	call, ok := expr.(*ast.Call)
-	if !ok {
-		t.Errorf("Expected *ast.Call but got %T", expr)
-		return nil, nil
-	}
-	
-	return call, nil
-}
-
 // Helper function to classify argument type
 func getArgumentType(arg *ast.Argument) string {
 	switch {

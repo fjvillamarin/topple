@@ -98,6 +98,40 @@ func getExprTypeName(expr ast.Expr) string {
 		return "*ast.Binary"
 	case *ast.Lambda:
 		return "*ast.Lambda"
+	case *ast.Subscript:
+		return "*ast.Subscript"
+	case *ast.ListExpr:
+		return "*ast.ListExpr"
+	case *ast.DictExpr:
+		return "*ast.DictExpr"
+	case *ast.ListComp:
+		return "*ast.ListComp"
+	case *ast.SetExpr:
+		return "*ast.SetExpr"
+	case *ast.SetComp:
+		return "*ast.SetComp"
+	case *ast.DictComp:
+		return "*ast.DictComp"
+	case *ast.GenExpr:
+		return "*ast.GenExpr"
+	case *ast.TupleExpr:
+		return "*ast.TupleExpr"
+	case *ast.Unary:
+		return "*ast.Unary"
+	case *ast.TernaryExpr:
+		return "*ast.TernaryExpr"
+	case *ast.GroupExpr:
+		return "*ast.GroupExpr"
+	case *ast.AwaitExpr:
+		return "*ast.AwaitExpr"
+	case *ast.YieldExpr:
+		return "*ast.YieldExpr"
+	case *ast.StarExpr:
+		return "*ast.StarExpr"
+	case *ast.FString:
+		return "*ast.FString"
+	case *ast.Slice:
+		return "*ast.Slice"
 	default:
 		return "unknown"
 	}

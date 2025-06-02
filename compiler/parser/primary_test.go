@@ -174,7 +174,7 @@ func TestPrimarySubscript(t *testing.T) {
 			}
 
 			// Check that we got a subscript at the top level
-			if test.name[:5] != "mixed" {
+			if !strings.HasPrefix(test.name, "mixed") {
 				_, ok := expr.(*ast.Subscript)
 				if !ok {
 					t.Fatalf("Expected Subscript, got %T", expr)
