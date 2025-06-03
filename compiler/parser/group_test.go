@@ -11,8 +11,21 @@ import (
 func parseGroupExpression(t *testing.T, input string) (ast.Expr, error) {
 	scanner := lexer.NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
+	
+	// Check for lexer errors
+	if len(scanner.Errors) > 0 {
+		t.Fatalf("Lexer errors encountered: %v", scanner.Errors)
+	}
+	
 	parser := NewParser(tokens)
-	return parser.expression()
+	expr, err := parser.expression()
+	
+	// Check for parser errors
+	if len(parser.Errors) > 0 {
+		t.Fatalf("Parser errors encountered: %v", parser.Errors)
+	}
+	
+	return expr, err
 }
 
 // Helper function to get expression type as string for group tests
