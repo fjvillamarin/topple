@@ -586,7 +586,7 @@ func TestIfEdgeCases(t *testing.T) {
 			var err error
 			
 			// Try parsing as statement first, then as expression
-			if strings.Contains(test.input, "if ") && strings.Contains(test.input, ":") {
+			if strings.HasPrefix(test.input, "if ") {
 				_, err = parseIfStatement(t, test.input)
 			} else {
 				_, err = parseTernaryExpression(t, test.input)
