@@ -417,6 +417,7 @@ Some bugs stem from misalignment between lexer token generation and parser expec
 - Complex target type resolution (#13) - parsing accuracy
 - Try statement clause ordering (#16) - syntax validation
 - Star target sequence parsing (#20) - assignment pattern parsing
+- Raw string literal tokenization (#24) - scanner string parsing
 
 **Low Priority**:
 - Incomplete "not in" validation (#3) - edge case error handling
@@ -470,3 +471,19 @@ The following additional target parsing failures have been identified and are re
 
 **Parser Location**: `compiler/parser/try.go:66-74` - same as bug #16
 **Fix Required**: Will be resolved by the same validation fix as bug #16.
+
+## Scanner (Lexer) Issues
+
+### 24. Raw String Literal Leading Quote Bug
+**File**: `scanner_test.go:166`  
+**Test**: `TestStrings` raw string literal test case  
+**Input**: `r"raw\nstring"`  
+**Expected**: `raw\nstring` (string content without delimiters)  
+**Actual**: `"raw\nstring` (includes leading quote character)  
+**Python Behavior**: Raw strings preserve backslashes but don't include delimiter quotes  
+**Impact**: Medium - incorrect tokenization of raw string literals  
+
+**Root Cause Analysis**: The scanner is incorrectly including the opening quote character as part of the raw string literal's content. When parsing `r"raw\nstring"`, the scanner should extract only `raw\nstring` as the literal value, but it's including the leading `"` character, resulting in `"raw\nstring`.
+
+**Scanner Location**: `compiler/lexer/scanner.go` - raw string literal parsing logic  
+**Fix Required**: Update the raw string parsing logic to properly exclude the delimiter quotes from the string content. The scanner should start capturing the string content after the opening quote and stop before the closing quote.

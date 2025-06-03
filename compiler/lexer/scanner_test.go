@@ -163,7 +163,7 @@ func TestStrings(t *testing.T) {
 single'''`, "triple\nsingle"},
 		{`"""triple
 double"""`, "triple\ndouble"},
-		{`r"raw\nstring"`, `"raw\nstring`},
+		{`r"raw\nstring"`, `raw\nstring`},
 	}
 	
 	for _, test := range tests {
