@@ -18,7 +18,7 @@ func assertTokenTypes(t *testing.T, tokens []Token, expected []TokenType) {
 	}
 	for i, tok := range tokens {
 		if tok.Type != expected[i] {
-			t.Errorf("Token %d: expected %s, got %s", i, expected[i], tok.Type)
+			t.Errorf("Token %d: expected %v, got %v", i, expected[i], tok.Type)
 		}
 	}
 }
@@ -27,7 +27,7 @@ func assertTokenTypes(t *testing.T, tokens []Token, expected []TokenType) {
 func assertToken(t *testing.T, tok Token, expectedType TokenType, expectedLexeme string) {
 	t.Helper()
 	if tok.Type != expectedType {
-		t.Errorf("Expected token type %s, got %s", expectedType, tok.Type)
+		t.Errorf("Expected token type %v, got %v", expectedType, tok.Type)
 	}
 	if tok.Lexeme != expectedLexeme {
 		t.Errorf("Expected lexeme %q, got %q", expectedLexeme, tok.Lexeme)
@@ -92,7 +92,7 @@ func TestIdentifiers(t *testing.T) {
 	
 	for i := 0; i < len(tokens)-1; i++ { // -1 to skip EOF
 		if tokens[i].Type != Identifier {
-			t.Errorf("Token %d: expected Identifier, got %s", i, tokens[i].Type)
+			t.Errorf("Token %d: expected Identifier, got %v", i, tokens[i].Type)
 		}
 	}
 	
