@@ -186,7 +186,7 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 		// Save position in case we need to backtrack
 		startPos := p.Current
 		name := p.advance()
-		
+
 		// Check if this is a simple subscript like arr[0]
 		if p.match(lexer.LeftBracket) {
 			// Handle simple subscript: name[index]
@@ -194,30 +194,30 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			
+
 			right, err := p.consume(lexer.RightBracket, "expected ']' after index")
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Check if there's more chaining
 			if !p.tLookahead() {
 				// Simple subscript, return it
 				return &ast.Subscript{
 					Object: &ast.Name{
 						Token: name,
-						Span: lexer.Span{Start: name.Start(), End: name.End()},
+						Span:  lexer.Span{Start: name.Start(), End: name.End()},
 					},
 					Indices: indices,
-					Span: lexer.Span{Start: name.Start(), End: right.End()},
+					Span:    lexer.Span{Start: name.Start(), End: right.End()},
 				}, nil
 			}
-			
+
 			// There's more chaining, restore position and use the complex path
 			p.Current = startPos
 			return p.singleSubscriptAttributeTarget()
 		}
-		
+
 		// Check if it might be a single_subscript_attribute_target
 		// by seeing if there's a lookahead accessor after the identifier
 		if p.check(lexer.Dot) || p.check(lexer.LeftParen) {
@@ -229,7 +229,7 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 		// Just a NAME
 		return &ast.Name{
 			Token: name,
-			Span: lexer.Span{Start: name.Start(), End: name.End()},
+			Span:  lexer.Span{Start: name.Start(), End: name.End()},
 		}, nil
 	} else if p.match(lexer.LeftParen) {
 		// Handle parenthesized form: '(' single_target ')'
@@ -245,7 +245,7 @@ func (p *Parser) singleTarget() (ast.Expr, error) {
 
 		return &ast.GroupExpr{
 			Expression: target,
-			Span: lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
+			Span:       lexer.Span{Start: p.previous().Start(), End: p.previous().End()},
 		}, nil
 	}
 
@@ -530,32 +530,32 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 	if p.check(lexer.Identifier) {
 		startPos := p.Current
 		name := p.advance()
-		
+
 		if p.match(lexer.LeftBracket) {
 			// Handle simple subscript: name[index]
 			indices, err := p.slices()
 			if err != nil {
 				return nil, err
 			}
-			
+
 			right, err := p.consume(lexer.RightBracket, "expected ']' after index")
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Check if there's more chaining
 			if !p.tLookahead() {
 				// Simple subscript, return it
 				return &ast.Subscript{
 					Object: &ast.Name{
 						Token: name,
-						Span: lexer.Span{Start: name.Start(), End: name.End()},
+						Span:  lexer.Span{Start: name.Start(), End: name.End()},
 					},
 					Indices: indices,
-					Span: lexer.Span{Start: name.Start(), End: right.End()},
+					Span:    lexer.Span{Start: name.Start(), End: right.End()},
 				}, nil
 			}
-			
+
 			// There's more chaining, fall through to use t_primary path
 			p.Current = startPos
 		} else if p.check(lexer.Dot) || p.check(lexer.LeftParen) {
@@ -565,11 +565,11 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 			// Just a name, return it
 			return &ast.Name{
 				Token: name,
-				Span: lexer.Span{Start: name.Start(), End: name.End()},
+				Span:  lexer.Span{Start: name.Start(), End: name.End()},
 			}, nil
 		}
 	}
-	
+
 	// Try to parse as t_primary if the next token could start a t_primary
 	if p.check(lexer.Identifier) || p.check(lexer.LeftParen) || p.check(lexer.LeftBracket) ||
 		p.check(lexer.False) || p.check(lexer.True) || p.check(lexer.None) ||
