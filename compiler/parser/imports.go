@@ -60,10 +60,11 @@ func (p *Parser) importFrom() (ast.Stmt, error) {
 	// Parse leading dots for relative imports
 	dotCount := 0
 	for p.match(lexer.Dot) || p.match(lexer.Ellipsis) {
-		// Count '.' as 1, '...' as 3
-		if p.previous().Type == lexer.Dot {
-			dotCount += 1
-		} else {
+		prev := p.previous()
+		if prev.Type == lexer.Dot {
+			// Count the actual dots in the lexeme
+			dotCount += len(prev.Lexeme)
+		} else { // Ellipsis
 			dotCount += 3
 		}
 	}
