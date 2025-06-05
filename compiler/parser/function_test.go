@@ -78,6 +78,12 @@ func countParameterTypes(params *ast.ParameterList) (regular, withDefaults, star
 			doubleStarred++
 		} else if param.IsStar {
 			starred++
+		} else if param.IsKeywordOnly {
+			// Keyword-only parameters are counted based on whether they have defaults
+			if param.Default != nil {
+				withDefaults++
+			}
+			// Note: keyword-only parameters without defaults are NOT counted as regular
 		} else if param.Default != nil {
 			withDefaults++
 		} else {
@@ -390,8 +396,8 @@ func TestFunctionParameterPatterns(t *testing.T) {
 			name: "complete parameter pattern",
 			input: `def func(a, b=1, *args, c, d=2, **kwargs):
     pass`,
-			expectedRegular:    2, // a and c (keyword-only regular parameter)
-			expectedDefaults:   2, // b and d (b=1, d=2)
+			expectedRegular:    1, // only a (c is keyword-only and not counted as regular)
+			expectedDefaults:   2, // b=1 and d=2
 			expectedStarred:    1,
 			expectedDblStarred: 1,
 			description:        "function with complete parameter pattern",
@@ -408,8 +414,8 @@ func TestFunctionParameterPatterns(t *testing.T) {
 			name: "keyword-only parameters",
 			input: `def func(a, *, b, c=1):
     pass`,
-			expectedRegular:  2, // a and b (both are parameters, b is keyword-only regular)
-			expectedDefaults: 1, // only c has default value
+			expectedRegular:  1, // only a (b is keyword-only without default, not counted as regular)
+			expectedDefaults: 1, // only c=1
 			description:      "function with keyword-only parameters",
 		},
 		{

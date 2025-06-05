@@ -7,12 +7,13 @@ import (
 
 // Parameter represents a function parameter
 type Parameter struct {
-	Name         *Name // Parameter name
-	Annotation   Expr  // Optional type annotation (:Type)
-	Default      Expr  // Optional default value (=default)
-	IsStar       bool  // Whether this is a *args parameter
-	IsDoubleStar bool  // Whether this is a **kwargs parameter
-	IsSlash      bool  // Whether this is a positional-only parameter (before /)
+	Name          *Name // Parameter name
+	Annotation    Expr  // Optional type annotation (:Type)
+	Default       Expr  // Optional default value (=default)
+	IsStar        bool  // Whether this is a *args parameter
+	IsDoubleStar  bool  // Whether this is a **kwargs parameter
+	IsSlash       bool  // Whether this is a positional-only parameter (before /)
+	IsKeywordOnly bool  // Whether this is a keyword-only parameter (after * or *args)
 
 	Span lexer.Span
 }
