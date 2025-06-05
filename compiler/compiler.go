@@ -6,10 +6,10 @@ import (
 
 	"biscuit/compiler/ast"
 	"biscuit/compiler/codegen"
-	"biscuit/compiler/codegen/transformers"
 	"biscuit/compiler/lexer"
 	"biscuit/compiler/parser"
 	"biscuit/compiler/resolver"
+	"biscuit/compiler/transformers"
 )
 
 // File represents a file in the Biscuit compiler

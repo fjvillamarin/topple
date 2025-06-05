@@ -14,8 +14,11 @@ help:
 	@echo "  fmt              - Format Go code"
 	@echo ""
 	@echo "🧪 Testing:"
-	@echo "  test             - Run all Go unit tests"
-	@echo "  test-all         - Run all tests (unit + golden file tests)"
+	@echo "  test                        - Run all Go unit tests"
+	@echo "  test-codegen                - Run code generation tests"
+	@echo "  test-view-transformer       - Run view transformer tests"
+	@echo "  test-view-transformer-update - Update view transformer golden files"
+	@echo "  test-all                    - Run all tests (unit + golden file tests)"
 	@echo ""
 	@echo "✨ Golden File Tests (End-to-End):"
 	@echo "  test-golden                     - Run all golden file tests"
@@ -49,6 +52,21 @@ run:
 .PHONY: test
 test:
 	go test ./...
+
+.PHONY: test-codegen
+test-codegen:
+	@echo "🧪 Running codegen tests..."
+	@go test ./compiler/codegen -v
+
+.PHONY: test-view-transformer
+test-view-transformer:
+	@echo "🧪 Running view transformer tests..."
+	@go test ./compiler/transformers -v
+
+.PHONY: test-view-transformer-update
+test-view-transformer-update:
+	@echo "📝 Updating view transformer golden files..."
+	@UPDATE_GOLDEN=1 go test ./compiler/transformers -v
 
 .PHONY: watch
 watch:

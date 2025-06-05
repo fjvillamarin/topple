@@ -1,0 +1,1 @@
+"yes" if condition else "no"

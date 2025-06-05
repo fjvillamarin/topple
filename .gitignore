@@ -51,4 +51,6 @@ env/
 *.sqlite
 
 # Generated test files (for local development comparison only)
-compiler/testdata/generated/ 
+compiler/testdata/generated/
+compiler/codegen/testdata/generated/
+compiler/transformers/testdata/generated/
