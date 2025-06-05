@@ -57,7 +57,7 @@ func (vm *ViewTransformer) transformViewBody(body []ast.Stmt) ([]ast.Stmt, error
 		if needsHierarchy {
 			// Push a new context for the root elements
 			rootContext := vm.pushContext("root")
-			
+
 			// Create the array for root elements
 			createArray := &ast.AssignStmt{
 				Targets: []ast.Expr{
@@ -133,13 +133,13 @@ func (vm *ViewTransformer) processViewStatement(stmt ast.Stmt) ([]ast.Stmt, erro
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// If we're in a context, append to it
 			if vm.currentContext != "" {
 				appendStmt := vm.createAppendStatement(vm.currentContext, transformedCall)
 				return []ast.Stmt{appendStmt}, nil
 			}
-			
+
 			// Otherwise return as expression statement
 			return []ast.Stmt{&ast.ExprStmt{Expr: transformedCall, Span: s.Span}}, nil
 		}

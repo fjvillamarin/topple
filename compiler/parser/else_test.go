@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -44,8 +44,8 @@ func TestElseBlock(t *testing.T) {
 	}{
 		// Basic else blocks
 		{
-			name:           "simple else block",
-			input:          `else:
+			name: "simple else block",
+			input: `else:
     pass`,
 			shouldHaveElse: true,
 			expectedLen:    1,
@@ -325,11 +325,11 @@ func TestElseBlockEdgeCases(t *testing.T) {
 // Test specific parsing behaviors
 func TestElseBlockParsing(t *testing.T) {
 	tests := []struct {
-		name                string
-		input               string
-		expectElseKeyword   bool
-		expectStatements    bool
-		minStatementCount   int
+		name              string
+		input             string
+		expectElseKeyword bool
+		expectStatements  bool
+		minStatementCount int
 	}{
 		{"detects else keyword", "else: pass", true, true, 1},
 		{"ignores non-else", "pass", false, false, 0},
@@ -346,7 +346,7 @@ func TestElseBlockParsing(t *testing.T) {
 			}
 
 			hasStatements := statements != nil && len(statements) > 0
-			
+
 			if test.expectStatements != hasStatements {
 				t.Errorf("Expected statements=%v, got statements=%v", test.expectStatements, hasStatements)
 			}

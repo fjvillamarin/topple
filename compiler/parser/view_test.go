@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -109,7 +109,7 @@ func findStatementInList(stmts []ast.Stmt, stmtType string) bool {
 				return true
 			}
 		}
-		
+
 		// Check inside MultiStmt containers
 		if multiStmt, ok := stmt.(*ast.MultiStmt); ok {
 			if findStatementInList(multiStmt.Stmts, stmtType) {
@@ -140,63 +140,63 @@ func validateHTMLElementInView(t *testing.T, viewStmt *ast.ViewStmt, expectedTag
 // Test comprehensive view statement parsing functionality
 func TestViewStatement(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
-		hasError          bool
-		errorText         string
-		expectedName      string
+		name               string
+		input              string
+		hasError           bool
+		errorText          string
+		expectedName       string
 		expectedParamCount int
 		expectedBodyCount  int
-		description       string
+		description        string
 	}{
 		{
-			name:              "simple view without parameters",
+			name: "simple view without parameters",
 			input: `view hello():
     <div>Hello</div>`,
-			expectedName:      "hello",
+			expectedName:       "hello",
 			expectedParamCount: 0,
 			expectedBodyCount:  1,
-			description:       "view without parameters containing single HTML element",
+			description:        "view without parameters containing single HTML element",
 		},
 		{
-			name:              "view with parameters",
+			name: "view with parameters",
 			input: `view greet(name: str):
     <div>Hello {name}</div>`,
-			expectedName:      "greet",
+			expectedName:       "greet",
 			expectedParamCount: 1,
 			expectedBodyCount:  1,
-			description:       "view with typed parameter containing HTML with interpolation",
+			description:        "view with typed parameter containing HTML with interpolation",
 		},
 		{
-			name:              "view with return type",
+			name: "view with return type",
 			input: `view mycomponent() -> str:
     <div>Content</div>`,
-			expectedName:      "mycomponent",
+			expectedName:       "mycomponent",
 			expectedParamCount: 0,
 			expectedBodyCount:  1,
-			description:       "view with return type annotation",
+			description:        "view with return type annotation",
 		},
 		{
-			name:              "multiline view",
+			name: "multiline view",
 			input: `view layout():
     <div>
         <h1>Title</h1>
         <p>Content</p>
     </div>`,
-			expectedName:      "layout",
+			expectedName:       "layout",
 			expectedParamCount: 0,
 			expectedBodyCount:  1,
-			description:       "view with multiline HTML content",
+			description:        "view with multiline HTML content",
 		},
 		{
-			name:              "view with Python statements",
+			name: "view with Python statements",
 			input: `view conditional(show: bool):
     if show:
         <div>Visible</div>`,
-			expectedName:      "conditional",
+			expectedName:       "conditional",
 			expectedParamCount: 1,
 			expectedBodyCount:  1,
-			description:       "view containing Python control flow statements",
+			description:        "view containing Python control flow statements",
 		},
 		{
 			name:        "view without body",
@@ -246,63 +246,63 @@ func TestViewWithHTMLElements(t *testing.T) {
 		description string
 	}{
 		{
-			name:        "self-closing tag",
+			name: "self-closing tag",
 			input: `view test():
     <br/>`,
 			expectedTag: "br",
 			description: "view with self-closing HTML tag",
 		},
 		{
-			name:        "empty tag",
+			name: "empty tag",
 			input: `view test():
     <div></div>`,
 			expectedTag: "div",
 			description: "view with empty HTML tag",
 		},
 		{
-			name:        "tag with text content",
+			name: "tag with text content",
 			input: `view test():
     <p>Hello world</p>`,
 			expectedTag: "p",
 			description: "view with HTML tag containing text content",
 		},
 		{
-			name:        "tag with interpolation",
+			name: "tag with interpolation",
 			input: `view test(name: str):
     <span>{name}</span>`,
 			expectedTag: "span",
 			description: "view with HTML tag containing variable interpolation",
 		},
 		{
-			name:        "tag with attributes",
+			name: "tag with attributes",
 			input: `view test():
     <div class="container" id="main"></div>`,
 			expectedTag: "div",
 			description: "view with HTML tag containing multiple attributes",
 		},
 		{
-			name:        "tag with boolean attribute",
+			name: "tag with boolean attribute",
 			input: `view test():
     <input disabled checked/>`,
 			expectedTag: "input",
 			description: "view with HTML tag containing boolean attributes",
 		},
 		{
-			name:        "tag with expression attribute",
+			name: "tag with expression attribute",
 			input: `view test(variant: str):
     <div class={variant}></div>`,
 			expectedTag: "div",
 			description: "view with HTML tag containing expression-based attributes",
 		},
 		{
-			name:        "nested elements",
+			name: "nested elements",
 			input: `view test():
     <div><span>nested</span></div>`,
 			expectedTag: "div",
 			description: "view with nested HTML elements",
 		},
 		{
-			name:        "unclosed tag",
+			name: "unclosed tag",
 			input: `view test():
     <div>content`,
 			hasError:    true,
@@ -310,7 +310,7 @@ func TestViewWithHTMLElements(t *testing.T) {
 			description: "view with unclosed HTML tag should fail",
 		},
 		{
-			name:        "mismatched closing tag",
+			name: "mismatched closing tag",
 			input: `view test():
     <div></span>`,
 			hasError:    true,
@@ -336,45 +336,45 @@ func TestViewWithHTMLElements(t *testing.T) {
 // Test view statements containing Python code
 func TestViewWithPythonStatements(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		hasError        bool
-		errorText       string
+		name             string
+		input            string
+		hasError         bool
+		errorText        string
 		expectedStmtType string
-		description     string
+		description      string
 	}{
 		{
-			name:            "python assignment",
+			name: "python assignment",
 			input: `view test():
     x = 5
     <div>{x}</div>`,
 			expectedStmtType: "Assignment",
-			description:     "view with Python assignment statement",
+			description:      "view with Python assignment statement",
 		},
 		{
-			name:            "python if statement",
+			name: "python if statement",
 			input: `view test(show: bool):
     if show:
         <div>Visible</div>`,
 			expectedStmtType: "If",
-			description:     "view with Python conditional statement",
+			description:      "view with Python conditional statement",
 		},
 		{
-			name:            "python for loop",
+			name: "python for loop",
 			input: `view test(items: list):
     for item in items:
         <div>{item}</div>`,
 			expectedStmtType: "For",
-			description:     "view with Python for loop statement",
+			description:      "view with Python for loop statement",
 		},
 		{
-			name:            "mixed statements",
+			name: "mixed statements",
 			input: `view test():
     <h1>Title</h1>
     name = "World"
     <p>Hello {name}</p>`,
 			expectedStmtType: "HTMLElement", // First statement is HTML
-			description:     "view with mixed HTML and Python statements",
+			description:      "view with mixed HTML and Python statements",
 		},
 	}
 
@@ -386,7 +386,7 @@ func TestViewWithPythonStatements(t *testing.T) {
 				validateViewParseError(t, viewStmt, err, tt.errorText, tt.description)
 			} else {
 				validateViewParseSuccess(t, viewStmt, err, tt.description)
-				
+
 				if len(viewStmt.Body) == 0 {
 					t.Errorf("Expected view body to have at least one statement for %s", tt.description)
 					return
@@ -404,41 +404,41 @@ func TestViewWithPythonStatements(t *testing.T) {
 // Test view statements with complex parameter patterns
 func TestViewParameterPatterns(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
-		hasError          bool
-		errorText         string
+		name               string
+		input              string
+		hasError           bool
+		errorText          string
 		expectedParamCount int
-		description       string
+		description        string
 	}{
 		{
-			name:              "view with typed parameters",
+			name: "view with typed parameters",
 			input: `view test_view(title: str, count: int, active: bool):
     <div class={"active" if active else ""}>
         <h1>{title}</h1>
         <span>{count}</span>
     </div>`,
 			expectedParamCount: 3,
-			description:       "view with multiple typed parameters",
+			description:        "view with multiple typed parameters",
 		},
 		{
-			name:              "view with default parameters",
+			name: "view with default parameters",
 			input: `view button(text: str = "Click me", variant: str = "primary"):
     <button class={variant}>{text}</button>`,
 			expectedParamCount: 2,
-			description:       "view with default parameter values",
+			description:        "view with default parameter values",
 		},
 		{
-			name:              "view with complex type annotations",
+			name: "view with complex type annotations",
 			input: `view list_view(items: list, formatter: str):
     for item in items:
         <div>{item}</div>`,
 			expectedParamCount: 2,
-			description:       "view with complex type annotations",
+			description:        "view with complex type annotations",
 		},
 		{
-			name:        "view with invalid parameter syntax",
-			input:       `view broken(123invalid: str):
+			name: "view with invalid parameter syntax",
+			input: `view broken(123invalid: str):
     <div></div>`,
 			hasError:    true,
 			errorText:   "expected",
@@ -499,7 +499,7 @@ func TestAsyncViewStatements(t *testing.T) {
 				validateViewParseError(t, viewStmt, err, tt.errorText, tt.description)
 			} else {
 				validateViewParseSuccess(t, viewStmt, err, tt.description)
-				
+
 				if viewStmt.IsAsync != tt.isAsync {
 					t.Errorf("Expected IsAsync=%v but got %v for %s", tt.isAsync, viewStmt.IsAsync, tt.description)
 				}
@@ -553,24 +553,24 @@ func TestViewEdgeCases(t *testing.T) {
 			description: "view with docstring documentation",
 		},
 		{
-			name:        "view with missing view keyword",
-			input:       `component():
+			name: "view with missing view keyword",
+			input: `component():
     <div>Missing view keyword</div>`,
 			hasError:    true,
 			errorText:   "expected",
 			description: "statement without view keyword should fail",
 		},
 		{
-			name:        "view with empty name",
-			input:       `view ():
+			name: "view with empty name",
+			input: `view ():
     <div>Empty name</div>`,
 			hasError:    true,
 			errorText:   "expected",
 			description: "view with empty name should fail",
 		},
 		{
-			name:        "view with reserved keyword name",
-			input:       `view def():
+			name: "view with reserved keyword name",
+			input: `view def():
     <div>Reserved keyword</div>`,
 			hasError:    true,
 			errorText:   "expected",
@@ -586,7 +586,7 @@ func TestViewEdgeCases(t *testing.T) {
 				validateViewParseError(t, viewStmt, err, tt.errorText, tt.description)
 			} else {
 				validateViewParseSuccess(t, viewStmt, err, tt.description)
-				
+
 				// For successful complex cases, just verify basic structure
 				if len(viewStmt.Body) == 0 {
 					t.Errorf("Expected view body to have statements for %s", tt.description)

@@ -1,10 +1,10 @@
 package resolver
 
 import (
-	"sylfie/compiler/ast"
 	"fmt"
 	"sort"
 	"strings"
+	"sylfie/compiler/ast"
 )
 
 // DebugPrintResolutionTable outputs a comprehensive, formatted debug report of the given resolution table, including errors, variable states, view parameters, view composition, closure variables, and summary statistics.

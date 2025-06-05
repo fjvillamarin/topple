@@ -22,7 +22,7 @@ func TestBitwiseOperations(t *testing.T) {
 		{"mixed precedence or/and", "a & b | c", false, true, lexer.Pipe},
 		{"bitwise or with variables", "flags | new_flag", false, true, lexer.Pipe},
 
-		// Bitwise XOR operations  
+		// Bitwise XOR operations
 		{"simple bitwise xor", "a ^ b", false, true, lexer.Caret},
 		{"chained bitwise xor", "a ^ b ^ c", false, true, lexer.Caret},
 		{"bitwise xor with numbers", "5 ^ 3", false, true, lexer.Caret},
@@ -44,7 +44,7 @@ func TestBitwiseOperations(t *testing.T) {
 		{"shift with expressions", "(a + b) << count", false, true, lexer.LessLess},
 		{"shift with variables", "value >> shift_amount", false, true, lexer.GreaterGreater},
 
-		// Error cases  
+		// Error cases
 		{"incomplete bitwise or", "a |", true, false, lexer.EOF},
 		{"missing operand or", "| b", true, false, lexer.EOF},
 		{"incomplete bitwise xor", "a ^", true, false, lexer.EOF},
@@ -98,10 +98,10 @@ func TestBitwiseOperations(t *testing.T) {
 
 func TestBitwisePrecedence(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedTopOp  lexer.TokenType
-		description    string
+		name          string
+		input         string
+		expectedTopOp lexer.TokenType
+		description   string
 	}{
 		{"or lower than xor", "a ^ b | c", lexer.Pipe, "| has lower precedence than ^"},
 		{"xor lower than and", "a & b ^ c", lexer.Caret, "^ has lower precedence than &"},
@@ -130,7 +130,7 @@ func TestBitwisePrecedence(t *testing.T) {
 			// Validate that the top-level operator matches expected precedence
 			if binary, ok := expr.(*ast.Binary); ok {
 				if binary.Operator.Type != tt.expectedTopOp {
-					t.Errorf("Expected top-level operator %v, got %v - %s", 
+					t.Errorf("Expected top-level operator %v, got %v - %s",
 						tt.expectedTopOp, binary.Operator.Type, tt.description)
 				}
 			} else {
@@ -187,7 +187,7 @@ func TestUnaryBitwiseOperations(t *testing.T) {
 		{"bitwise not simple", "~a", false, lexer.Tilde},
 		{"bitwise not number", "~42", false, lexer.Tilde},
 		{"bitwise not expression", "~(a + b)", false, lexer.Tilde},
-		{"double bitwise not", "~~a", false, lexer.Tilde}, // outermost operator
+		{"double bitwise not", "~~a", false, lexer.Tilde},           // outermost operator
 		{"bitwise not with other unary", "-~a", false, lexer.Minus}, // outermost operator
 		{"bitwise not missing operand", "~", true, lexer.EOF},
 	}

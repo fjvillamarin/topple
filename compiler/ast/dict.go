@@ -1,9 +1,9 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // DictExpr represents a dictionary literal: {key1: value1, key2: value2, **dict_expr}

@@ -114,15 +114,15 @@ func TestTypeAliasStatements(t *testing.T) {
 
 func TestTypeParameters(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		paramIndex     int
-		expectedName   string
-		hasBound       bool
-		hasDefault     bool
-		isStar         bool
-		isDoubleStar   bool
-		hasError       bool
+		name         string
+		input        string
+		paramIndex   int
+		expectedName string
+		hasBound     bool
+		hasDefault   bool
+		isStar       bool
+		isDoubleStar bool
+		hasError     bool
 	}{
 		{
 			name:         "simple type parameter",
@@ -293,7 +293,7 @@ func TestTypeParameterBounds(t *testing.T) {
 			}
 
 			if actualType != tt.expectedType {
-				t.Errorf("Expected bound type %s but got %s (actual: %T)", 
+				t.Errorf("Expected bound type %s but got %s (actual: %T)",
 					tt.expectedType, actualType, param.Bound)
 			}
 		})
@@ -382,7 +382,7 @@ func TestTypeParameterDefaults(t *testing.T) {
 			}
 
 			if actualType != tt.expectedType {
-				t.Errorf("Expected default type %s but got %s (actual: %T)", 
+				t.Errorf("Expected default type %s but got %s (actual: %T)",
 					tt.expectedType, actualType, param.Default)
 			}
 		})
@@ -597,7 +597,7 @@ func TestTypeAliasExpressions(t *testing.T) {
 			}
 
 			if actualType != tt.expectedType {
-				t.Errorf("Expected value type %s but got %s (actual: %T)", 
+				t.Errorf("Expected value type %s but got %s (actual: %T)",
 					tt.expectedType, actualType, typeAlias.Value)
 			}
 		})

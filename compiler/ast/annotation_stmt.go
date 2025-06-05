@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
+	"sylfie/compiler/lexer"
 )
 
 // AnnotationStmt represents a variable annotation like 'x: int' or 'x: int = 5'.

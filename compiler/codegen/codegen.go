@@ -1,9 +1,9 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
 	"fmt"
 	"strings"
+	"sylfie/compiler/ast"
 )
 
 type CodeGenerator struct {

@@ -61,6 +61,6 @@ func (p *Parser) list() (ast.Expr, error) {
 
 	return &ast.ListExpr{
 		Elements: elements,
-		Span: lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()},
+		Span:     lexer.Span{Start: leftBracket.Start(), End: rightBracket.End()},
 	}, nil
 }

@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // Helper functions for constructing AST nodes in tests.
@@ -65,7 +65,7 @@ func HElement(tag string, content ...interface{}) *HTMLElement {
 	elem := &HTMLElement{
 		TagName: lexer.Token{Lexeme: tag},
 	}
-	
+
 	for _, item := range content {
 		switch v := item.(type) {
 		case HTMLAttribute:
@@ -84,7 +84,7 @@ func HElement(tag string, content ...interface{}) *HTMLElement {
 			elem.Content = append(elem.Content, &ExprStmt{Expr: v})
 		}
 	}
-	
+
 	return elem
 }
 
@@ -300,7 +300,7 @@ func HImportN(name string, alias ...string) *ImportName {
 	for _, part := range parts {
 		nameNodes = append(nameNodes, N(part))
 	}
-	
+
 	item := &ImportName{DottedName: &DottedName{Names: nameNodes}}
 	if len(alias) > 0 {
 		item.AsName = N(alias[0])
@@ -316,7 +316,7 @@ func HImportFrom(module string, names []*ImportName, level ...int) *ImportFromSt
 	for _, part := range parts {
 		nameNodes = append(nameNodes, N(part))
 	}
-	
+
 	stmt := &ImportFromStmt{
 		DottedName: &DottedName{Names: nameNodes},
 		Names:      names,

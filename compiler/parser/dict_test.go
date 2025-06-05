@@ -43,7 +43,7 @@ func validateDictExpr(t *testing.T, expr ast.Expr, expectedKV, expectedUnpack in
 	}
 
 	kvCount, unpackCount := countDictPairs(dict.Pairs)
-	
+
 	if kvCount != expectedKV {
 		t.Errorf("Expected %d key-value pairs, got %d", expectedKV, kvCount)
 	}
@@ -78,12 +78,12 @@ func validateDictComp(t *testing.T, expr ast.Expr, expectedGenerators int) {
 // Test comprehensive dictionary functionality
 func TestDictionary(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		hasError        bool
-		expectedKV      int
-		expectedUnpack  int
-		isDictComp      bool
+		name             string
+		input            string
+		hasError         bool
+		expectedKV       int
+		expectedUnpack   int
+		isDictComp       bool
 		expectedGenCount int
 	}{
 		// Basic dictionary expressions

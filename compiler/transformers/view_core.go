@@ -1,10 +1,10 @@
 package transformers
 
 import (
+	"fmt"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
 	"sylfie/compiler/resolver"
-	"fmt"
 )
 
 // ViewTransformer transforms PSX view statements into Python classes
@@ -37,7 +37,6 @@ type SlotContent struct {
 	SlotName string     // Target slot name (empty for default slot)
 	Content  []ast.Stmt // Content for the slot
 }
-
 
 // HTMLContext represents a context for collecting HTML children
 type HTMLContext struct {

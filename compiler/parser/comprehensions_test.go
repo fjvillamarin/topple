@@ -80,11 +80,11 @@ func isComprehension(expr ast.Expr) bool {
 // Test all types of comprehensions with comprehensive test cases
 func TestComprehensions(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		compType     string
-		hasError     bool
-		expectComp   bool
+		name       string
+		input      string
+		compType   string
+		hasError   bool
+		expectComp bool
 	}{
 		// List comprehensions
 		{"simple list comprehension", "[x for x in items]", "list", false, true},

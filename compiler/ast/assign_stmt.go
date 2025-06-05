@@ -1,9 +1,9 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // AssignStmt represents an assignment statement like 'x = y' or 'a, b = c, d'.

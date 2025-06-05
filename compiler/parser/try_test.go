@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -710,12 +710,12 @@ else:
 // Test nested exception handling scenarios
 func TestNestedExceptions(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		outerExcepts    int
-		outerFinally    int
-		hasInnerTry     bool
-		description     string
+		name         string
+		input        string
+		outerExcepts int
+		outerFinally int
+		hasInnerTry  bool
+		description  string
 	}{
 		{
 			name: "simple nested try",
@@ -726,10 +726,10 @@ func TestNestedExceptions(t *testing.T) {
         handle_inner()
 except OuterError:
     handle_outer()`,
-			outerExcepts:    1,
-			outerFinally:    0,
-			hasInnerTry:     true,
-			description:     "simple nested try-except structure",
+			outerExcepts: 1,
+			outerFinally: 0,
+			hasInnerTry:  true,
+			description:  "simple nested try-except structure",
 		},
 		{
 			name: "nested try with finally",
@@ -744,10 +744,10 @@ except OuterError as oe:
     handle_outer(oe)
 finally:
     cleanup_outer()`,
-			outerExcepts:    1,
-			outerFinally:    1,
-			hasInnerTry:     true,
-			description:     "nested try with finally blocks",
+			outerExcepts: 1,
+			outerFinally: 1,
+			hasInnerTry:  true,
+			description:  "nested try with finally blocks",
 		},
 		{
 			name: "deeply nested try",
@@ -761,10 +761,10 @@ finally:
         handle_middle()
 except OuterError:
     handle_outer()`,
-			outerExcepts:    1,
-			outerFinally:    0,
-			hasInnerTry:     true,
-			description:     "deeply nested try statements",
+			outerExcepts: 1,
+			outerFinally: 0,
+			hasInnerTry:  true,
+			description:  "deeply nested try statements",
 		},
 		{
 			name: "nested try in except handler",
@@ -775,10 +775,10 @@ except MainError as e:
         recovery_operation()
     except RecoveryError:
         fallback_operation()`,
-			outerExcepts:    1,
-			outerFinally:    0,
-			hasInnerTry:     false, // Inner try is in except block
-			description:     "nested try within except handler",
+			outerExcepts: 1,
+			outerFinally: 0,
+			hasInnerTry:  false, // Inner try is in except block
+			description:  "nested try within except handler",
 		},
 		{
 			name: "nested try in finally",
@@ -791,10 +791,10 @@ finally:
         cleanup_operation()
     except CleanupError:
         log_cleanup_error()`,
-			outerExcepts:    1,
-			outerFinally:    1,
-			hasInnerTry:     false, // Inner try is in finally block
-			description:     "nested try within finally block",
+			outerExcepts: 1,
+			outerFinally: 1,
+			hasInnerTry:  false, // Inner try is in finally block
+			description:  "nested try within finally block",
 		},
 	}
 

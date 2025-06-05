@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -110,23 +110,23 @@ func validateConditionComplexity(t *testing.T, condition ast.Expr, expectedType 
 // Test comprehensive if statement functionality
 func TestIfStatement(t *testing.T) {
 	tests := []struct {
-		name             string
-		input            string
-		hasError         bool
-		expectedHasElse  bool
+		name              string
+		input             string
+		hasError          bool
+		expectedHasElse   bool
 		expectedBodyCount int
-		conditionType    string
-		description      string
+		conditionType     string
+		description       string
 	}{
 		// Basic if statements
 		{
 			name: "simple if",
 			input: `if x > 0:
     print("positive")`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "basic if statement with simple condition",
+			conditionType:     "simple",
+			description:       "basic if statement with simple condition",
 		},
 		{
 			name: "if with else",
@@ -134,19 +134,19 @@ func TestIfStatement(t *testing.T) {
     print("positive")
 else:
     print("not positive")`,
-			expectedHasElse:  true,
+			expectedHasElse:   true,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with else clause",
+			conditionType:     "simple",
+			description:       "if statement with else clause",
 		},
 		{
 			name: "complex condition",
 			input: `if x > 0 and y < 10:
     process()`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "complex",
-			description:      "if statement with complex boolean condition",
+			conditionType:     "complex",
+			description:       "if statement with complex boolean condition",
 		},
 		{
 			name: "multiple statements in body",
@@ -154,83 +154,83 @@ else:
     x = 1
     y = 2
     z = 3`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 3,
-			conditionType:    "simple",
-			description:      "if statement with multiple body statements",
+			conditionType:     "simple",
+			description:       "if statement with multiple body statements",
 		},
 		{
 			name: "empty body with pass",
 			input: `if x:
     pass`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with pass statement",
+			conditionType:     "simple",
+			description:       "if statement with pass statement",
 		},
 		{
 			name: "nested if statement",
 			input: `if outer:
     if inner:
         do_something()`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with nested if in body",
+			conditionType:     "simple",
+			description:       "if statement with nested if in body",
 		},
 		{
 			name: "if with walrus operator",
 			input: `if (x := get_value()) > 0:
     use(x)`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "assignment",
-			description:      "if statement with assignment expression",
+			conditionType:     "assignment",
+			description:       "if statement with assignment expression",
 		},
 		{
 			name: "if with function call condition",
 			input: `if is_valid(data):
     process(data)`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with function call condition",
+			conditionType:     "simple",
+			description:       "if statement with function call condition",
 		},
 		{
 			name: "if with attribute access condition",
 			input: `if obj.is_ready():
     obj.start()`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with method call condition",
+			conditionType:     "simple",
+			description:       "if statement with method call condition",
 		},
 		{
 			name: "if with comparison chain",
 			input: `if 0 < x < 10:
     print("single digit")`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "complex",
-			description:      "if statement with comparison chaining",
+			conditionType:     "complex",
+			description:       "if statement with comparison chaining",
 		},
 		{
 			name: "if with membership test",
 			input: `if item in collection:
     use(item)`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with membership test",
+			conditionType:     "simple",
+			description:       "if statement with membership test",
 		},
 		{
 			name: "if with not operator",
 			input: `if not condition:
     handle_false_case()`,
-			expectedHasElse:  false,
+			expectedHasElse:   false,
 			expectedBodyCount: 1,
-			conditionType:    "simple",
-			description:      "if statement with negated condition",
+			conditionType:     "simple",
+			description:       "if statement with negated condition",
 		},
 
 		// Error cases
@@ -282,7 +282,7 @@ else:
 			}
 
 			ifStmt := validateIfStatement(t, stmt, test.expectedHasElse, test.expectedBodyCount)
-			
+
 			// Validate condition complexity if specified
 			if test.conditionType != "" {
 				validateConditionComplexity(t, ifStmt.Condition, test.conditionType)
@@ -398,13 +398,13 @@ else:
 			}
 
 			ifStmt := validateIfStatement(t, stmt, true, -1) // Don't check body count for complex structures
-			
+
 			elifCount, hasFinalElse := countElifBlocks(ifStmt)
-			
+
 			if elifCount != test.expectedElifCount {
 				t.Errorf("Expected %d elif blocks for %s, got %d", test.expectedElifCount, test.description, elifCount)
 			}
-			
+
 			if hasFinalElse != test.expectedFinalElse {
 				t.Errorf("Expected final else=%v for %s, got %v", test.expectedFinalElse, test.description, hasFinalElse)
 			}
@@ -501,7 +501,7 @@ func TestTernaryExpression(t *testing.T) {
 			}
 
 			validateTernaryExpression(t, expr)
-			
+
 			// For nested ternaries, check the structure
 			if test.isNested {
 				ternary := expr.(*ast.TernaryExpr)
@@ -517,11 +517,11 @@ func TestTernaryExpression(t *testing.T) {
 // Test error cases and edge scenarios
 func TestIfEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		{
 			name: "if with complex nested body",
@@ -568,23 +568,23 @@ func TestIfEdgeCases(t *testing.T) {
 			description:   "else without preceding if",
 		},
 		{
-			name:          "invalid ternary syntax",
-			input:         "x if else y",
-			hasError:      true,
-			description:   "ternary expression with missing condition",
+			name:        "invalid ternary syntax",
+			input:       "x if else y",
+			hasError:    true,
+			description: "ternary expression with missing condition",
 		},
 		{
-			name:          "incomplete ternary",
-			input:         "x if condition",
-			hasError:      true,
-			description:   "ternary expression missing else clause",
+			name:        "incomplete ternary",
+			input:       "x if condition",
+			hasError:    true,
+			description: "ternary expression missing else clause",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var err error
-			
+
 			// Try parsing as statement first, then as expression
 			if strings.HasPrefix(test.input, "if ") {
 				_, err = parseIfStatement(t, test.input)

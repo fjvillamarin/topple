@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -72,7 +72,7 @@ func countParameterTypes(params *ast.ParameterList) (regular, withDefaults, star
 	if params == nil {
 		return 0, 0, 0, 0
 	}
-	
+
 	for _, param := range params.Parameters {
 		if param.IsDoubleStar {
 			doubleStarred++
@@ -92,14 +92,14 @@ func validateParameterAnnotations(t *testing.T, params *ast.ParameterList, expec
 	if params == nil {
 		return
 	}
-	
+
 	annotatedCount := 0
 	for _, param := range params.Parameters {
 		if param.Annotation != nil {
 			annotatedCount++
 		}
 	}
-	
+
 	if annotatedCount != expectedAnnotated {
 		t.Errorf("Expected %d annotated parameters, got %d", expectedAnnotated, annotatedCount)
 	}
@@ -108,22 +108,22 @@ func validateParameterAnnotations(t *testing.T, params *ast.ParameterList, expec
 // Test comprehensive function definition functionality
 func TestFunctionDefinition(t *testing.T) {
 	tests := []struct {
-		name             string
-		input            string
-		hasError         bool
-		expectedName     string
-		expectedAsync    bool
-		expectedReturn   bool
-		expectedParams   int
-		expectedVarArg   bool
-		expectedKwArg    bool
-		expectedSlash    bool
+		name              string
+		input             string
+		hasError          bool
+		expectedName      string
+		expectedAsync     bool
+		expectedReturn    bool
+		expectedParams    int
+		expectedVarArg    bool
+		expectedKwArg     bool
+		expectedSlash     bool
 		expectedAnnotated int
-		description      string
+		description       string
 	}{
 		// Basic functions
 		{
-			name:           "simple function",
+			name: "simple function",
 			input: `def greet():
     print("Hello")`,
 			expectedName:   "greet",
@@ -178,13 +178,13 @@ func TestFunctionDefinition(t *testing.T) {
 			name: "function with varargs",
 			input: `def func(*args, **kwargs):
     pass`,
-			expectedName:    "func",
-			expectedAsync:   false,
-			expectedReturn:  false,
-			expectedParams:  2,
-			expectedVarArg:  true,
-			expectedKwArg:   true,
-			description:     "function with *args and **kwargs",
+			expectedName:   "func",
+			expectedAsync:  false,
+			expectedReturn: false,
+			expectedParams: 2,
+			expectedVarArg: true,
+			expectedKwArg:  true,
+			description:    "function with *args and **kwargs",
 		},
 		{
 			name: "function with positional-only params",
@@ -333,7 +333,7 @@ func TestFunctionDefinition(t *testing.T) {
 			}
 
 			funcDef := validateFunction(t, stmt, test.expectedName, test.expectedAsync)
-			
+
 			// Validate return type
 			hasReturn := funcDef.ReturnType != nil
 			if hasReturn != test.expectedReturn {
@@ -342,7 +342,7 @@ func TestFunctionDefinition(t *testing.T) {
 
 			// Validate parameters
 			validateParameterList(t, funcDef.Parameters, test.expectedParams, test.expectedVarArg, test.expectedKwArg, test.expectedSlash)
-			
+
 			// Validate annotations if specified
 			if test.expectedAnnotated > 0 {
 				validateParameterAnnotations(t, funcDef.Parameters, test.expectedAnnotated)
@@ -354,14 +354,14 @@ func TestFunctionDefinition(t *testing.T) {
 // Test specific parameter patterns and edge cases
 func TestFunctionParameterPatterns(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
-		hasError          bool
-		expectedRegular   int
-		expectedDefaults  int
-		expectedStarred   int
+		name               string
+		input              string
+		hasError           bool
+		expectedRegular    int
+		expectedDefaults   int
+		expectedStarred    int
 		expectedDblStarred int
-		description       string
+		description        string
 	}{
 		{
 			name: "only regular parameters",
@@ -460,9 +460,9 @@ func TestFunctionParameterPatterns(t *testing.T) {
 			}
 
 			funcDef := validateFunction(t, stmt, "func", false)
-			
+
 			regular, defaults, starred, dblStarred := countParameterTypes(funcDef.Parameters)
-			
+
 			if regular != test.expectedRegular {
 				t.Errorf("Expected %d regular parameters, got %d", test.expectedRegular, regular)
 			}
@@ -570,11 +570,11 @@ func TestFunctionReturnTypes(t *testing.T) {
 // Test function edge cases and error scenarios
 func TestFunctionEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		{
 			name: "function with complex nested body",
@@ -630,10 +630,10 @@ func TestFunctionEdgeCases(t *testing.T) {
 			description:   "function with invalid return type syntax",
 		},
 		{
-			name:          "function with invalid indentation",
-			input:         "def func():\npass",
-			hasError:      true,
-			description:   "function with incorrect indentation",
+			name:        "function with invalid indentation",
+			input:       "def func():\npass",
+			hasError:    true,
+			description: "function with incorrect indentation",
 		},
 	}
 

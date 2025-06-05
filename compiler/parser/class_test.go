@@ -11,18 +11,18 @@ func parseClass(t *testing.T, input string) (*ast.Class, error) {
 	scanner := lexer.NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
-	
+
 	stmt, err := parser.classStatement()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	classDef, ok := stmt.(*ast.Class)
 	if !ok {
 		t.Errorf("Expected *ast.Class but got %T", stmt)
 		return nil, nil
 	}
-	
+
 	return classDef, nil
 }
 
@@ -117,7 +117,7 @@ func TestClassDef(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			stmt, err := parser.classStatement()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -204,7 +204,7 @@ func TestClassInheritance(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			stmt, err := parser.classStatement()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -243,7 +243,6 @@ func TestClassInheritance(t *testing.T) {
 	}
 }
 
-
 // Test decorated classes
 func TestDecoratedClass(t *testing.T) {
 	tests := []struct {
@@ -275,7 +274,7 @@ class ImmutablePoint:
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			// Parse the statement - decorators create wrapper nodes
 			stmt, err := parser.statement()
 			if err != nil {
@@ -328,7 +327,7 @@ func TestClassErrors(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			_, err := parser.classStatement()
 			if err == nil {
 				t.Errorf("Expected error for %s, but got none", test.input)

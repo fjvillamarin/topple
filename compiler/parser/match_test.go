@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -106,12 +106,12 @@ func hasPatternFeature(matchStmt *ast.MatchStmt, feature string) bool {
 // Test basic match statement functionality
 func TestMatchStatements(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCases int
-		hasGuards    bool
-		description  string
+		hasGuards     bool
+		description   string
 	}{
 		// Basic match statements
 		{
@@ -157,26 +157,26 @@ func TestMatchStatements(t *testing.T) {
 
 		// Error cases
 		{
-			name: "match without cases",
-			input: `match value:`,
+			name:        "match without cases",
+			input:       `match value:`,
 			hasError:    true,
 			description: "match statement missing case blocks",
 		},
 		{
-			name: "match without colon",
-			input: `match value case 1: pass`,
+			name:        "match without colon",
+			input:       `match value case 1: pass`,
 			hasError:    true,
 			description: "match statement missing colon",
 		},
 		{
-			name: "match without subject",
-			input: `match: case 1: pass`,
+			name:        "match without subject",
+			input:       `match: case 1: pass`,
 			hasError:    true,
 			description: "match statement missing subject expression",
 		},
 		{
-			name: "incomplete match",
-			input: `match`,
+			name:        "incomplete match",
+			input:       `match`,
 			hasError:    true,
 			description: "incomplete match statement",
 		},
@@ -205,11 +205,11 @@ func TestMatchStatements(t *testing.T) {
 // Test match statements with guards
 func TestMatchWithGuards(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCases int
-		description  string
+		description   string
 	}{
 		{
 			name: "simple guard",
@@ -282,11 +282,11 @@ func TestMatchWithGuards(t *testing.T) {
 // Test sequence patterns in match statements
 func TestMatchSequencePatterns(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCases int
-		description  string
+		description   string
 	}{
 		{
 			name: "tuple pattern",
@@ -365,11 +365,11 @@ func TestMatchSequencePatterns(t *testing.T) {
 // Test mapping patterns in match statements
 func TestMatchMappingPatterns(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCases int
-		description  string
+		description   string
 	}{
 		{
 			name: "simple mapping pattern",
@@ -444,11 +444,11 @@ func TestMatchMappingPatterns(t *testing.T) {
 // Test advanced match patterns
 func TestMatchAdvancedPatterns(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCases int
-		description  string
+		description   string
 	}{
 		{
 			name: "or patterns",
@@ -529,11 +529,11 @@ func TestMatchAdvancedPatterns(t *testing.T) {
 // Test match edge cases and error scenarios
 func TestMatchEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		// Complex valid cases
 		{
@@ -573,22 +573,22 @@ func TestMatchEdgeCases(t *testing.T) {
 			description:   "invalid case pattern syntax",
 		},
 		{
-			name:          "missing case keyword",
-			input:         `match x: 1: pass`,
-			hasError:      true,
-			description:   "case block missing 'case' keyword",
+			name:        "missing case keyword",
+			input:       `match x: 1: pass`,
+			hasError:    true,
+			description: "case block missing 'case' keyword",
 		},
 		{
-			name:          "invalid guard syntax",
-			input:         `match x: case n if: pass`,
-			hasError:      true,
-			description:   "guard with incomplete condition",
+			name:        "invalid guard syntax",
+			input:       `match x: case n if: pass`,
+			hasError:    true,
+			description: "guard with incomplete condition",
 		},
 		{
-			name:          "malformed mapping pattern",
-			input:         `match x: case {key value}: pass`,
-			hasError:      true,
-			description:   "malformed dictionary pattern",
+			name:        "malformed mapping pattern",
+			input:       `match x: case {key value}: pass`,
+			hasError:    true,
+			description: "malformed dictionary pattern",
 		},
 	}
 

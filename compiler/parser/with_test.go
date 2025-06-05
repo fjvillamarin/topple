@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -107,7 +107,7 @@ func TestWithStatement(t *testing.T) {
 		description       string
 	}{
 		{
-			name:              "simple with",
+			name: "simple with",
 			input: `with open("file.txt") as f:
     content = f.read()`,
 			expectedAsync:     false,
@@ -115,7 +115,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "basic with statement with single context manager",
 		},
 		{
-			name:              "with without as",
+			name: "with without as",
 			input: `with open("file.txt"):
     pass`,
 			expectedAsync:     false,
@@ -123,7 +123,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "with statement without target variable binding",
 		},
 		{
-			name:              "multiple context managers",
+			name: "multiple context managers",
 			input: `with open("file1.txt") as f1, open("file2.txt") as f2:
     merge(f1, f2)`,
 			expectedAsync:     false,
@@ -131,7 +131,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "with statement with multiple context managers",
 		},
 		{
-			name:              "async with",
+			name: "async with",
 			input: `async with aiofiles.open("file.txt") as f:
     content = await f.read()`,
 			expectedAsync:     true,
@@ -139,7 +139,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "async with statement for asynchronous context manager",
 		},
 		{
-			name:              "nested context expressions",
+			name: "nested context expressions",
 			input: `with lock1, lock2:
     critical_section()`,
 			expectedAsync:     false,
@@ -147,7 +147,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "with statement with multiple simple context expressions",
 		},
 		{
-			name:              "complex context expression",
+			name: "complex context expression",
 			input: `with (
     database.session() as db,
     redis.connection() as cache
@@ -158,7 +158,7 @@ func TestWithStatement(t *testing.T) {
 			description:       "with statement with parenthesized context managers",
 		},
 		{
-			name:              "with expression result",
+			name: "with expression result",
 			input: `with threading.Lock():
     shared_resource += 1`,
 			expectedAsync:     false,
@@ -218,7 +218,7 @@ func TestWithItems(t *testing.T) {
 			1,
 		},
 		{
-			"simple call expression", 
+			"simple call expression",
 			`with database.connection() as db:
     pass`,
 			true,
@@ -325,7 +325,7 @@ func TestWithBody(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			withStmt, err := parseWithStatement(t, test.input)
 			validateWithParseSuccess(t, withStmt, err, test.name)
-			
+
 			// Verify the body has statements
 			if len(withStmt.Body) == 0 {
 				t.Errorf("Expected with statement to have body statements for %s", test.name)

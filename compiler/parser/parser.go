@@ -1,27 +1,27 @@
 package parser
 
 import (
+	"fmt"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"fmt"
 )
 
 // The scaffold parses only *one-line expression statements* so that you can
 // start writing tests immediately and grow the grammar feature-by-feature.
 
 type Parser struct {
-	Tokens  []lexer.Token
-	Current int
-	Errors  []error
+	Tokens         []lexer.Token
+	Current        int
+	Errors         []error
 	tempVarCounter int
 }
 
 // NewParser returns a new parser instance.
 func NewParser(tokens []lexer.Token) *Parser {
 	return &Parser{
-		Tokens:  tokens,
-		Current: 0,
-		Errors:  []error{},
+		Tokens:         tokens,
+		Current:        0,
+		Errors:         []error{},
 		tempVarCounter: 0,
 	}
 }

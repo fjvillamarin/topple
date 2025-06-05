@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -248,8 +248,8 @@ func TestStatements(t *testing.T) {
 			description:  "for statement",
 		},
 		{
-			name:        "try statement",
-			input:       `try:
+			name: "try statement",
+			input: `try:
     pass
 except:
     pass`,
@@ -263,8 +263,8 @@ except:
 			description:  "with statement",
 		},
 		{
-			name:        "match statement",
-			input:       `match x:
+			name: "match statement",
+			input: `match x:
     case 1:
         pass`,
 			expectedType: "match",
@@ -1278,39 +1278,39 @@ func TestYieldStatement(t *testing.T) {
 // Test simple control flow statements
 func TestSimpleControlFlowStatements(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       string
-		parseFunc   func(*Parser) (ast.Stmt, error)
+		name         string
+		input        string
+		parseFunc    func(*Parser) (ast.Stmt, error)
 		expectedType string
-		hasError    bool
-		errorText   string
-		description string
+		hasError     bool
+		errorText    string
+		description  string
 	}{
 		// Pass statements
 		{
-			name:        "simple pass",
-			input:       "pass",
-			parseFunc:   (*Parser).passStatement,
+			name:         "simple pass",
+			input:        "pass",
+			parseFunc:    (*Parser).passStatement,
 			expectedType: "pass",
-			description: "simple pass statement",
+			description:  "simple pass statement",
 		},
 
 		// Break statements
 		{
-			name:        "simple break",
-			input:       "break",
-			parseFunc:   (*Parser).breakStatement,
+			name:         "simple break",
+			input:        "break",
+			parseFunc:    (*Parser).breakStatement,
 			expectedType: "break",
-			description: "simple break statement",
+			description:  "simple break statement",
 		},
 
 		// Continue statements
 		{
-			name:        "simple continue",
-			input:       "continue",
-			parseFunc:   (*Parser).continueStatement,
+			name:         "simple continue",
+			input:        "continue",
+			parseFunc:    (*Parser).continueStatement,
 			expectedType: "continue",
-			description: "simple continue statement",
+			description:  "simple continue statement",
 		},
 	}
 
@@ -1349,8 +1349,6 @@ func TestSimpleControlFlowStatements(t *testing.T) {
 		})
 	}
 }
-
-
 
 // Test statement parsing error cases
 func TestStatementErrors(t *testing.T) {

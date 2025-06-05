@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -240,7 +240,7 @@ func TestAwaitExpression(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.await()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)

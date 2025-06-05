@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -405,84 +405,84 @@ func TestTargetParsing(t *testing.T) {
 // Test star target sequences and comma-separated target lists
 func TestStarTargetSequences(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
+		name          string
+		input         string
 		expectedCount int
-		hasError     bool
-		errorText    string
-		description  string
+		hasError      bool
+		errorText     string
+		description   string
 	}{
 		{
-			name:         "single target",
-			input:        "x",
+			name:          "single target",
+			input:         "x",
 			expectedCount: 1,
-			description:  "single identifier target",
+			description:   "single identifier target",
 		},
 		{
-			name:         "single target with trailing comma",
-			input:        "x,",
+			name:          "single target with trailing comma",
+			input:         "x,",
 			expectedCount: 1,
-			description:  "single target with trailing comma",
+			description:   "single target with trailing comma",
 		},
 		{
-			name:         "two simple targets",
-			input:        "x, y",
+			name:          "two simple targets",
+			input:         "x, y",
 			expectedCount: 2,
-			description:  "two identifier targets",
+			description:   "two identifier targets",
 		},
 		{
-			name:         "three targets with trailing comma",
-			input:        "x, y, z,",
+			name:          "three targets with trailing comma",
+			input:         "x, y, z,",
 			expectedCount: 3,
-			description:  "three targets with trailing comma",
+			description:   "three targets with trailing comma",
 		},
 		{
-			name:         "starred targets",
-			input:        "*x, y, *z",
+			name:          "starred targets",
+			input:         "*x, y, *z",
 			expectedCount: 3,
-			description:  "mixed starred and regular targets",
+			description:   "mixed starred and regular targets",
 		},
 		{
-			name:         "complex mixed targets",
-			input:        "a, *b, c.attr, d[0]",
+			name:          "complex mixed targets",
+			input:         "a, *b, c.attr, d[0]",
 			expectedCount: 4,
-			description:  "mix of simple, starred, attribute, and subscript targets",
+			description:   "mix of simple, starred, attribute, and subscript targets",
 		},
 		{
-			name:         "deeply nested targets",
-			input:        "obj.method()[0].attr, *items, data[key]",
+			name:          "deeply nested targets",
+			input:         "obj.method()[0].attr, *items, data[key]",
 			expectedCount: 3,
-			description:  "complex nested target expressions",
+			description:   "complex nested target expressions",
 		},
 		{
-			name:         "starred first element",
-			input:        "*first, second, third",
+			name:          "starred first element",
+			input:         "*first, second, third",
 			expectedCount: 3,
-			description:  "starred element at beginning of sequence",
+			description:   "starred element at beginning of sequence",
 		},
 		{
-			name:         "starred last element",
-			input:        "first, second, *rest",
+			name:          "starred last element",
+			input:         "first, second, *rest",
 			expectedCount: 3,
-			description:  "starred element at end of sequence",
+			description:   "starred element at end of sequence",
 		},
 		{
-			name:         "parenthesized targets",
-			input:        "(a, b), (c, d), *others",
+			name:          "parenthesized targets",
+			input:         "(a, b), (c, d), *others",
 			expectedCount: 3,
-			description:  "parenthesized tuple targets with starred element",
+			description:   "parenthesized tuple targets with starred element",
 		},
 		{
-			name:         "list targets",
-			input:        "[a, b], [c, d], *remaining",
+			name:          "list targets",
+			input:         "[a, b], [c, d], *remaining",
 			expectedCount: 3,
-			description:  "list targets with starred element",
+			description:   "list targets with starred element",
 		},
 		{
-			name:         "attribute and method targets",
-			input:        "obj.attr, instance.method(), *extras",
+			name:          "attribute and method targets",
+			input:         "obj.attr, instance.method(), *extras",
 			expectedCount: 3,
-			description:  "attribute and method call targets",
+			description:   "attribute and method call targets",
 		},
 	}
 
@@ -693,48 +693,48 @@ func TestTargetEdgeCases(t *testing.T) {
 // Test comprehensive star target validation
 func TestStarTargetValidation(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
+		name          string
+		input         string
 		expectedStars int
-		hasError     bool
-		errorText    string
-		description  string
+		hasError      bool
+		errorText     string
+		description   string
 	}{
 		{
-			name:         "no starred elements",
-			input:        "a, b, c",
+			name:          "no starred elements",
+			input:         "a, b, c",
 			expectedStars: 0,
-			description:  "sequence with no starred elements",
+			description:   "sequence with no starred elements",
 		},
 		{
-			name:         "single starred element",
-			input:        "a, *b, c",
+			name:          "single starred element",
+			input:         "a, *b, c",
 			expectedStars: 1,
-			description:  "sequence with one starred element",
+			description:   "sequence with one starred element",
 		},
 		{
-			name:         "starred at beginning",
-			input:        "*first, second, third",
+			name:          "starred at beginning",
+			input:         "*first, second, third",
 			expectedStars: 1,
-			description:  "starred element at beginning of sequence",
+			description:   "starred element at beginning of sequence",
 		},
 		{
-			name:         "starred at end",
-			input:        "first, second, *rest",
+			name:          "starred at end",
+			input:         "first, second, *rest",
 			expectedStars: 1,
-			description:  "starred element at end of sequence",
+			description:   "starred element at end of sequence",
 		},
 		{
-			name:         "multiple starred elements",
-			input:        "*a, b, *c, d",
+			name:          "multiple starred elements",
+			input:         "*a, b, *c, d",
 			expectedStars: 2,
-			description:  "sequence with multiple starred elements",
+			description:   "sequence with multiple starred elements",
 		},
 		{
-			name:         "starred complex expressions",
-			input:        "*obj.attr, regular, *data[key]",
+			name:          "starred complex expressions",
+			input:         "*obj.attr, regular, *data[key]",
 			expectedStars: 2,
-			description:  "starred elements with complex expressions",
+			description:   "starred elements with complex expressions",
 		},
 	}
 

@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -146,134 +146,134 @@ func analyzeTupleElements(tuple *ast.TupleExpr) (starCount, nonStarCount int) {
 // Test comprehensive tuple expression parsing functionality
 func TestTupleExpressions(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		expectedType    string
+		name             string
+		input            string
+		expectedType     string
 		expectedElements int
-		hasError        bool
-		errorText       string
-		description     string
+		hasError         bool
+		errorText        string
+		description      string
 	}{
 		// Basic tuple expressions
 		{
-			name:            "empty tuple",
-			input:           "()",
-			expectedType:    "TupleExpr",
+			name:             "empty tuple",
+			input:            "()",
+			expectedType:     "TupleExpr",
 			expectedElements: 0,
-			description:     "empty tuple expression",
+			description:      "empty tuple expression",
 		},
 		{
-			name:            "single element tuple with comma",
-			input:           "(1,)",
-			expectedType:    "TupleExpr",
+			name:             "single element tuple with comma",
+			input:            "(1,)",
+			expectedType:     "TupleExpr",
 			expectedElements: 1,
-			description:     "single element tuple with trailing comma",
+			description:      "single element tuple with trailing comma",
 		},
 		{
-			name:            "two element tuple",
-			input:           "(1, 2)",
-			expectedType:    "TupleExpr",
+			name:             "two element tuple",
+			input:            "(1, 2)",
+			expectedType:     "TupleExpr",
 			expectedElements: 2,
-			description:     "simple two element tuple",
+			description:      "simple two element tuple",
 		},
 		{
-			name:            "multiple element tuple",
-			input:           "(1, 2, 3, 4, 5)",
-			expectedType:    "TupleExpr",
+			name:             "multiple element tuple",
+			input:            "(1, 2, 3, 4, 5)",
+			expectedType:     "TupleExpr",
 			expectedElements: 5,
-			description:     "tuple with multiple elements",
+			description:      "tuple with multiple elements",
 		},
 		{
-			name:            "tuple with trailing comma",
-			input:           "(1, 2, 3,)",
-			expectedType:    "TupleExpr",
+			name:             "tuple with trailing comma",
+			input:            "(1, 2, 3,)",
+			expectedType:     "TupleExpr",
 			expectedElements: 3,
-			description:     "tuple with trailing comma",
+			description:      "tuple with trailing comma",
 		},
 
 		// Expression elements
 		{
-			name:            "tuple with expressions",
-			input:           "(x + 1, y * 2, z / 3)",
-			expectedType:    "TupleExpr",
+			name:             "tuple with expressions",
+			input:            "(x + 1, y * 2, z / 3)",
+			expectedType:     "TupleExpr",
 			expectedElements: 3,
-			description:     "tuple with arithmetic expressions",
+			description:      "tuple with arithmetic expressions",
 		},
 		{
-			name:            "tuple with function calls",
-			input:           "(func(), method(), len(x))",
-			expectedType:    "TupleExpr",
+			name:             "tuple with function calls",
+			input:            "(func(), method(), len(x))",
+			expectedType:     "TupleExpr",
 			expectedElements: 3,
-			description:     "tuple with function call elements",
+			description:      "tuple with function call elements",
 		},
 		{
-			name:            "tuple with mixed types",
-			input:           "(1, 'hello', True, None)",
-			expectedType:    "TupleExpr",
+			name:             "tuple with mixed types",
+			input:            "(1, 'hello', True, None)",
+			expectedType:     "TupleExpr",
 			expectedElements: 4,
-			description:     "tuple with mixed literal types",
+			description:      "tuple with mixed literal types",
 		},
 		{
-			name:            "nested tuples",
-			input:           "((1, 2), (3, 4), (5, 6))",
-			expectedType:    "TupleExpr",
+			name:             "nested tuples",
+			input:            "((1, 2), (3, 4), (5, 6))",
+			expectedType:     "TupleExpr",
 			expectedElements: 3,
-			description:     "tuple containing nested tuples",
+			description:      "tuple containing nested tuples",
 		},
 
 		// Complex expressions
 		{
-			name:            "tuple with comprehensions",
-			input:           "([x for x in range(3)], {y for y in range(2)})",
-			expectedType:    "TupleExpr",
+			name:             "tuple with comprehensions",
+			input:            "([x for x in range(3)], {y for y in range(2)})",
+			expectedType:     "TupleExpr",
 			expectedElements: 2,
-			description:     "tuple containing list and set comprehensions",
+			description:      "tuple containing list and set comprehensions",
 		},
 		{
-			name:            "tuple with lambda expressions",
-			input:           "(lambda x: x + 1, lambda y: y * 2)",
-			expectedType:    "TupleExpr",
+			name:             "tuple with lambda expressions",
+			input:            "(lambda x: x + 1, lambda y: y * 2)",
+			expectedType:     "TupleExpr",
 			expectedElements: 2,
-			description:     "tuple containing lambda expressions",
+			description:      "tuple containing lambda expressions",
 		},
 		{
-			name:            "tuple with conditional expressions",
-			input:           "(x if condition else y, a if flag else b)",
-			expectedType:    "TupleExpr",
+			name:             "tuple with conditional expressions",
+			input:            "(x if condition else y, a if flag else b)",
+			expectedType:     "TupleExpr",
 			expectedElements: 2,
-			description:     "tuple with conditional expressions",
+			description:      "tuple with conditional expressions",
 		},
 
 		// Parenthesized expressions (not tuples)
 		{
-			name:            "parenthesized single expression",
-			input:           "(42)",
-			expectedType:    "GroupExpr",
+			name:             "parenthesized single expression",
+			input:            "(42)",
+			expectedType:     "GroupExpr",
 			expectedElements: -1, // Not applicable for GroupExpr
-			description:     "single parenthesized expression without comma",
+			description:      "single parenthesized expression without comma",
 		},
 		{
-			name:            "parenthesized complex expression",
-			input:           "(x + y * z)",
-			expectedType:    "GroupExpr",
+			name:             "parenthesized complex expression",
+			input:            "(x + y * z)",
+			expectedType:     "GroupExpr",
 			expectedElements: -1, // Not applicable for GroupExpr
-			description:     "parenthesized arithmetic expression",
+			description:      "parenthesized arithmetic expression",
 		},
 
 		// Generator expressions
 		{
-			name:            "simple generator expression",
-			input:           "(x for x in range(10))",
-			expectedType:    "GenExpr",
+			name:             "simple generator expression",
+			input:            "(x for x in range(10))",
+			expectedType:     "GenExpr",
 			expectedElements: -1, // Not applicable for GenExpr
-			description:     "basic generator expression",
+			description:      "basic generator expression",
 		},
 		{
-			name:            "generator with condition",
-			input:           "(x for x in items if x > 0)",
-			expectedType:    "GenExpr",
+			name:             "generator with condition",
+			input:            "(x for x in items if x > 0)",
+			expectedType:     "GenExpr",
 			expectedElements: -1, // Not applicable for GenExpr
-			description:     "generator expression with condition",
+			description:      "generator expression with condition",
 		},
 
 		// Error cases
@@ -329,35 +329,35 @@ func TestTupleExpressions(t *testing.T) {
 // Test tuple expressions without parentheses (comma-separated expressions)
 func TestTupleWithoutParentheses(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
+		name             string
+		input            string
 		expectedElements int
-		expectTuple     bool
-		hasError        bool
-		errorText       string
-		description     string
+		expectTuple      bool
+		hasError         bool
+		errorText        string
+		description      string
 	}{
 		// Single expressions (parser.expression() behavior)
 		{
-			name:            "single expression",
-			input:           "42",
+			name:             "single expression",
+			input:            "42",
 			expectedElements: 1,
-			expectTuple:     false,
-			description:     "single expression without comma",
+			expectTuple:      false,
+			description:      "single expression without comma",
 		},
 		{
-			name:            "single complex expression",
-			input:           "obj.method().result[0]",
+			name:             "single complex expression",
+			input:            "obj.method().result[0]",
 			expectedElements: 1,
-			expectTuple:     false,
-			description:     "single complex expression",
+			expectTuple:      false,
+			description:      "single complex expression",
 		},
 		{
-			name:            "first element of comma expression",
-			input:           "1, 2",
+			name:             "first element of comma expression",
+			input:            "1, 2",
 			expectedElements: 1,
-			expectTuple:     false,
-			description:     "parser.expression() typically returns first element",
+			expectTuple:      false,
+			description:      "parser.expression() typically returns first element",
 		},
 
 		// Note: parser.expression() doesn't typically create tuples
@@ -542,97 +542,97 @@ func TestGeneratorExpressions(t *testing.T) {
 // Test starred expressions in tuples
 func TestTupleWithStarredExpressions(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		expectedStars   int
+		name             string
+		input            string
+		expectedStars    int
 		expectedElements int
-		hasError        bool
-		errorText       string
-		description     string
+		hasError         bool
+		errorText        string
+		description      string
 	}{
 		// Basic starred expressions
 		{
-			name:            "starred at beginning",
-			input:           "(*first, 2, 3)",
-			expectedStars:   1,
+			name:             "starred at beginning",
+			input:            "(*first, 2, 3)",
+			expectedStars:    1,
 			expectedElements: 3,
-			description:     "tuple with starred element at beginning",
+			description:      "tuple with starred element at beginning",
 		},
 		{
-			name:            "starred at end",
-			input:           "(1, 2, *rest)",
-			expectedStars:   1,
+			name:             "starred at end",
+			input:            "(1, 2, *rest)",
+			expectedStars:    1,
 			expectedElements: 3,
-			description:     "tuple with starred element at end",
+			description:      "tuple with starred element at end",
 		},
 		{
-			name:            "starred in middle",
-			input:           "(1, *middle, 3)",
-			expectedStars:   1,
+			name:             "starred in middle",
+			input:            "(1, *middle, 3)",
+			expectedStars:    1,
 			expectedElements: 3,
-			description:     "tuple with starred element in middle",
+			description:      "tuple with starred element in middle",
 		},
 
 		// Multiple starred expressions
 		{
-			name:            "multiple starred elements",
-			input:           "(*first, *second, 3)",
-			expectedStars:   2,
+			name:             "multiple starred elements",
+			input:            "(*first, *second, 3)",
+			expectedStars:    2,
 			expectedElements: 3,
-			description:     "tuple with multiple starred elements",
+			description:      "tuple with multiple starred elements",
 		},
 		{
-			name:            "all starred elements",
-			input:           "(*a, *b, *c)",
-			expectedStars:   3,
+			name:             "all starred elements",
+			input:            "(*a, *b, *c)",
+			expectedStars:    3,
 			expectedElements: 3,
-			description:     "tuple with all starred elements",
+			description:      "tuple with all starred elements",
 		},
 
 		// Complex starred expressions
 		{
-			name:            "starred generator expression",
-			input:           "(*(x for x in range(3)), 4)",
-			expectedStars:   1,
+			name:             "starred generator expression",
+			input:            "(*(x for x in range(3)), 4)",
+			expectedStars:    1,
 			expectedElements: 2,
-			description:     "tuple with starred generator expression",
+			description:      "tuple with starred generator expression",
 		},
 		{
-			name:            "starred function call",
-			input:           "(*get_items(), 'extra')",
-			expectedStars:   1,
+			name:             "starred function call",
+			input:            "(*get_items(), 'extra')",
+			expectedStars:    1,
 			expectedElements: 2,
-			description:     "tuple with starred function call",
+			description:      "tuple with starred function call",
 		},
 		{
-			name:            "starred attribute access",
-			input:           "(*obj.items, *obj.extras)",
-			expectedStars:   2,
+			name:             "starred attribute access",
+			input:            "(*obj.items, *obj.extras)",
+			expectedStars:    2,
 			expectedElements: 2,
-			description:     "tuple with starred attribute accesses",
+			description:      "tuple with starred attribute accesses",
 		},
 		{
-			name:            "starred complex expressions",
-			input:           "(*process(data), *filter(items), result)",
-			expectedStars:   2,
+			name:             "starred complex expressions",
+			input:            "(*process(data), *filter(items), result)",
+			expectedStars:    2,
 			expectedElements: 3,
-			description:     "tuple with complex starred expressions",
+			description:      "tuple with complex starred expressions",
 		},
 
 		// Mixed starred and regular elements
 		{
-			name:            "mixed starred and regular",
-			input:           "(first, *middle, 'literal', func(), *rest)",
-			expectedStars:   2,
+			name:             "mixed starred and regular",
+			input:            "(first, *middle, 'literal', func(), *rest)",
+			expectedStars:    2,
 			expectedElements: 5,
-			description:     "tuple with mix of starred and regular elements",
+			description:      "tuple with mix of starred and regular elements",
 		},
 		{
-			name:            "single starred element",
-			input:           "(*items,)",
-			expectedStars:   1,
+			name:             "single starred element",
+			input:            "(*items,)",
+			expectedStars:    1,
 			expectedElements: 1,
-			description:     "single starred element tuple",
+			description:      "single starred element tuple",
 		},
 
 		// Error cases
@@ -768,59 +768,59 @@ func TestTupleEdgeCases(t *testing.T) {
 	}{
 		// Complex valid cases
 		{
-			name: "deeply nested tuples",
-			input: "(((1, 2), (3, 4)), ((5, 6), (7, 8)))",
+			name:        "deeply nested tuples",
+			input:       "(((1, 2), (3, 4)), ((5, 6), (7, 8)))",
 			description: "deeply nested tuple structures",
 		},
 		{
-			name: "tuple with comprehensions",
-			input: "([x for x in range(3)], {y: y**2 for y in range(2)})",
+			name:        "tuple with comprehensions",
+			input:       "([x for x in range(3)], {y: y**2 for y in range(2)})",
 			description: "tuple containing list and dict comprehensions",
 		},
 		{
-			name: "tuple with lambda expressions",
-			input: "(lambda x: x + 1, lambda y: y * 2, lambda z: z / 3)",
+			name:        "tuple with lambda expressions",
+			input:       "(lambda x: x + 1, lambda y: y * 2, lambda z: z / 3)",
 			description: "tuple containing multiple lambda expressions",
 		},
 		{
-			name: "tuple with conditional expressions",
-			input: "(x if condition else y, a if flag else b, c if test else d)",
+			name:        "tuple with conditional expressions",
+			input:       "(x if condition else y, a if flag else b, c if test else d)",
 			description: "tuple with multiple conditional expressions",
 		},
 		{
-			name: "tuple with async expressions",
-			input: "(await func1(), await func2(), regular_func())",
+			name:        "tuple with async expressions",
+			input:       "(await func1(), await func2(), regular_func())",
 			description: "tuple with async await expressions",
 		},
 		{
-			name: "tuple with star expressions",
-			input: "(func(*args), method(**kwargs), normal_call())",
+			name:        "tuple with star expressions",
+			input:       "(func(*args), method(**kwargs), normal_call())",
 			description: "tuple with star expression function calls",
 		},
 		{
-			name: "complex generator with multiple conditions",
-			input: "(process(x, y) for x in data for y in items if x.valid and y.active)",
+			name:        "complex generator with multiple conditions",
+			input:       "(process(x, y) for x in data for y in items if x.valid and y.active)",
 			description: "generator with multiple for clauses and conditions",
 		},
 		{
-			name: "tuple with yield expressions",
-			input: "(yield value1, yield value2, yield value3)",
+			name:        "tuple with yield expressions",
+			input:       "(yield value1, yield value2, yield value3)",
 			description: "tuple containing yield expressions",
 		},
 
 		// Edge error cases
 		{
-			name: "nested syntax error",
-			input: "((1, 2), (3, def))",
-			hasError: true,
-			errorText: "unexpected",
+			name:        "nested syntax error",
+			input:       "((1, 2), (3, def))",
+			hasError:    true,
+			errorText:   "unexpected",
 			description: "syntax error in nested tuple",
 		},
 		{
-			name: "generator with invalid expression",
-			input: "(def for x in items)",
-			hasError: true,
-			errorText: "unexpected",
+			name:        "generator with invalid expression",
+			input:       "(def for x in items)",
+			hasError:    true,
+			errorText:   "unexpected",
 			description: "generator with invalid element expression",
 		},
 	}

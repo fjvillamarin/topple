@@ -1,13 +1,13 @@
 package transformers
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/codegen"
 	"sylfie/compiler/lexer"
 	"sylfie/compiler/resolver"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 

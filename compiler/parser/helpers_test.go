@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"sylfie/compiler/lexer"
 	"strings"
+	"sylfie/compiler/lexer"
 	"testing"
 )
 
@@ -24,7 +24,7 @@ func validateParserPosition(t *testing.T, parser *Parser, expectedPosition int, 
 func validateTokenAndAdvance(t *testing.T, parser *Parser, expectedType lexer.TokenType, shouldAdvance bool, operation string) lexer.Token {
 	initialPos := parser.Current
 	var token lexer.Token
-	
+
 	switch operation {
 	case "peek":
 		token = parser.peek()
@@ -33,16 +33,16 @@ func validateTokenAndAdvance(t *testing.T, parser *Parser, expectedType lexer.To
 	case "previous":
 		token = parser.previous()
 	}
-	
+
 	if token.Type != expectedType {
 		t.Errorf("%s: Expected token type %s, got %s", operation, expectedType, token.Type)
 	}
-	
+
 	expectedPos := initialPos
 	if shouldAdvance {
 		expectedPos++
 	}
-	
+
 	validateParserPosition(t, parser, expectedPos, operation)
 	return token
 }
@@ -52,16 +52,16 @@ func validateParseError(t *testing.T, err error, expectedMessage string, expecte
 	if err == nil {
 		t.Fatal("Expected error but got none")
 	}
-	
+
 	parseErr, ok := err.(*ParseError)
 	if !ok {
 		t.Fatalf("Expected *ParseError, got %T", err)
 	}
-	
+
 	if parseErr.Message != expectedMessage {
 		t.Errorf("Expected error message %q, got %q", expectedMessage, parseErr.Message)
 	}
-	
+
 	if parseErr.Token.Type != expectedTokenType {
 		t.Errorf("Expected error token type %s, got %s", expectedTokenType, parseErr.Token.Type)
 	}
@@ -104,7 +104,7 @@ func TestParserHelpers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			parser := createParser(t, test.input)
-			
+
 			// Test initial state
 			if test.input == "" {
 				if !parser.isAtEnd() {
@@ -112,29 +112,29 @@ func TestParserHelpers(t *testing.T) {
 				}
 				return
 			}
-			
+
 			if parser.isAtEnd() {
 				t.Error("Parser should not be at end for non-empty input")
 			}
-			
+
 			// Test peek without advancing
 			initialPos := parser.Current
 			firstToken := parser.peek()
 			validateParserPosition(t, parser, initialPos, "peek")
-			
+
 			// Test advance
 			advancedToken := parser.advance()
 			if advancedToken.Type != firstToken.Type {
-				t.Errorf("Advanced token should match peeked token: expected %s, got %s", 
+				t.Errorf("Advanced token should match peeked token: expected %s, got %s",
 					firstToken.Type, advancedToken.Type)
 			}
 			validateParserPosition(t, parser, initialPos+1, "advance")
-			
+
 			// Test previous
 			if parser.Current > 0 {
 				previousToken := parser.previous()
 				if previousToken.Type != advancedToken.Type {
-					t.Errorf("Previous token should match advanced token: expected %s, got %s", 
+					t.Errorf("Previous token should match advanced token: expected %s, got %s",
 						advancedToken.Type, previousToken.Type)
 				}
 			}
@@ -188,7 +188,7 @@ func TestConsume(t *testing.T) {
 			message:     "expected left paren",
 			description: "consume punctuation token",
 		},
-		
+
 		// Error cases
 		{
 			name:          "wrong token type",
@@ -249,68 +249,68 @@ func TestConsume(t *testing.T) {
 // Test match method with multiple token types
 func TestMatch(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		tokenTypes   []lexer.TokenType
-		shouldMatch  bool
+		name          string
+		input         string
+		tokenTypes    []lexer.TokenType
+		shouldMatch   bool
 		shouldAdvance bool
-		description  string
+		description   string
 	}{
 		{
-			name:         "match single type",
-			input:        "hello",
-			tokenTypes:   []lexer.TokenType{lexer.Identifier},
-			shouldMatch:  true,
+			name:          "match single type",
+			input:         "hello",
+			tokenTypes:    []lexer.TokenType{lexer.Identifier},
+			shouldMatch:   true,
 			shouldAdvance: true,
-			description:  "match single expected token type",
+			description:   "match single expected token type",
 		},
 		{
-			name:         "match multiple types",
-			input:        "42",
-			tokenTypes:   []lexer.TokenType{lexer.Identifier, lexer.Number, lexer.String},
-			shouldMatch:  true,
+			name:          "match multiple types",
+			input:         "42",
+			tokenTypes:    []lexer.TokenType{lexer.Identifier, lexer.Number, lexer.String},
+			shouldMatch:   true,
 			shouldAdvance: true,
-			description:  "match from multiple possible types",
+			description:   "match from multiple possible types",
 		},
 		{
-			name:         "match operators",
-			input:        "*",
-			tokenTypes:   []lexer.TokenType{lexer.Plus, lexer.Minus, lexer.Star, lexer.Slash},
-			shouldMatch:  true,
+			name:          "match operators",
+			input:         "*",
+			tokenTypes:    []lexer.TokenType{lexer.Plus, lexer.Minus, lexer.Star, lexer.Slash},
+			shouldMatch:   true,
 			shouldAdvance: true,
-			description:  "match operator from set",
+			description:   "match operator from set",
 		},
 		{
-			name:         "match punctuation",
-			input:        "{",
-			tokenTypes:   []lexer.TokenType{lexer.LeftParen, lexer.LeftBrace, lexer.LeftBracket},
-			shouldMatch:  true,
+			name:          "match punctuation",
+			input:         "{",
+			tokenTypes:    []lexer.TokenType{lexer.LeftParen, lexer.LeftBrace, lexer.LeftBracket},
+			shouldMatch:   true,
 			shouldAdvance: true,
-			description:  "match punctuation from set",
+			description:   "match punctuation from set",
 		},
 		{
-			name:         "no match single type",
-			input:        "hello",
-			tokenTypes:   []lexer.TokenType{lexer.Number},
-			shouldMatch:  false,
+			name:          "no match single type",
+			input:         "hello",
+			tokenTypes:    []lexer.TokenType{lexer.Number},
+			shouldMatch:   false,
 			shouldAdvance: false,
-			description:  "no match for single wrong type",
+			description:   "no match for single wrong type",
 		},
 		{
-			name:         "no match multiple types",
-			input:        "hello",
-			tokenTypes:   []lexer.TokenType{lexer.Number, lexer.String, lexer.Plus},
-			shouldMatch:  false,
+			name:          "no match multiple types",
+			input:         "hello",
+			tokenTypes:    []lexer.TokenType{lexer.Number, lexer.String, lexer.Plus},
+			shouldMatch:   false,
 			shouldAdvance: false,
-			description:  "no match for multiple wrong types",
+			description:   "no match for multiple wrong types",
 		},
 		{
-			name:         "no match at end",
-			input:        "",
-			tokenTypes:   []lexer.TokenType{lexer.Identifier, lexer.Number},
-			shouldMatch:  false,
+			name:          "no match at end",
+			input:         "",
+			tokenTypes:    []lexer.TokenType{lexer.Identifier, lexer.Number},
+			shouldMatch:   false,
 			shouldAdvance: false,
-			description:  "no match when at end of input",
+			description:   "no match when at end of input",
 		},
 	}
 
@@ -420,7 +420,7 @@ func TestCheckMethods(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			parser := createParser(t, test.input)
 			initialPos := parser.Current
-			
+
 			var result bool
 			if test.checkNext {
 				result = parser.checkNext(test.checkType)
@@ -441,11 +441,11 @@ func TestCheckMethods(t *testing.T) {
 // Test error creation and formatting
 func TestErrorCreation(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		message      string
-		expectToken  lexer.TokenType
-		description  string
+		name        string
+		input       string
+		message     string
+		expectToken lexer.TokenType
+		description string
 	}{
 		{
 			name:        "error with identifier",
@@ -519,7 +519,7 @@ func TestParserNavigation(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			parser := createParser(t, test.input)
-			
+
 			for i, operation := range test.operations {
 				switch operation {
 				case "advance":
@@ -569,7 +569,7 @@ func TestHelperMethodIntegration(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			parser := createParser(t, test.input)
-			
+
 			// Simulate parsing by using various helper methods
 			tokenCount := 0
 			for !parser.isAtEnd() {
@@ -578,7 +578,7 @@ func TestHelperMethodIntegration(t *testing.T) {
 				if current.Type == lexer.EOF {
 					break
 				}
-				
+
 				// Check if it matches expected types
 				if parser.check(current.Type) {
 					// Advance past the token
@@ -587,7 +587,7 @@ func TestHelperMethodIntegration(t *testing.T) {
 						t.Errorf("Token type mismatch: expected %s, got %s", current.Type, advanced.Type)
 					}
 					tokenCount++
-					
+
 					// Test previous() works
 					if parser.Current > 0 {
 						prev := parser.previous()

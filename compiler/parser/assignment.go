@@ -224,59 +224,59 @@ tryStarTargets:
 				return nil, p.error(p.peek(), "unexpected '=' in assignment")
 			}
 
-				// For chain assignments (a = b = c = 1), we optimize by evaluating the RHS only once
-				// This is important for expressions with side effects or expensive computations
-				var stmts []ast.Stmt
-				
-				// Check if RHS is a simple literal or name that doesn't need a temp variable
-				needsTempVar := !isSimpleExpression(rhs)
-				
-				if needsTempVar {
-					// Create a temporary variable to store the RHS value
-					tempVarName := p.generateTempVarName()
-					tempVar := &ast.Name{
-						Token: lexer.Token{
-							Type:   lexer.Identifier,
-							Lexeme: tempVarName,
-							Span:   rhs.GetSpan(),
-						},
-						Span: rhs.GetSpan(),
-					}
-					
-					// First statement: _temp = rhs
+			// For chain assignments (a = b = c = 1), we optimize by evaluating the RHS only once
+			// This is important for expressions with side effects or expensive computations
+			var stmts []ast.Stmt
+
+			// Check if RHS is a simple literal or name that doesn't need a temp variable
+			needsTempVar := !isSimpleExpression(rhs)
+
+			if needsTempVar {
+				// Create a temporary variable to store the RHS value
+				tempVarName := p.generateTempVarName()
+				tempVar := &ast.Name{
+					Token: lexer.Token{
+						Type:   lexer.Identifier,
+						Lexeme: tempVarName,
+						Span:   rhs.GetSpan(),
+					},
+					Span: rhs.GetSpan(),
+				}
+
+				// First statement: _temp = rhs
+				stmts = append(stmts, &ast.AssignStmt{
+					Targets: []ast.Expr{tempVar},
+					Value:   rhs,
+					Span: lexer.Span{
+						Start: startPos,
+						End:   rhs.GetSpan().End,
+					},
+				})
+
+				// Then assign temp variable to all targets (in reverse order to match Python semantics)
+				for i := len(targetChain) - 1; i >= 0; i-- {
 					stmts = append(stmts, &ast.AssignStmt{
-						Targets: []ast.Expr{tempVar},
+						Targets: targetChain[i],
+						Value:   tempVar,
+						Span: lexer.Span{
+							Start: targetChain[i][0].GetSpan().Start,
+							End:   tempVar.GetSpan().End,
+						},
+					})
+				}
+			} else {
+				// For simple expressions, just assign directly
+				for i := 0; i < len(targetChain); i++ {
+					stmts = append(stmts, &ast.AssignStmt{
+						Targets: targetChain[i],
 						Value:   rhs,
 						Span: lexer.Span{
 							Start: startPos,
 							End:   rhs.GetSpan().End,
 						},
 					})
-					
-					// Then assign temp variable to all targets (in reverse order to match Python semantics)
-					for i := len(targetChain) - 1; i >= 0; i-- {
-						stmts = append(stmts, &ast.AssignStmt{
-							Targets: targetChain[i],
-							Value:   tempVar,
-							Span: lexer.Span{
-								Start: targetChain[i][0].GetSpan().Start,
-								End:   tempVar.GetSpan().End,
-							},
-						})
-					}
-				} else {
-					// For simple expressions, just assign directly
-					for i := 0; i < len(targetChain); i++ {
-						stmts = append(stmts, &ast.AssignStmt{
-							Targets: targetChain[i],
-							Value:   rhs,
-							Span: lexer.Span{
-								Start: startPos,
-								End:   rhs.GetSpan().End,
-							},
-						})
-					}
 				}
+			}
 
 			return &ast.MultiStmt{
 				Stmts: stmts,

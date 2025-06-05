@@ -22,13 +22,13 @@ func getArgumentType(arg *ast.Argument) string {
 
 func TestFunctionCallArguments(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedArgs   int
-		expectedStars  int
-		expectedKwargs int
+		name                string
+		input               string
+		expectedArgs        int
+		expectedStars       int
+		expectedKwargs      int
 		expectedDoubleStars int
-		hasError       bool
+		hasError            bool
 	}{
 		{
 			name:         "no arguments",
@@ -46,41 +46,41 @@ func TestFunctionCallArguments(t *testing.T) {
 			expectedArgs: 3,
 		},
 		{
-			name:         "single keyword argument",
-			input:        "func(x=42)",
-			expectedArgs: 1,
+			name:           "single keyword argument",
+			input:          "func(x=42)",
+			expectedArgs:   1,
 			expectedKwargs: 1,
 		},
 		{
-			name:         "multiple keyword arguments",
-			input:        "func(x=1, y=2)",
-			expectedArgs: 2,
+			name:           "multiple keyword arguments",
+			input:          "func(x=1, y=2)",
+			expectedArgs:   2,
 			expectedKwargs: 2,
 		},
 		{
-			name:         "mixed positional and keyword",
-			input:        "func(1, 2, x=3, y=4)",
-			expectedArgs: 4,
+			name:           "mixed positional and keyword",
+			input:          "func(1, 2, x=3, y=4)",
+			expectedArgs:   4,
 			expectedKwargs: 2,
 		},
 		{
-			name:         "starred argument",
-			input:        "func(*args)",
-			expectedArgs: 1,
+			name:          "starred argument",
+			input:         "func(*args)",
+			expectedArgs:  1,
 			expectedStars: 1,
 		},
 		{
-			name:         "double starred argument",
-			input:        "func(**kwargs)",
-			expectedArgs: 1,
+			name:                "double starred argument",
+			input:               "func(**kwargs)",
+			expectedArgs:        1,
 			expectedDoubleStars: 1,
 		},
 		{
-			name:         "complex argument mix",
-			input:        "func(1, *args, x=2, **kwargs)",
-			expectedArgs: 4,
-			expectedStars: 1,
-			expectedKwargs: 1,
+			name:                "complex argument mix",
+			input:               "func(1, *args, x=2, **kwargs)",
+			expectedArgs:        4,
+			expectedStars:       1,
+			expectedKwargs:      1,
 			expectedDoubleStars: 1,
 		},
 		{
@@ -94,8 +94,8 @@ func TestFunctionCallArguments(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name:     "missing argument after comma",
-			input:    "func(1,)",
+			name:         "missing argument after comma",
+			input:        "func(1,)",
 			expectedArgs: 1,
 		},
 	}
@@ -163,14 +163,14 @@ func TestFunctionCallArguments(t *testing.T) {
 
 func TestArgumentTypes(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		argIndex int
-		expectStar bool
-		expectDoubleStar bool
-		expectKeyword bool
+		name                string
+		input               string
+		argIndex            int
+		expectStar          bool
+		expectDoubleStar    bool
+		expectKeyword       bool
 		expectedKeywordName string
-		hasError bool
+		hasError            bool
 	}{
 		{
 			name:     "positional argument",
@@ -178,22 +178,22 @@ func TestArgumentTypes(t *testing.T) {
 			argIndex: 0,
 		},
 		{
-			name:     "starred argument",
-			input:    "func(*items)",
-			argIndex: 0,
+			name:       "starred argument",
+			input:      "func(*items)",
+			argIndex:   0,
 			expectStar: true,
 		},
 		{
-			name:     "double starred argument",
-			input:    "func(**mapping)",
-			argIndex: 0,
+			name:             "double starred argument",
+			input:            "func(**mapping)",
+			argIndex:         0,
 			expectDoubleStar: true,
 		},
 		{
-			name:     "keyword argument",
-			input:    "func(x=42)",
-			argIndex: 0,
-			expectKeyword: true,
+			name:                "keyword argument",
+			input:               "func(x=42)",
+			argIndex:            0,
+			expectKeyword:       true,
 			expectedKeywordName: "x",
 		},
 		{
@@ -361,52 +361,52 @@ func TestArgumentOrdering(t *testing.T) {
 
 func TestArgumentExpressions(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		argIndex int
+		name              string
+		input             string
+		argIndex          int
 		expectedValueType string // "literal", "name", "binary", "call", etc.
-		hasError bool
+		hasError          bool
 	}{
 		{
-			name:     "number literal",
-			input:    "func(42)",
-			argIndex: 0,
+			name:              "number literal",
+			input:             "func(42)",
+			argIndex:          0,
 			expectedValueType: "literal",
 		},
 		{
-			name:     "string literal",
-			input:    `func("hello")`,
-			argIndex: 0,
+			name:              "string literal",
+			input:             `func("hello")`,
+			argIndex:          0,
 			expectedValueType: "literal",
 		},
 		{
-			name:     "variable name",
-			input:    "func(x)",
-			argIndex: 0,
+			name:              "variable name",
+			input:             "func(x)",
+			argIndex:          0,
 			expectedValueType: "name",
 		},
 		{
-			name:     "binary expression",
-			input:    "func(a + b)",
-			argIndex: 0,
+			name:              "binary expression",
+			input:             "func(a + b)",
+			argIndex:          0,
 			expectedValueType: "binary",
 		},
 		{
-			name:     "function call",
-			input:    "func(other())",
-			argIndex: 0,
+			name:              "function call",
+			input:             "func(other())",
+			argIndex:          0,
 			expectedValueType: "call",
 		},
 		{
-			name:     "attribute access",
-			input:    "func(obj.method)",
-			argIndex: 0,
+			name:              "attribute access",
+			input:             "func(obj.method)",
+			argIndex:          0,
 			expectedValueType: "attribute",
 		},
 		{
-			name:     "subscript access",
-			input:    "func(arr[0])",
-			argIndex: 0,
+			name:              "subscript access",
+			input:             "func(arr[0])",
+			argIndex:          0,
 			expectedValueType: "subscript",
 		},
 	}
@@ -466,7 +466,7 @@ func TestArgumentExpressions(t *testing.T) {
 			}
 
 			if actualType != tt.expectedValueType {
-				t.Errorf("Expected value type %s but got %s (actual type: %T)", 
+				t.Errorf("Expected value type %s but got %s (actual type: %T)",
 					tt.expectedValueType, actualType, arg.Value)
 			}
 		})

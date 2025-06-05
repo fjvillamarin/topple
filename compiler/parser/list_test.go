@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -93,114 +93,114 @@ func getElementTypes(list *ast.ListExpr) []string {
 // Test comprehensive list expression functionality
 func TestListExpressions(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCount int
 		elementTypes  []string
-		description  string
+		description   string
 	}{
 		// Basic list expressions
 		{
-			name:         "empty list",
-			input:        "[]",
+			name:          "empty list",
+			input:         "[]",
 			expectedCount: 0,
 			elementTypes:  []string{},
-			description:  "empty list literal",
+			description:   "empty list literal",
 		},
 		{
-			name:         "single element",
-			input:        "[1]",
+			name:          "single element",
+			input:         "[1]",
 			expectedCount: 1,
 			elementTypes:  []string{"literal"},
-			description:  "list with single literal element",
+			description:   "list with single literal element",
 		},
 		{
-			name:         "multiple elements",
-			input:        "[1, 2, 3]",
+			name:          "multiple elements",
+			input:         "[1, 2, 3]",
 			expectedCount: 3,
 			elementTypes:  []string{"literal", "literal", "literal"},
-			description:  "list with multiple literal elements",
+			description:   "list with multiple literal elements",
 		},
 		{
-			name:         "trailing comma",
-			input:        "[1, 2, 3,]",
+			name:          "trailing comma",
+			input:         "[1, 2, 3,]",
 			expectedCount: 3,
 			elementTypes:  []string{"literal", "literal", "literal"},
-			description:  "list with trailing comma",
+			description:   "list with trailing comma",
 		},
 
 		// Different element types
 		{
-			name:         "mixed types",
-			input:        "[1, 'hello', True, None]",
+			name:          "mixed types",
+			input:         "[1, 'hello', True, None]",
 			expectedCount: 4,
 			elementTypes:  []string{"literal", "literal", "literal", "literal"},
-			description:  "list with mixed literal types",
+			description:   "list with mixed literal types",
 		},
 		{
-			name:         "variables",
-			input:        "[x, y, z]",
+			name:          "variables",
+			input:         "[x, y, z]",
 			expectedCount: 3,
 			elementTypes:  []string{"name", "name", "name"},
-			description:  "list with variable names",
+			description:   "list with variable names",
 		},
 		{
-			name:         "expressions",
-			input:        "[x + 1, y * 2, z - 3]",
+			name:          "expressions",
+			input:         "[x + 1, y * 2, z - 3]",
 			expectedCount: 3,
 			elementTypes:  []string{"binary", "binary", "binary"},
-			description:  "list with arithmetic expressions",
+			description:   "list with arithmetic expressions",
 		},
 		{
-			name:         "function calls",
-			input:        "[func(), method(), len(x)]",
+			name:          "function calls",
+			input:         "[func(), method(), len(x)]",
 			expectedCount: 3,
 			elementTypes:  []string{"call", "call", "call"},
-			description:  "list with function calls",
+			description:   "list with function calls",
 		},
 
 		// Nested structures
 		{
-			name:         "nested lists",
-			input:        "[[1, 2], [3, 4]]",
+			name:          "nested lists",
+			input:         "[[1, 2], [3, 4]]",
 			expectedCount: 2,
 			elementTypes:  []string{"list", "list"},
-			description:  "list containing nested lists",
+			description:   "list containing nested lists",
 		},
 		{
-			name:         "deeply nested",
-			input:        "[[[1]], [[2, 3]], [4]]",
+			name:          "deeply nested",
+			input:         "[[[1]], [[2, 3]], [4]]",
 			expectedCount: 3,
 			elementTypes:  []string{"list", "list", "list"},
-			description:  "deeply nested list structure",
+			description:   "deeply nested list structure",
 		},
 		{
-			name:         "mixed nesting",
-			input:        "[1, [2, 3], 4]",
+			name:          "mixed nesting",
+			input:         "[1, [2, 3], 4]",
 			expectedCount: 3,
 			elementTypes:  []string{"literal", "list", "literal"},
-			description:  "list with mixed literal and nested elements",
+			description:   "list with mixed literal and nested elements",
 		},
 
 		// Complex expressions
 		{
-			name:         "attribute access",
-			input:        "[obj.attr, data.value, item.name]",
+			name:          "attribute access",
+			input:         "[obj.attr, data.value, item.name]",
 			expectedCount: 3,
-			description:  "list with attribute access expressions",
+			description:   "list with attribute access expressions",
 		},
 		{
-			name:         "subscript access",
-			input:        "[data[0], items[key], matrix[i][j]]",
+			name:          "subscript access",
+			input:         "[data[0], items[key], matrix[i][j]]",
 			expectedCount: 3,
-			description:  "list with subscript access expressions",
+			description:   "list with subscript access expressions",
 		},
 		{
-			name:         "conditional expressions",
-			input:        "[x if condition else y, a if flag else b]",
+			name:          "conditional expressions",
+			input:         "[x if condition else y, a if flag else b]",
 			expectedCount: 2,
-			description:  "list with ternary expressions",
+			description:   "list with ternary expressions",
 		},
 
 		// Error cases
@@ -267,87 +267,87 @@ func TestListExpressions(t *testing.T) {
 // Test list comprehensions and their variations
 func TestListComprehensions(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
-		hasError          bool
+		name               string
+		input              string
+		hasError           bool
 		expectedGenerators int
-		hasCondition      bool
-		description       string
+		hasCondition       bool
+		description        string
 	}{
 		// Basic comprehensions
 		{
-			name:              "simple comprehension",
-			input:             "[x for x in range(10)]",
+			name:               "simple comprehension",
+			input:              "[x for x in range(10)]",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "basic list comprehension with single generator",
+			hasCondition:       false,
+			description:        "basic list comprehension with single generator",
 		},
 		{
-			name:              "with condition",
-			input:             "[x for x in range(10) if x % 2 == 0]",
+			name:               "with condition",
+			input:              "[x for x in range(10) if x % 2 == 0]",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "list comprehension with filter condition",
+			hasCondition:       true,
+			description:        "list comprehension with filter condition",
 		},
 		{
-			name:              "expression transform",
-			input:             "[x * 2 for x in numbers]",
+			name:               "expression transform",
+			input:              "[x * 2 for x in numbers]",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "list comprehension with expression transformation",
+			hasCondition:       false,
+			description:        "list comprehension with expression transformation",
 		},
 		{
-			name:              "nested generators",
-			input:             "[x + y for x in range(3) for y in range(3)]",
+			name:               "nested generators",
+			input:              "[x + y for x in range(3) for y in range(3)]",
 			expectedGenerators: 2,
-			hasCondition:      false,
-			description:       "list comprehension with multiple generators",
+			hasCondition:       false,
+			description:        "list comprehension with multiple generators",
 		},
 		{
-			name:              "multiple conditions",
-			input:             "[x for x in items if x > 0 if x < 10]",
+			name:               "multiple conditions",
+			input:              "[x for x in items if x > 0 if x < 10]",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "list comprehension with multiple filter conditions",
+			hasCondition:       true,
+			description:        "list comprehension with multiple filter conditions",
 		},
 
 		// Complex comprehensions
 		{
-			name:              "function call in element",
-			input:             "[func(x) for x in data]",
+			name:               "function call in element",
+			input:              "[func(x) for x in data]",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "list comprehension with function call in element expression",
+			hasCondition:       false,
+			description:        "list comprehension with function call in element expression",
 		},
 		{
-			name:              "attribute access in condition",
-			input:             "[item for item in objects if item.is_valid]",
+			name:               "attribute access in condition",
+			input:              "[item for item in objects if item.is_valid]",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "list comprehension with attribute access in condition",
+			hasCondition:       true,
+			description:        "list comprehension with attribute access in condition",
 		},
 		{
-			name:              "complex expression and condition",
-			input:             "[item.name.upper() for item in data if item.active and item.visible]",
+			name:               "complex expression and condition",
+			input:              "[item.name.upper() for item in data if item.active and item.visible]",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "list comprehension with complex element expression and condition",
+			hasCondition:       true,
+			description:        "list comprehension with complex element expression and condition",
 		},
 
 		// Nested data access
 		{
-			name:              "tuple unpacking",
-			input:             "[x + y for x, y in pairs]",
+			name:               "tuple unpacking",
+			input:              "[x + y for x, y in pairs]",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "list comprehension with tuple unpacking in generator",
+			hasCondition:       false,
+			description:        "list comprehension with tuple unpacking in generator",
 		},
 		{
-			name:              "nested iteration",
-			input:             "[cell for row in matrix for cell in row]",
+			name:               "nested iteration",
+			input:              "[cell for row in matrix for cell in row]",
 			expectedGenerators: 2,
-			hasCondition:      false,
-			description:       "list comprehension flattening nested structure",
+			hasCondition:       false,
+			description:        "list comprehension flattening nested structure",
 		},
 
 		// Error cases
@@ -486,11 +486,11 @@ func TestListStarredExpressions(t *testing.T) {
 // Test list edge cases and complex scenarios
 func TestListEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		// Complex valid cases
 		{
@@ -516,16 +516,16 @@ func TestListEdgeCases(t *testing.T) {
 
 		// Error cases with specific error validation
 		{
-			name:          "invalid element syntax",
-			input:         "[1, 2, def]",
-			hasError:      true,
-			description:   "list with invalid element syntax",
+			name:        "invalid element syntax",
+			input:       "[1, 2, def]",
+			hasError:    true,
+			description: "list with invalid element syntax",
 		},
 		{
-			name:          "invalid comprehension",
-			input:         "[x for x in for y in items]",
-			hasError:      true,
-			description:   "malformed comprehension syntax",
+			name:        "invalid comprehension",
+			input:       "[x for x in for y in items]",
+			hasError:    true,
+			description: "malformed comprehension syntax",
 		},
 	}
 

@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // HTMLContent represents HTML content with mixed text and interpolations: Hello {name}!

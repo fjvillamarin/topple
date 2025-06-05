@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -38,7 +38,7 @@ func findReplacementField(fstring *ast.FString, index int) *ast.FStringReplaceme
 	if index >= len(fstring.Parts) {
 		return nil
 	}
-	
+
 	partIndex := 0
 	for _, part := range fstring.Parts {
 		if rf, ok := part.(*ast.FStringReplacementField); ok {
@@ -181,8 +181,8 @@ func TestFString(t *testing.T) {
 			description:          "function call in replacement field",
 		},
 		{
-			name: "conditional expression",
-			input: `f"Status: {'active' if is_active else 'inactive'}"`,
+			name:                 "conditional expression",
+			input:                `f"Status: {'active' if is_active else 'inactive'}"`,
 			expectedParts:        2,
 			expectedReplacements: 1,
 			description:          "ternary expression in replacement field",
@@ -247,7 +247,7 @@ func TestFString(t *testing.T) {
 			}
 
 			fstring := validateFString(t, expr, test.expectedParts)
-			
+
 			actualReplacements := countReplacementFields(fstring)
 			if actualReplacements != test.expectedReplacements {
 				t.Errorf("Expected %d replacement fields, got %d", test.expectedReplacements, actualReplacements)
@@ -269,11 +269,11 @@ func TestFString(t *testing.T) {
 // Test f-string conversions (!r, !s, !a)
 func TestFStringConversions(t *testing.T) {
 	tests := []struct {
-		name             string
-		input            string
-		hasError         bool
-		expectedType     string
-		errorContains    string
+		name          string
+		input         string
+		hasError      bool
+		expectedType  string
+		errorContains string
 	}{
 		{"repr conversion", `f"{value!r}"`, false, "r", ""},
 		{"str conversion", `f"{value!s}"`, false, "s", ""},
