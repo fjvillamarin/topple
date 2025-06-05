@@ -1,0 +1,17 @@
+# Test that chain assignments with side effects only evaluate once
+
+counter = 0
+
+def increment_and_return():
+    global counter
+    counter += 1
+    return counter
+
+# This should only increment counter once
+a = b = c = increment_and_return()
+
+# This should evaluate the complex expression with side effects only once  
+x = y = z = increment_and_return() + increment_and_return()
+
+# Multiple function calls in chain
+p = q = r = s = print("This should only print once") or 42

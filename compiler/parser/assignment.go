@@ -224,22 +224,60 @@ tryStarTargets:
 				return nil, p.error(p.peek(), "unexpected '=' in assignment")
 			}
 
-			// For chain assignments (a = b = c = 1), we create multiple AssignStmt nodes
-			// The last one gets the right-hand side expression, and then assign left to right
-			// We iterate over the targetChain, and create an AssignStmt for each target
-			// TODO: we should assign the RHS expression to a temp variable, and then assign the temp variable to the targets
-			var stmts []ast.Stmt
-			for i := 0; i < len(targetChain); i++ {
-				stmts = append(stmts, &ast.AssignStmt{
-					Targets: targetChain[i],
-					Value:   rhs,
+				// For chain assignments (a = b = c = 1), we optimize by evaluating the RHS only once
+				// This is important for expressions with side effects or expensive computations
+				var stmts []ast.Stmt
+				
+				// Check if RHS is a simple literal or name that doesn't need a temp variable
+				needsTempVar := !isSimpleExpression(rhs)
+				
+				if needsTempVar {
+					// Create a temporary variable to store the RHS value
+					tempVarName := p.generateTempVarName()
+					tempVar := &ast.Name{
+						Token: lexer.Token{
+							Type:   lexer.Identifier,
+							Lexeme: tempVarName,
+							Span:   rhs.GetSpan(),
+						},
+						Span: rhs.GetSpan(),
+					}
+					
+					// First statement: _temp = rhs
+					stmts = append(stmts, &ast.AssignStmt{
+						Targets: []ast.Expr{tempVar},
+						Value:   rhs,
+						Span: lexer.Span{
+							Start: startPos,
+							End:   rhs.GetSpan().End,
+						},
+					})
+					
+					// Then assign temp variable to all targets (in reverse order to match Python semantics)
+					for i := len(targetChain) - 1; i >= 0; i-- {
+						stmts = append(stmts, &ast.AssignStmt{
+							Targets: targetChain[i],
+							Value:   tempVar,
+							Span: lexer.Span{
+								Start: targetChain[i][0].GetSpan().Start,
+								End:   tempVar.GetSpan().End,
+							},
+						})
+					}
+				} else {
+					// For simple expressions, just assign directly
+					for i := 0; i < len(targetChain); i++ {
+						stmts = append(stmts, &ast.AssignStmt{
+							Targets: targetChain[i],
+							Value:   rhs,
+							Span: lexer.Span{
+								Start: startPos,
+								End:   rhs.GetSpan().End,
+							},
+						})
+					}
+				}
 
-					Span: lexer.Span{
-						Start: startPos,
-						End:   rhs.GetSpan().End,
-					},
-				})
-			}
 			return &ast.MultiStmt{
 				Stmts: stmts,
 				Span:  lexer.Span{Start: startPos, End: rhs.GetSpan().End},
@@ -412,4 +450,17 @@ func augassignToOperator(augassign lexer.Token) lexer.Token {
 		}
 	}
 	return lexer.Token{}
+}
+
+// isSimpleExpression returns true if the expression is simple enough that it doesn't need
+// a temporary variable in chain assignments (literals, names, etc.)
+func isSimpleExpression(expr ast.Expr) bool {
+	switch expr.(type) {
+	case *ast.Literal:
+		return true
+	case *ast.Name:
+		return true
+	default:
+		return false
+	}
 }

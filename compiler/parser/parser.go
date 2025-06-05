@@ -13,6 +13,7 @@ type Parser struct {
 	Tokens  []lexer.Token
 	Current int
 	Errors  []error
+	tempVarCounter int
 }
 
 // NewParser returns a new parser instance.
@@ -21,6 +22,7 @@ func NewParser(tokens []lexer.Token) *Parser {
 		Tokens:  tokens,
 		Current: 0,
 		Errors:  []error{},
+		tempVarCounter: 0,
 	}
 }
 
@@ -89,4 +91,10 @@ func unwrapMultiStmt(stmt ast.Stmt) []ast.Stmt {
 		return multi.Stmts
 	}
 	return []ast.Stmt{stmt}
+}
+
+// generateTempVarName generates a unique temporary variable name
+func (p *Parser) generateTempVarName() string {
+	p.tempVarCounter++
+	return fmt.Sprintf("_chain_tmp_%d", p.tempVarCounter)
 }
