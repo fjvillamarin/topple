@@ -302,20 +302,6 @@ func TestCodeGeneration(t *testing.T) {
 				}
 			},
 		},
-		{
-			category:   "statements",
-			name:       "multi_statement",
-			skipReason: "Known bug: MultiStmt incorrectly generates newlines between semicolons",
-			buildAST: func() ast.Node {
-				return &ast.MultiStmt{
-					Stmts: []ast.Stmt{
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "a"}}},
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "b"}}},
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "c"}}},
-					},
-				}
-			},
-		},
 
 		// Functions
 		{

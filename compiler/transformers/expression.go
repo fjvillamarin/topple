@@ -235,14 +235,8 @@ func (vm *ViewTransformer) transformStatement(stmt ast.Stmt) ast.Stmt {
 		}
 
 	case *ast.MultiStmt:
-		transformedStmts := make([]ast.Stmt, len(s.Stmts))
-		for i, stmt := range s.Stmts {
-			transformedStmts[i] = vm.transformStatement(stmt)
-		}
-		return &ast.MultiStmt{
-			Stmts: transformedStmts,
-			Span:  s.Span,
-		}
+		// MultiStmt should have been unwrapped in the parser
+		panic("MultiStmt should not reach transformer - it should be unwrapped in the parser")
 
 	// For other statements, return as-is for now
 	default:

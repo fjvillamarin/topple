@@ -1,0 +1,11 @@
+# Basic chain assignment
+a = b = c = 1
+
+# Chain assignment with different expressions
+x = y = z = "hello"
+
+# Chain assignment with function call
+p = q = r = len([1, 2, 3])
+
+# Chain assignment with complex expression
+i = j = k = 2 + 3 * 4

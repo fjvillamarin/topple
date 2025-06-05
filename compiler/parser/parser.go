@@ -49,7 +49,9 @@ func (p *Parser) Parse() (*ast.Module, []error) {
 			p.Errors = append(p.Errors, err)
 			return nil, p.Errors
 		}
-		stmts = append(stmts, stmt)
+		// Unwrap MultiStmt nodes at module level
+		unwrapped := unwrapMultiStmt(stmt)
+		stmts = append(stmts, unwrapped...)
 	}
 
 	return &ast.Module{Body: stmts}, p.Errors
@@ -77,4 +79,14 @@ func (e *ParseError) Span() lexer.Span {
 // NewParseError creates a new ParseError.
 func NewParseError(token lexer.Token, message string) *ParseError {
 	return &ParseError{Token: token, Message: message}
+}
+
+// unwrapMultiStmt takes a statement and returns a slice of statements.
+// If the statement is a MultiStmt, it returns its inner statements.
+// Otherwise, it returns a slice containing just the original statement.
+func unwrapMultiStmt(stmt ast.Stmt) []ast.Stmt {
+	if multi, ok := stmt.(*ast.MultiStmt); ok {
+		return multi.Stmts
+	}
+	return []ast.Stmt{stmt}
 }
