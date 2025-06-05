@@ -10,13 +10,13 @@ Golden file tests are end-to-end tests that validate the complete compilation pi
 
 ```bash
 # Show all available test categories and usage examples
-make test-golden-list
+mise run test-golden-list
 
 # Run all golden file tests
-make test-golden
+mise run test-golden
 
 # Update all golden files (use when compiler output changes intentionally)
-make test-golden-update
+mise run test-golden-update
 ```
 
 ## Test Organization
@@ -41,22 +41,22 @@ Tests are organized into categories in `compiler/testdata/`:
 - `fastapi` - FastAPI integration examples
 - `errors` - Error handling and edge cases
 
-## Make Targets
+## Mise Tasks
 
 ### Running Tests
 
 ```bash
 # Run all golden file tests
-make test-golden
+mise run test-golden
 
 # Run tests for a specific category
-make test-golden-category CATEGORY=basic
+mise run test-golden-category CATEGORY=basic
 
 # Run a single test file
-make test-golden-single TEST=basic/hello_world
+mise run test-golden-single TEST=basic/hello_world
 
 # Show available categories and usage examples
-make test-golden-list
+mise run test-golden-list
 ```
 
 ### Updating Golden Files
@@ -65,13 +65,13 @@ make test-golden-list
 
 ```bash
 # Update all golden files
-make test-golden-update
+mise run test-golden-update
 
 # Update golden files for a specific category
-make test-golden-category-update CATEGORY=views
+mise run test-golden-category-update CATEGORY=views
 
 # Update a single golden file
-make test-golden-single-update TEST=control_flow/loops
+mise run test-golden-single-update TEST=control_flow/loops
 ```
 
 ### Comparing Generated vs Expected Files
@@ -80,13 +80,13 @@ When tests run, generated output is automatically saved to `compiler/testdata/ge
 
 ```bash
 # Compare all files in a category
-make test-golden-diff CATEGORY=basic
+mise run test-golden-diff CATEGORY=basic
 
 # Compare a single file
-make test-golden-diff-single TEST=basic/hello_world
+mise run test-golden-diff-single TEST=basic/hello_world
 
 # Clean generated files (optional - they're gitignored)
-make test-golden-clean
+mise run test-golden-clean
 ```
 
 **File Locations for Manual Comparison:**
@@ -97,40 +97,40 @@ make test-golden-clean
 ## Adding New Tests
 
 1. **Create input file**: Add a `.psx` file in `compiler/testdata/input/<category>/`
-2. **Generate golden file**: Run `make test-golden-category-update CATEGORY=<category>`
+2. **Generate golden file**: Run `mise run test-golden-category-update CATEGORY=<category>`
 3. **Verify output**: Check that the generated `.py` file in `compiler/testdata/expected/<category>/` is correct
-4. **Run test**: Use `make test-golden-category CATEGORY=<category>` to verify
+4. **Run test**: Use `mise run test-golden-category CATEGORY=<category>` to verify
 
 ## Example Usage
 
 ```bash
 # Test basic functionality
-make test-golden-category CATEGORY=basic
+mise run test-golden-category CATEGORY=basic
 
 # Test and update view-related tests
-make test-golden-category CATEGORY=views
-make test-golden-category-update CATEGORY=views
+mise run test-golden-category CATEGORY=views
+mise run test-golden-category-update CATEGORY=views
 
 # Test a specific file that handles loops
-make test-golden-single TEST=control_flow/loops
+mise run test-golden-single TEST=control_flow/loops
 
 # Update golden file after fixing a bug in loop compilation
-make test-golden-single-update TEST=control_flow/loops
+mise run test-golden-single-update TEST=control_flow/loops
 
 # Compare generated vs expected files to debug differences
-make test-golden-diff CATEGORY=basic
-make test-golden-diff-single TEST=control_flow/loops
+mise run test-golden-diff CATEGORY=basic
+mise run test-golden-diff-single TEST=control_flow/loops
 ```
 
 ## Development Workflow
 
 1. **Make changes to the compiler**
-2. **Run tests**: `make test-golden-category CATEGORY=basic`
+2. **Run tests**: `mise run test-golden-category CATEGORY=basic`
 3. **If tests fail**: 
-   - Check differences: `make test-golden-diff CATEGORY=basic`
+   - Check differences: `mise run test-golden-diff CATEGORY=basic`
    - View specific file: `compiler/testdata/generated/basic/hello_world.py`
    - Fix compiler issue or update golden files if change is intentional
-4. **Clean up** (optional): `make test-golden-clean`
+4. **Clean up** (optional): `mise run test-golden-clean`
 
 ## Integration with CI/CD
 
@@ -138,10 +138,10 @@ Add to your CI pipeline:
 
 ```bash
 # Run all tests (unit tests + golden file tests)
-make test-all
+mise run test-all
 
 # Or run just golden file tests
-make test-golden
+mise run test-golden
 ```
 
 Golden file tests ensure that:

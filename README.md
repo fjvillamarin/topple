@@ -238,26 +238,14 @@ sylfie/
 │   └── codegen/        # Python code generation
 ├── runtime.py          # Python runtime library
 ├── bin/               # Compiled binaries
-└── Makefile          # Build and test commands
+└── .mise.toml         # Task runner configuration
 ```
 
 ### Building from Source
 
 ```bash
-# Requirements: Go 1.23+
+# Requirements: Go 1.23+, mise
 
-# Using mise (recommended)
-mise run build
-
-# Or using make
-make build
-```
-
-### Development with mise
-
-The project uses [mise](https://mise.jdx.dev) for task management. All make targets are available as mise tasks:
-
-```bash
 # Install mise (if not already installed)
 curl https://mise.run | sh
 
@@ -278,14 +266,14 @@ mise run test-golden-category CATEGORY=views
 
 # Update golden files after changes
 mise run test-golden-update
-
-# View all available tasks
-mise run help
 ```
 
 ### Development Commands
 
 ```bash
+# View all available tasks
+mise run help
+
 # Format Go code
 mise run fmt
 
@@ -297,18 +285,6 @@ mise run watch
 
 # View available test categories
 mise run test-golden-list
-```
-
-### Using Make (alternative)
-
-The traditional Makefile is still available:
-
-```bash
-make build
-make test
-make test-all
-make test-golden-category CATEGORY=views
-make test-golden-update
 ```
 
 ### Contributing

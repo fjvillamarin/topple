@@ -8,10 +8,11 @@ The Sylfie compiler provides a command-line interface for transforming `.psx` (P
 
 ```bash
 # Build from source
-make build
+mise run build
 
-# Install to system
-make install
+# The binary will be in bin/sylfie
+# Add to PATH or copy to system location:
+cp bin/sylfie /usr/local/bin/
 ```
 
 ## Command Structure
@@ -169,21 +170,20 @@ SyntaxError: Unclosed HTML tag 'div'
 
 ### Integration with Build Tools
 
-#### Makefile
-```makefile
-PSX_FILES := $(shell find src -name "*.psx")
-PY_FILES := $(PSX_FILES:.psx=.py)
+#### Mise Tasks
+```toml
+# In .mise.toml
+[tasks.compile-views]
+description = "Compile all PSX views"
+run = "sylfie compile src/ -r"
 
-compile: $(PY_FILES)
+[tasks.dev]
+description = "Start development mode"
+run = "sylfie watch src/"
 
-%.py: %.psx
-    sylfie compile $<
-
-watch:
-    sylfie watch src/
-
-clean:
-    rm -f $(PY_FILES)
+[tasks.clean-views]
+description = "Clean generated Python files"
+run = 'find src -name "*.py" -type f | grep -E "view.*\.py$" | xargs rm -f'
 ```
 
 #### Poetry/PyProject

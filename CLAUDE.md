@@ -35,56 +35,61 @@ Sylfie is a Python transpiler written in Go that compiles `.psx` (Python Sylfie 
 
 ## Essential Commands
 
+The project uses `mise` for task management.
+
 ### Building and Running
 ```bash
 # Build the compiler
-make build
+mise run build
 
 # Compile PSX files recursively
-make run
+mise run run
 
 # Watch mode for development
-make watch
+mise run watch
 
 # Start FastAPI dev server
-make web
+mise run web
+
+# View all available tasks
+mise run help
 ```
 
 ### Testing
 ```bash
 # Run all unit tests
-make test
+mise run test
 
 # Run codegen tests specifically
-make test-codegen
+mise run test-codegen
 
 # Run view transformer tests
-make test-view-transformer
+mise run test-view-transformer
 
 # Update view transformer golden files
-make test-view-transformer-update
+mise run test-view-transformer-update
 
 # Run all golden file tests (e2e compiler tests)
-make test-golden
+mise run test-golden
 
 # Update all golden files
-make test-golden-update
+mise run test-golden-update
 
 # Run specific test category
-make test-golden-category CATEGORY=literals
+mise run test-golden-category CATEGORY=literals
 
 # Run single test
-make test-golden-single TEST=literals/string
+mise run test-golden-single TEST=literals/string
 
 # Update single golden file
-UPDATE_GOLDEN=1 go test ./compiler/codegen -run TestLiterals/string
+UPDATE_GOLDEN=1 mise run test-golden-single TEST=literals/string
 
 # View available test categories
-make test-golden-list
+mise run test-golden-list
 
 # Compare generated vs expected files
-make test-golden-diff CATEGORY=literals
-make test-golden-diff-single TEST=literals/string
+mise run test-golden-diff CATEGORY=literals
+mise run test-golden-diff-single TEST=literals/string
 ```
 
 ### CLI Commands

@@ -40,7 +40,7 @@ This document outlines the plan for rebranding the project from "Biscuit" to "Sy
 
 1. **Binary Name**
    - Rename `biscuit` binary to `sylfie`
-   - Update Makefile targets
+   - Migrate from Makefile to mise tasks (.mise.toml)
    - Update build scripts
 
 2. **Package References**

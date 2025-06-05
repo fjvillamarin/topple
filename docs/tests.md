@@ -286,25 +286,25 @@ func validateViewStatement(t *testing.T, viewStmt *ast.ViewStmt,
 
 ## Test Organization and Execution
 
-### Make Targets
+### Mise Tasks
 
-The project provides excellent test automation through Make:
+The project provides excellent test automation through mise:
 
 ```bash
 # Unit tests
-make test              # Run all unit tests
-make test-verbose      # Verbose output
-make test-coverage     # Generate coverage report
+mise run test              # Run all unit tests
+mise run test-verbose      # Verbose output
+mise run test-coverage     # Generate coverage report
 
 # End-to-end tests
-make test-golden       # Run all golden file tests
-make test-golden-update # Update expected output files
-make test-golden-diff  # Show differences
-make test-golden-clean # Clean generated files
+mise run test-golden       # Run all golden file tests
+mise run test-golden-update # Update expected output files
+mise run test-golden-diff  # Show differences
+mise run test-golden-clean # Clean generated files
 
 # Granular control
-make test-golden-category CATEGORY=basic  # Test specific category
-make test-golden-single TEST=basic/hello_world  # Single test
+mise run test-golden-category CATEGORY=basic  # Test specific category
+mise run test-golden-single TEST=basic/hello_world  # Single test
 ```
 
 ### Test File Organization
@@ -507,16 +507,16 @@ testdata/
 
 ```bash
 # Update all expected files
-make test-golden-update
+mise run test-golden-update
 
 # Update specific category
-UPDATE_GOLDEN=1 make test-golden-category CATEGORY=basic
+UPDATE_GOLDEN=1 mise run test-golden-category CATEGORY=basic
 
 # Compare differences
-make test-golden-diff
+mise run test-golden-diff
 
 # Clean generated files
-make test-golden-clean
+mise run test-golden-clean
 ```
 
 ### Automation Features:
@@ -746,10 +746,10 @@ func validateViewTransformation(t *testing.T, input string,
 #### 1. Golden File Updates
 ```bash
 # Update all golden files after making changes
-make test-golden-update
+mise run test-golden-update
 
 # Verify changes are correct
-make test-golden-diff
+mise run test-golden-diff
 
 # Commit updated expected files
 git add testdata/expected/
