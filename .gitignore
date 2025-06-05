@@ -54,3 +54,4 @@ env/
 compiler/testdata/generated/
 compiler/codegen/testdata/generated/
 compiler/transformers/testdata/generated/
+bin/

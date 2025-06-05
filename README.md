@@ -246,36 +246,69 @@ sylfie/
 ```bash
 # Requirements: Go 1.23+
 
-# Build the compiler
+# Using mise (recommended)
+mise run build
+
+# Or using make
 make build
+```
+
+### Development with mise
+
+The project uses [mise](https://mise.jdx.dev) for task management. All make targets are available as mise tasks:
+
+```bash
+# Install mise (if not already installed)
+curl https://mise.run | sh
+
+# Trust the project configuration
+mise trust
+
+# Build the compiler
+mise run build
 
 # Run unit tests
-make test
+mise run test
 
 # Run all tests including golden file tests
-make test-all
+mise run test-all
 
 # Run specific test categories
-make test-golden-category CATEGORY=views
+mise run test-golden-category CATEGORY=views
 
 # Update golden files after changes
-make test-golden-update
+mise run test-golden-update
+
+# View all available tasks
+mise run help
 ```
 
 ### Development Commands
 
 ```bash
 # Format Go code
-make fmt
+mise run fmt
 
 # Run examples
-make run
+mise run run
 
 # Start watch mode
-make watch
+mise run watch
 
 # View available test categories
-make test-golden-list
+mise run test-golden-list
+```
+
+### Using Make (alternative)
+
+The traditional Makefile is still available:
+
+```bash
+make build
+make test
+make test-all
+make test-golden-category CATEGORY=views
+make test-golden-update
 ```
 
 ### Contributing

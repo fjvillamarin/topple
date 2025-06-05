@@ -1,0 +1,289 @@
+# Sylfie Compiler - Mise Configuration
+# Migrated from Makefile
+
+[env]
+VERSION = "0.1.0"
+
+[tools]
+# Use system go for now due to mise go toolchain issues
+# go = "1.23"
+python = "3.12"
+
+# Development Tasks
+[tasks.run]
+description = "Compile and run examples recursively"
+run = "go run ./cmd/... compile examples/ -r -d"
+
+[tasks.watch]
+description = "Watch files for changes and recompile"
+run = "go run ./cmd/... watch examples/sylfie/01_hello_world/ -d"
+
+[tasks.build]
+description = "Build the sylfie binary"
+run = 'go build -ldflags="-X main.Version=$VERSION" -o bin/sylfie ./cmd/...'
+
+[tasks.fmt]
+description = "Format Go code"
+run = "go fmt ./..."
+
+# Testing Tasks
+[tasks.test]
+description = "Run all Go unit tests"
+run = "go test ./..."
+
+[tasks.test-codegen]
+description = "Run code generation tests"
+run = """
+echo "🧪 Running codegen tests..."
+go test ./compiler/codegen -v
+"""
+
+[tasks.test-view-transformer]
+description = "Run view transformer tests"
+run = """
+echo "🧪 Running view transformer tests..."
+go test ./compiler/transformers -v
+"""
+
+[tasks.test-view-transformer-update]
+description = "Update view transformer golden files"
+run = """
+echo "📝 Updating view transformer golden files..."
+UPDATE_GOLDEN=1 go test ./compiler/transformers -v
+"""
+
+[tasks.test-all]
+description = "Run all tests (unit + golden file tests)"
+depends = ["test", "test-golden"]
+run = 'echo "✅ All tests completed successfully!"'
+
+# Golden File Tests
+[tasks.test-golden]
+description = "Run all golden file tests"
+run = """
+echo "🧪 Running golden file tests..."
+go test ./compiler -run "TestE2E" -v
+"""
+
+[tasks.test-golden-update]
+description = "Update all golden files"
+run = """
+echo "📝 Updating golden files..."
+UPDATE_GOLDEN=1 go test ./compiler -run "TestE2E" -v
+echo "✅ Golden files updated successfully!"
+"""
+
+[tasks.test-golden-category]
+description = "Run tests for specific category"
+run = """
+if [ -z "$CATEGORY" ]; then
+    echo "❌ Error: Please specify a category with CATEGORY=<name>"
+    echo "Available categories: basic, views, control_flow, composition, slots, attributes, expressions, python_integration, htmx, fastapi, errors"
+    exit 1
+fi
+echo "🧪 Running golden file tests for category: $CATEGORY"
+go test ./compiler -run "TestE2E/$CATEGORY" -v
+"""
+
+[tasks.test-golden-category-update]
+description = "Update golden files for category"
+run = """
+if [ -z "$CATEGORY" ]; then
+    echo "❌ Error: Please specify a category with CATEGORY=<name>"
+    echo "Available categories: basic, views, control_flow, composition, slots, attributes, expressions, python_integration, htmx, fastapi, errors"
+    exit 1
+fi
+echo "📝 Updating golden files for category: $CATEGORY"
+UPDATE_GOLDEN=1 go test ./compiler -run "TestE2E/$CATEGORY" -v
+echo "✅ Golden files updated for $CATEGORY!"
+"""
+
+[tasks.test-golden-single]
+description = "Run single test"
+run = """
+if [ -z "$TEST" ]; then
+    echo "❌ Error: Please specify a test with TEST=<category>/<testname>"
+    echo "Example: mise run test-golden-single TEST=basic/hello_world"
+    exit 1
+fi
+echo "🧪 Running single golden file test: $TEST"
+go test ./compiler -run "TestE2E/$TEST" -v
+"""
+
+[tasks.test-golden-single-update]
+description = "Update single golden file"
+run = """
+if [ -z "$TEST" ]; then
+    echo "❌ Error: Please specify a test with TEST=<category>/<testname>"
+    echo "Example: mise run test-golden-single-update TEST=basic/hello_world"
+    exit 1
+fi
+echo "📝 Updating single golden file: $TEST"
+UPDATE_GOLDEN=1 go test ./compiler -run "TestE2E/$TEST" -v
+echo "✅ Golden file updated for $TEST!"
+"""
+
+[tasks.test-golden-list]
+description = "Show available test categories"
+run = """
+echo "📋 Available golden file test categories:"
+echo "  • basic - Simple Python code and basic views"
+echo "  • views - View definitions and parameters"
+echo "  • control_flow - If statements, loops, match, try/except"
+echo "  • composition - View composition and nesting"
+echo "  • slots - Slot functionality and templates"
+echo "  • attributes - HTML attribute handling"
+echo "  • expressions - Complex expressions and f-strings"
+echo "  • python_integration - Python-specific features"
+echo "  • htmx - HTMX integration examples"
+echo "  • fastapi - FastAPI integration examples"
+echo "  • errors - Error handling and edge cases"
+echo ""
+echo "📝 Usage examples:"
+echo "  mise run test-golden                                    # Run all golden file tests"
+echo "  mise run test-golden-update                             # Update all golden files"
+echo "  mise run test-golden-category CATEGORY=basic           # Test specific category"
+echo "  mise run test-golden-category-update CATEGORY=views    # Update specific category"
+echo "  mise run test-golden-single TEST=basic/hello_world     # Test single file"
+echo "  mise run test-golden-single-update TEST=views/simple   # Update single file"
+echo ""
+echo "🔍 File comparison (generated vs expected):"
+echo "  mise run test-golden-diff CATEGORY=basic               # Compare all files in category"
+echo "  mise run test-golden-diff-single TEST=basic/hello      # Compare single file"
+"""
+
+[tasks.test-golden-diff]
+description = "Compare generated vs expected files"
+run = """
+if [ -z "$CATEGORY" ]; then
+    echo "❌ Error: Please specify a category with CATEGORY=<name>"
+    echo "Available categories: basic, views, control_flow, composition, slots, attributes, expressions, python_integration, htmx, fastapi, errors"
+    exit 1
+fi
+echo "🔍 Comparing generated vs expected files for category: $CATEGORY"
+if [ ! -d "compiler/testdata/generated/$CATEGORY" ]; then
+    echo "⚠️  Generated directory not found. Run tests first: mise run test-golden-category CATEGORY=$CATEGORY"
+    exit 1
+fi
+if command -v diff >/dev/null 2>&1; then
+    echo "Running diff between generated and expected files:"
+    diff -u "compiler/testdata/expected/$CATEGORY" "compiler/testdata/generated/$CATEGORY" || true
+else
+    echo "Diff command not available. Files are in:"
+    echo "  Expected: compiler/testdata/expected/$CATEGORY"
+    echo "  Generated: compiler/testdata/generated/$CATEGORY"
+fi
+"""
+
+[tasks.test-golden-diff-single]
+description = "Compare single generated vs expected file"
+run = """
+if [ -z "$TEST" ]; then
+    echo "❌ Error: Please specify a test with TEST=<category>/<testname>"
+    echo "Example: mise run test-golden-diff-single TEST=basic/hello_world"
+    exit 1
+fi
+CATEGORY=$(echo "$TEST" | cut -d'/' -f1)
+TESTNAME=$(echo "$TEST" | cut -d'/' -f2)
+EXPECTED_FILE="compiler/testdata/expected/$CATEGORY/$TESTNAME.py"
+GENERATED_FILE="compiler/testdata/generated/$CATEGORY/$TESTNAME.py"
+echo "🔍 Comparing generated vs expected for: $TEST"
+if [ ! -f "$GENERATED_FILE" ]; then
+    echo "⚠️  Generated file not found. Run test first: mise run test-golden-single TEST=$TEST"
+    exit 1
+fi
+if [ ! -f "$EXPECTED_FILE" ]; then
+    echo "⚠️  Expected file not found: $EXPECTED_FILE"
+    exit 1
+fi
+if command -v diff >/dev/null 2>&1; then
+    echo "Expected file: $EXPECTED_FILE"
+    echo "Generated file: $GENERATED_FILE"
+    echo "Differences:"
+    diff -u "$EXPECTED_FILE" "$GENERATED_FILE" || true
+else
+    echo "Diff command not available. Files are:"
+    echo "  Expected: $EXPECTED_FILE"
+    echo "  Generated: $GENERATED_FILE"
+fi
+"""
+
+[tasks.test-golden-clean]
+description = "Clean generated test files"
+run = """
+echo "🧹 Cleaning generated test files..."
+rm -rf compiler/testdata/generated/
+echo "✅ Generated files cleaned!"
+"""
+
+# Compiler Operations
+[tasks.scan]
+description = "Scan source files and show tokens"
+run = "go run ./cmd/... scan examples/sylfie/ -d -w -r"
+
+[tasks.parse]
+description = "Parse source files and show AST"
+run = "go run ./cmd/... parse examples/sylfie/ -d -w -r"
+
+[tasks.compile]
+description = "Compile a single source file"
+run = "go run ./cmd/... compile examples/sylfie/01_hello_world/01_hello_world.psx -d -r"
+
+# Web Development
+[tasks.web]
+description = "Start development web server"
+run = "poetry run uvicorn examples.sylfie.01_hello_world.01_hello_world:app --reload"
+
+# Help Task
+[tasks.help]
+description = "Show available tasks"
+run = """
+echo "🚀 Sylfie Compiler - Available Tasks"
+echo ""
+echo "🔨 Development:"
+echo "  mise run run              - Compile and run examples recursively"
+echo "  mise run watch            - Watch files for changes and recompile"
+echo "  mise run build            - Build the sylfie binary"
+echo "  mise run fmt              - Format Go code"
+echo ""
+echo "🧪 Testing:"
+echo "  mise run test                        - Run all Go unit tests"
+echo "  mise run test-codegen                - Run code generation tests"
+echo "  mise run test-view-transformer       - Run view transformer tests"
+echo "  mise run test-view-transformer-update - Update view transformer golden files"
+echo "  mise run test-all                    - Run all tests (unit + golden file tests)"
+echo ""
+echo "✨ Golden File Tests (End-to-End):"
+echo "  mise run test-golden                     - Run all golden file tests"
+echo "  mise run test-golden-update              - Update all golden files"
+echo "  mise run test-golden-list                - Show available test categories"
+echo "  mise run test-golden-category            - Run tests for specific category (use CATEGORY=name)"
+echo "  mise run test-golden-category-update     - Update golden files for category (use CATEGORY=name)"
+echo "  mise run test-golden-single              - Run single test (use TEST=category/testname)"
+echo "  mise run test-golden-single-update       - Update single golden file (use TEST=category/testname)"
+echo "  mise run test-golden-diff                - Compare generated vs expected files (use CATEGORY=name)"
+echo "  mise run test-golden-diff-single         - Compare single generated vs expected file (use TEST=name)"
+echo "  mise run test-golden-clean               - Clean generated test files"
+echo ""
+echo "🔍 Compiler Operations:"
+echo "  mise run scan             - Scan source files and show tokens"
+echo "  mise run parse            - Parse source files and show AST"
+echo "  mise run compile          - Compile a single source file"
+echo ""
+echo "🌐 Web Development:"
+echo "  mise run web              - Start development web server"
+echo ""
+echo "📝 Quick Examples:"
+echo "  mise run test-golden-list                           # See all test categories"
+echo "  mise run test-golden-category CATEGORY=basic       # Test basic functionality"
+echo "  mise run test-golden-single TEST=views/simple_view # Test one specific file"
+"""
+
+# Legacy aliases for backwards compatibility
+[tasks.test-e2e]
+description = "Legacy alias for test-golden"
+alias = "test-golden"
+
+[tasks.test-e2e-update]
+description = "Legacy alias for test-golden-update"
+alias = "test-golden-update"
