@@ -35,56 +35,61 @@ Sylfie is a Python transpiler written in Go that compiles `.psx` (Python Sylfie 
 
 ## Essential Commands
 
+The project uses `mise` for task management.
+
 ### Building and Running
 ```bash
 # Build the compiler
-make build
+mise run build
 
 # Compile PSX files recursively
-make run
+mise run run
 
 # Watch mode for development
-make watch
+mise run watch
 
 # Start FastAPI dev server
-make web
+mise run web
+
+# View all available tasks
+mise run help
 ```
 
 ### Testing
 ```bash
 # Run all unit tests
-make test
+mise run test
 
 # Run codegen tests specifically
-make test-codegen
+mise run test-codegen
 
 # Run view transformer tests
-make test-view-transformer
+mise run test-view-transformer
 
 # Update view transformer golden files
-make test-view-transformer-update
+mise run test-view-transformer-update
 
 # Run all golden file tests (e2e compiler tests)
-make test-golden
+mise run test-golden
 
 # Update all golden files
-make test-golden-update
+mise run test-golden-update
 
 # Run specific test category
-make test-golden-category CATEGORY=literals
+mise run test-golden-category CATEGORY=literals
 
 # Run single test
-make test-golden-single TEST=literals/string
+mise run test-golden-single TEST=literals/string
 
 # Update single golden file
-UPDATE_GOLDEN=1 go test ./compiler/codegen -run TestLiterals/string
+UPDATE_GOLDEN=1 mise run test-golden-single TEST=literals/string
 
 # View available test categories
-make test-golden-list
+mise run test-golden-list
 
 # Compare generated vs expected files
-make test-golden-diff CATEGORY=literals
-make test-golden-diff-single TEST=literals/string
+mise run test-golden-diff CATEGORY=literals
+mise run test-golden-diff-single TEST=literals/string
 ```
 
 ### CLI Commands
@@ -175,6 +180,87 @@ class HelloWorld(BaseView):
 
 ## Development Workflow
 
+### Working on GitHub Issues
+
+When working on a GitHub issue (e.g., #22), follow these steps:
+
+1. **Fetch the issue details** using GitHub CLI:
+   ```bash
+   gh issue view 22
+   ```
+
+2. **Create a branch** following the naming convention:
+   - For bugs: `bug/issue-22`
+   - For features: `feat/issue-22`
+   - For documentation: `docs/issue-22`
+   ```bash
+   # Example for a bug fix
+   git checkout -b bug/issue-22
+   
+   # Example for a feature
+   git checkout -b feat/issue-22
+   ```
+
+3. **Work on the issue**:
+   - Make incremental commits as you progress
+   - Ensure all existing tests continue to pass
+   - Add new tests if implementing a feature or fixing a bug
+   - Follow the existing code style and patterns
+
+4. **Testing requirements**:
+   ```bash
+   # Run all tests before committing
+   mise run test
+   
+   # Run specific test categories related to your changes
+   mise run test-golden-category CATEGORY=<relevant-category>
+   
+   # Update golden files if output changes are intentional
+   mise run test-golden-update
+   
+   # Debug by running compiler on individual files
+   sylfie compile path/to/test.psx        # See compiled output
+   sylfie scan path/to/test.psx          # See token stream
+   sylfie parse path/to/test.psx         # See AST structure
+   sylfie parse path/to/test.psx -d      # See AST with resolution info
+   ```
+
+5. **Commit guidelines**:
+   - Use conventional commit format: `type(scope): description` or `type: description`
+     - `feat(parser): add support for async views`
+     - `fix(codegen): handle empty set literals correctly`
+     - `docs: update README with mise instructions`
+     - `test(transformers): add tests for slot handling`
+   - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+   - Common scopes: `parser`, `codegen`, `lexer`, `transformer`, `resolver`
+   - Reference the issue number when relevant: `fix(parser): handle nested f-strings (#22)`
+   - Ensure each commit represents a working state
+
+6. **Before pushing**:
+   - Run the full test suite: `mise run test-all`
+   - Verify no existing tests are broken
+   - Check that new tests cover your changes
+   - Run code formatting: `mise run fmt`
+   - Review your changes: `git diff master`
+   - Double-check all modified files make sense for the issue
+
+7. **Creating the Pull Request**:
+   ```bash
+   # Push your branch
+   git push -u origin bug/issue-22
+   
+   # Create PR using GitHub CLI
+   gh pr create --title "fix(parser): handle nested f-strings correctly" \
+                --body "Fixes #22\n\n## Summary\n- Fixed parser to handle nested f-strings\n- Added comprehensive tests\n\n## Test plan\n- Added golden file tests\n- All existing tests pass"
+   ```
+   - Use a meaningful PR title following the commit format
+   - Reference the issue in the PR body (e.g., "Fixes #22")
+   - Include a summary of changes
+   - Describe the test plan
+   - Let GitHub Actions run the full test suite
+
+### General Development Guidelines
+
 1. **Always run tests** before submitting changes
 2. **Update golden files** when changing expected output: `UPDATE_GOLDEN=1`
 3. **Check generated files** in `testdata/generated/` to verify output
@@ -199,7 +285,31 @@ class HelloWorld(BaseView):
 2. Fix the Visit method in codegen.go
 3. Run UPDATE_GOLDEN=1 to update expected output
 4. Verify the generated Python is correct
+
+# When adding tests:
+1. Follow existing test patterns in the relevant _test.go files
+2. Use table-driven tests for multiple test cases
+3. For golden file tests, add input files in testdata/input/
+4. Run the test with UPDATE_GOLDEN=1 to generate expected output
+5. Verify the expected output is correct before committing
 ```
+
+### Testing Best Practices
+
+1. **Unit Tests**: Follow the existing patterns in `*_test.go` files
+   - Use descriptive test names that explain what is being tested
+   - Group related tests using subtests (`t.Run()`)
+   - Use table-driven tests for testing multiple scenarios
+
+2. **Golden File Tests**: For end-to-end compiler tests
+   - Place input `.psx` files in `compiler/testdata/input/<category>/`
+   - Run `mise run test-golden-category-update CATEGORY=<category>` to generate expected output
+   - Always verify the generated output is correct before committing
+
+3. **Test Coverage**: Ensure your changes are covered by tests
+   - Add tests for both success and error cases
+   - Test edge cases and boundary conditions
+   - If fixing a bug, add a test that would have caught the bug
 
 ## File Types
 - `.psx` - Source files with view syntax

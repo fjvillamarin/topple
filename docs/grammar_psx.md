@@ -20,8 +20,9 @@ Key benefits of PSX:
 # Clone and build from source
 git clone https://github.com/yourusername/sylfie.git
 cd sylfie
-make build
-make install
+mise run build
+# Copy binary to PATH or add bin/ to your PATH
+cp bin/sylfie /usr/local/bin/
 ```
 
 ### Your First View

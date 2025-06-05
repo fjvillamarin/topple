@@ -238,44 +238,53 @@ sylfie/
 │   └── codegen/        # Python code generation
 ├── runtime.py          # Python runtime library
 ├── bin/               # Compiled binaries
-└── Makefile          # Build and test commands
+└── .mise.toml         # Task runner configuration
 ```
 
 ### Building from Source
 
 ```bash
-# Requirements: Go 1.23+
+# Requirements: Go 1.23+, mise
+
+# Install mise (if not already installed)
+curl https://mise.run | sh
+
+# Trust the project configuration
+mise trust
 
 # Build the compiler
-make build
+mise run build
 
 # Run unit tests
-make test
+mise run test
 
 # Run all tests including golden file tests
-make test-all
+mise run test-all
 
 # Run specific test categories
-make test-golden-category CATEGORY=views
+mise run test-golden-category CATEGORY=views
 
 # Update golden files after changes
-make test-golden-update
+mise run test-golden-update
 ```
 
 ### Development Commands
 
 ```bash
+# View all available tasks
+mise run help
+
 # Format Go code
-make fmt
+mise run fmt
 
 # Run examples
-make run
+mise run run
 
 # Start watch mode
-make watch
+mise run watch
 
 # View available test categories
-make test-golden-list
+mise run test-golden-list
 ```
 
 ### Contributing
