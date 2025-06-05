@@ -530,6 +530,17 @@ func (s *Scanner) scanPythonToken() {
 			s.addToken(Caret)
 		}
 	case '<':
+		// If we're in a view and could be starting an HTML tag
+		if s.ctx.viewDepth > 0 && s.ctx.mode == PythonMode {
+			// Check if this looks like an HTML tag
+			nextChar := s.peek()
+			if isIdentifierStart(nextChar) || nextChar == '/' {
+				s.ctx.mode = HTMLTagMode
+				s.addToken(TagOpen)
+				return
+			}
+		}
+		// Otherwise, treat as less-than operator
 		if s.match('<') {
 			if s.match('=') {
 				s.addToken(LessLessEqual)
