@@ -1,0 +1,26 @@
+def risky_operation(value):
+    if value < 0:
+        raise ValueError("Negative value not allowed")
+    return value * 2
+
+view ErrorHandlingView(input_value: int):
+    <div>
+        try:
+            result = risky_operation(input_value)
+            <div class="success">
+                <h2>Success!</h2>
+                <p>Result: {result}</p>
+            </div>
+        except ValueError as e:
+            <div class="error">
+                <h2>Error</h2>
+                <p>ValueError: {str(e)}</p>
+            </div>
+        except Exception as e:
+            <div class="error">
+                <h2>Unexpected Error</h2>
+                <p>Error: {str(e)}</p>
+            </div>
+        finally:
+            <p class="footer">Operation completed</p>
+    </div>

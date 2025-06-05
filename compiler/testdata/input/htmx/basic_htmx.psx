@@ -1,0 +1,32 @@
+view HTMXBasic(user_id: int):
+    <div>
+        <h1>HTMX Demo</h1>
+        
+        <button 
+            hx-get="/api/data"
+            hx-target="#content"
+            hx-swap="innerHTML"
+        >
+            Load Data
+        </button>
+        
+        <div 
+            id="content"
+            hx-get="/api/initial"
+            hx-trigger="load"
+        >
+            Loading...
+        </div>
+        
+        <form 
+            hx-post="/api/submit"
+            hx-target="#result"
+            hx-swap="outerHTML"
+        >
+            <input type="hidden" name="user_id" value="{user_id}" />
+            <input type="text" name="message" placeholder="Enter message..." />
+            <button type="submit">Send</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>

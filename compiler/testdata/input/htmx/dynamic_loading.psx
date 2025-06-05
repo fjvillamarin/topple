@@ -1,0 +1,38 @@
+view LazyContent(section_id: str, trigger: str = "revealed"):
+    <div 
+        hx-get=f"/api/sections/{section_id}"
+        hx-trigger="{trigger}"
+        hx-swap="innerHTML"
+        class="lazy-section"
+    >
+        <div class="loading-spinner">
+            <p>Loading {section_id}...</p>
+        </div>
+    </div>
+
+view InfiniteScroll(page: int = 1):
+    <div class="content-section">
+        <h2>Page {page} Content</h2>
+        <p>This is content for page {page}</p>
+    </div>
+    
+    <div 
+        hx-get=f"/api/content?page={page + 1}"
+        hx-trigger="revealed"
+        hx-swap="afterend"
+        class="load-more-trigger"
+    >
+        <span>Loading more...</span>
+    </div>
+
+view DynamicApp():
+    <div>
+        <h1>Dynamic Loading Demo</h1>
+        
+        <LazyContent section_id="featured" trigger="revealed" />
+        <LazyContent section_id="popular" trigger="revealed" />
+        
+        <div class="infinite-content">
+            <InfiniteScroll page={1} />
+        </div>
+    </div>

@@ -59,18 +59,10 @@ func (p *Parser) parameters() (*ast.ParameterList, error) {
 
 			starToken := p.previous()
 
-			// Check for empty star parameter (*,)
+			// Check for empty star parameter (*,) - this is the keyword-only marker
 			if p.match(lexer.Comma) {
-				// Create empty vararg parameter
-				varargParam := &ast.Parameter{
-					IsStar: true,
-					Span:   lexer.Span{Start: starToken.Start(), End: starToken.End()},
-				}
-
-				paramList.Parameters = append(paramList.Parameters, varargParam)
-				paramList.HasVarArg = true
-				paramList.VarArgIndex = len(paramList.Parameters) - 1
-
+				// This is a bare star, marking keyword-only parameters
+				// Don't add it as a parameter, just mark the phase
 				hasStarArg = true
 				paramPhase = 2
 				continue

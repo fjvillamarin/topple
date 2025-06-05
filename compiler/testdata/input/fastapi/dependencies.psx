@@ -1,0 +1,58 @@
+from fastapi import FastAPI, Depends, HTTPException
+from typing import Optional
+
+app = FastAPI()
+
+class Database:
+    def __init__(self):
+        self.users = {
+            1: {"name": "Alice", "email": "alice@example.com"},
+            2: {"name": "Bob", "email": "bob@example.com"}
+        }
+    
+    def get_user(self, user_id: int):
+        return self.users.get(user_id)
+
+def get_database():
+    return Database()
+
+def get_current_user(user_id: int = 1):
+    return {"id": user_id, "name": f"User {user_id}"}
+
+@app.get("/dashboard")
+view Dashboard(
+    current_user: dict = Depends(get_current_user),
+    db: Database = Depends(get_database)
+):
+    <div>
+        <h1>Dashboard</h1>
+        <p>Welcome, {current_user['name']}!</p>
+        <p>User ID: {current_user['id']}</p>
+        
+        <h2>All Users</h2>
+        <ul>
+            for user_id, user in db.users.items():
+                <li>{user['name']} - {user['email']}</li>
+        </ul>
+    </div>
+
+@app.get("/users/{user_id}")
+view UserProfile(
+    user_id: int,
+    db: Database = Depends(get_database)
+):
+    user = db.get_user(user_id)
+    
+    if not user:
+        <div class="error">
+            <h1>User Not Found</h1>
+            <p>User with ID {user_id} does not exist.</p>
+        </div>
+        return
+    
+    <div>
+        <h1>User Profile</h1>
+        <h2>{user['name']}</h2>
+        <p>Email: {user['email']}</p>
+        <p>User ID: {user_id}</p>
+    </div>

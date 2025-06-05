@@ -1,0 +1,8 @@
+view UnclosedTags():
+    <div>
+        <h1>Missing closing tags
+        <p>This paragraph is not closed
+        <div>
+            <span>Nested unclosed elements
+        # Missing </div>, </p>, </h1>
+    # Missing </div>

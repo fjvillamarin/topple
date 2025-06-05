@@ -1,0 +1,30 @@
+view Layout():
+    <div class="layout">
+        <header>
+            <slot name="header">
+                <h1>Default Header</h1>
+            </slot>
+        </header>
+        <main>
+            <slot>
+                <p>Default content</p>
+            </slot>
+        </main>
+        <footer>
+            <slot name="footer">
+                <p>Default footer</p>
+            </slot>
+        </footer>
+    </div>
+
+view App():
+    <Layout>
+        <h1 slot="header">Custom Header</h1>
+        <div>
+            <p>This is the main content</p>
+            <p>Multiple paragraphs</p>
+        </div>
+        <div slot="footer">
+            <p>&copy; 2024 My App</p>
+        </div>
+    </Layout>

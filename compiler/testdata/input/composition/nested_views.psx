@@ -1,0 +1,27 @@
+view Icon(name: str):
+    <i class="icon icon-{name}"></i>
+
+view Button(text: str, icon: str = ""):
+    <button>
+        if icon:
+            <Icon name={icon} />
+        <span>{text}</span>
+    </button>
+
+view Toolbar(title: str):
+    <div class="toolbar">
+        <h2>{title}</h2>
+        <div class="actions">
+            <Button text="Save" icon="save" />
+            <Button text="Edit" icon="edit" />
+            <Button text="Delete" icon="trash" />
+        </div>
+    </div>
+
+view Page():
+    <div class="page">
+        <Toolbar title="Document Editor" />
+        <div class="content">
+            <p>Page content</p>
+        </div>
+    </div>

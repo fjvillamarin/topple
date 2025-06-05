@@ -1,0 +1,12 @@
+class ConditionalView(BaseView):
+    def __init__(self, show_message, message):
+        super().__init__()
+        self.show_message = show_message
+        self.message = message
+
+    def _render(self) -> Element:
+        if show_message:
+            el("div", "")
+        else:
+            el("div", escape("No message"))
+

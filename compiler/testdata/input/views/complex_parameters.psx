@@ -1,0 +1,17 @@
+from typing import List, Optional, Dict
+
+view ComplexView(
+    title: str,
+    items: List[str] = [],
+    metadata: Optional[Dict[str, str]] = None,
+    *args,
+    **kwargs
+):
+    <div>
+        <h1>{title}</h1>
+        <p>Items count: {len(items)}</p>
+        if metadata:
+            <p>Has metadata: {bool(metadata)}</p>
+        <p>Args: {len(args)}</p>
+        <p>Kwargs: {len(kwargs)}</p>
+    </div>

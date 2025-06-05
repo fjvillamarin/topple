@@ -1,0 +1,17 @@
+view EarlyReturnView(items: list, show_empty: bool = True):
+    if not items and not show_empty:
+        <div class="empty-message">No content to display</div>
+        return
+        
+    if not items:
+        <div class="empty-state">
+            <h2>No items found</h2>
+            <p>Try adding some items</p>
+        </div>
+        return
+    
+    <div class="items-list">
+        <h2>Items ({len(items)})</h2>
+        for item in items:
+            <div class="item">{item}</div>
+    </div>

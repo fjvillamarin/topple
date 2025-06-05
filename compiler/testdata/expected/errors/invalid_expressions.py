@@ -1,0 +1,1 @@
+COMPILATION_ERRORS: [Error: string literal cannot span newline at position L12:37]

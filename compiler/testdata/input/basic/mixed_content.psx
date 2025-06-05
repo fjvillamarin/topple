@@ -1,0 +1,16 @@
+from datetime import datetime
+
+count = 0
+
+def increment():
+    global count
+    count += 1
+    return count
+
+view Counter():
+    current_time = datetime.now()
+    <div>
+        <h1>Counter App</h1>
+        <p>Current count: {increment()}</p>
+        <p>Time: {current_time}</p>
+    </div>

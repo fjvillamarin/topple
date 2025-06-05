@@ -1,0 +1,29 @@
+view Panel(title: str):
+    <div class="panel">
+        <div class="panel-header">
+            <h3>{title}</h3>
+            if has_slot("actions"):
+                <div class="panel-actions">
+                    <slot name="actions" />
+                </div>
+        </div>
+        <div class="panel-body">
+            <slot />
+        </div>
+        
+        if has_slot("footer"):
+            <div class="panel-footer">
+                <slot name="footer" />
+            </div>
+        else:
+            <div class="panel-footer text-muted">
+                <p>No footer content provided.</p>
+            </div>
+    </div>
+
+view Example():
+    <Panel title="My Panel">
+        <p>This is the main content</p>
+        <button slot="actions">Edit</button>
+        <p slot="footer">Custom footer</p>
+    </Panel>

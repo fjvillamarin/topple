@@ -1,0 +1,2 @@
+view HelloWorld():
+    <div>Hello World</div>

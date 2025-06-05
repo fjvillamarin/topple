@@ -1,0 +1,12 @@
+view SyntaxError():
+    <div>
+        <h1>This view has syntax errors</h1>
+        # Missing closing tag
+        <p>Unclosed paragraph
+        
+        # Invalid Python syntax
+        x = 
+        
+        # Unmatched braces
+        <span>{incomplete_expression</span>
+    </div>

@@ -1,0 +1,37 @@
+view SearchInterface():
+    <div class="search-container">
+        <h1>Live Search</h1>
+        
+        <input 
+            type="search"
+            name="q"
+            placeholder="Search products..."
+            hx-get="/api/search"
+            hx-trigger="keyup changed delay:500ms, search"
+            hx-target="#search-results"
+            hx-indicator=".search-spinner"
+        />
+        
+        <div class="search-spinner" style="display:none;">
+            <span>Searching...</span>
+        </div>
+        
+        <div id="search-results">
+            <p class="placeholder">Start typing to search...</p>
+        </div>
+        
+        <div class="filters">
+            <select 
+                name="category"
+                hx-get="/api/search"
+                hx-trigger="change"
+                hx-target="#search-results"
+                hx-include="[name='q']"
+            >
+                <option value="">All Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="books">Books</option>
+                <option value="clothing">Clothing</option>
+            </select>
+        </div>
+    </div>

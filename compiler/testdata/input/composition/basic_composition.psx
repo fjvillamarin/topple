@@ -1,0 +1,22 @@
+view Button(text: str, variant: str = "primary"):
+    <button class="btn btn-{variant}">
+        {text}
+    </button>
+
+view Card(title: str):
+    <div class="card">
+        <div class="card-header">
+            <h3>{title}</h3>
+        </div>
+        <div class="card-body">
+            <p>Card content goes here</p>
+        </div>
+    </div>
+
+view App():
+    <div class="app">
+        <h1>My Application</h1>
+        <Card title="Welcome" />
+        <Button text="Click me" variant="success" />
+        <Button text="Cancel" variant="danger" />
+    </div>

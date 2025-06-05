@@ -1,0 +1,13 @@
+view InvalidExpressions():
+    <div>
+        <h1>{undefined_variable}</h1>
+        <p>{1 / 0}</p>  # Division by zero
+        <span>{missing.attribute}</span>
+        <div>{function_that_does_not_exist()}</div>
+        
+        # Invalid attribute expression
+        <button disabled={undefined_var}>Click me</button>
+        
+        # Invalid f-string
+        <p>f"Invalid {unclosed_brace"</p>
+    </div>

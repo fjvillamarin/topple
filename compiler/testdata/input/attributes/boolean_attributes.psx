@@ -1,0 +1,20 @@
+view BooleanAttributes(is_editable: bool = False, is_required: bool = True):
+    <form>
+        <input 
+            type="text" 
+            readonly={not is_editable}
+            required={is_required}
+            disabled={False}
+            autofocus={True}
+        />
+        <input 
+            type="checkbox" 
+            checked={is_editable}
+        />
+        <button 
+            type="submit"
+            disabled={not is_editable}
+        >
+            Submit
+        </button>
+    </form>
