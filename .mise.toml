@@ -16,7 +16,7 @@ run = "go run ./cmd/... compile examples/ -r -d"
 
 [tasks.watch]
 description = "Watch files for changes and recompile"
-run = "go run ./cmd/... watch examples/sylfie/01_hello_world/ -d"
+run = "go run ./cmd/... watch examples/ -r -d"
 
 [tasks.build]
 description = "Build the sylfie binary"
