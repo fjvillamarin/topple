@@ -95,8 +95,7 @@ func (p *Parser) viewStatement() (ast.Stmt, error) {
     
     if p.match(lexer.Async) {
         isAsync = true
-        startToken = p.previous()
-        _, err := p.consume(lexer.View, "expected 'view' after 'async'")
+        startToken, err := p.consume(lexer.View, "expected 'view' after 'async'")
         if err != nil {
             return nil, err
         }
