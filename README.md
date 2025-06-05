@@ -1,35 +1,318 @@
-# Biscuit: Pythonic Templating for Modern Web UIs
+# Biscuit: Python-Powered Web Templating Language
 
-Biscuit is an innovative templating language that seamlessly blends the power and familiarity of Python with standard HTML markup. It's designed for developers who want to leverage Python's full programming capabilities to create dynamic and interactive user interfaces, offering a development experience conceptually similar to JSX/TSX in the JavaScript world.
+Biscuit is a modern templating language that seamlessly blends Python's power with HTML markup. It compiles `.psx` (Python Syntax eXtended) files into pure Python code, enabling developers to build dynamic web UIs using familiar Python constructs.
 
-With Biscuit, you can write expressive, reusable UI components (called "views") using Python logic directly within your HTML structures. This allows for clean separation of concerns while keeping related display logic and markup colocated.
+## Key Features
 
-## Key Features & Benefits
+- **Full Python Integration**: Use all Python features directly in templates - variables, loops, conditionals, functions, classes, comprehensions, and more
+- **Component-Based Architecture**: Build reusable UI components called "views" with parameters and composition support
+- **Smart Caching**: Built-in render caching prevents unnecessary re-rendering for better performance
+- **Type Safety**: Full support for Python type hints and annotations
+- **Modern Web Framework Support**: Designed for seamless integration with FastAPI, Flask, and other Python web frameworks
+- **HTMX Ready**: First-class support for building interactive UIs with HTMX attributes
+- **Fragment Support**: Render multiple root elements without wrapper divs
 
-*   **Python-Powered Templating**: Use all of Python's features directly in your templates – variables, loops, conditionals, functions, classes, and more. No need to learn a separate, restricted templating DSL.
-*   **Reusable UI Components (Views)**: Build your UI as a collection of modular, composable views. Pass data as parameters and manage state with Python's natural constructs.
-*   **Seamless FastAPI Integration**: Biscuit is designed to work effortlessly with FastAPI. Views can be returned directly from your route handlers, simplifying the development of full-stack Python web applications.
-*   **First-Class HTMX Support**: Create rich, interactive user experiences with minimal JavaScript. Biscuit provides direct support for HTMX attributes, making it easy to build modern, dynamic UIs.
-*   **Vue-Inspired Slot System**: Enjoy flexible and powerful layout capabilities with a slot system inspired by Vue.js, allowing for sophisticated content injection and component composition.
+## Installation
 
-## Quick Example
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/biscuit.git
+cd biscuit
 
-Here's a taste of what a Biscuit view looks like:
+# Build the Biscuit compiler (requires Go 1.23+)
+make build
+
+# Copy the binary to your PATH
+cp bin/biscuit /usr/local/bin/
+# Or add bin/ to your PATH
+export PATH="$PATH:$(pwd)/bin"
+```
+
+## Quick Start
+
+### 1. Create a Biscuit View
+
+Create a file named `hello.psx`:
 
 ```python
-# hello_view.bsct
-view Greeting(name: str = "World"):
+view HelloWorld(name: str = "World"):
     <div class="greeting">
         <h1>Hello, {name}!</h1>
         if len(name) > 10:
-            <p>That's a long name!</p>
+            <p>That's quite a long name!</p>
         else:
             <p>Nice to meet you.</p>
+        
+        <ul>
+            for i in range(3):
+                <li>Item {i + 1}</li>
+        </ul>
     </div>
 ```
 
-## Learn More
+### 2. Compile to Python
 
-For a comprehensive guide to the Biscuit language, its syntax, features, and advanced usage, please see the [Biscuit Language Grammar](grammar_biscuit.md) documentation.
+```bash
+biscuit compile hello.psx
+```
 
-Dive into the `examples/` directory in this repository to see Biscuit in action with various use cases, including FastAPI integration and HTMX examples.
+This generates `hello.py` with a pure Python class that can be imported and used in any Python application.
+
+### 3. Use in Your Application
+
+```python
+from hello import HelloWorld
+
+# Create an instance and render
+view = HelloWorld(name="Alice")
+html = view.render()
+print(html)
+```
+
+### Runtime Dependencies
+
+The generated Python code requires the `runtime.py` file from the Biscuit project. Copy it to your project or ensure it's in your Python path.
+
+## CLI Usage
+
+The Biscuit compiler provides several commands:
+
+```bash
+# Compile a single file
+biscuit compile input.psx
+
+# Compile with custom output
+biscuit compile input.psx -o output.py
+
+# Compile directory recursively
+biscuit compile src/ -r
+
+# Watch mode for development
+biscuit watch src/
+
+# Debug: show tokens
+biscuit scan input.psx
+
+# Debug: show AST
+biscuit parse input.psx
+
+# Debug: show with resolution info
+biscuit parse input.psx -d
+```
+
+## Language Features
+
+### Views
+
+Views are the core building blocks in Biscuit:
+
+```python
+view UserCard(user: User, show_email: bool = False):
+    <div class="user-card">
+        <h3>{user.name}</h3>
+        if show_email:
+            <p>{user.email}</p>
+    </div>
+```
+
+### Control Flow
+
+Use Python's control flow directly:
+
+```python
+view TodoList(todos: list[Todo]):
+    <ul>
+        for todo in todos:
+            <li class={"done" if todo.completed else ""}>
+                {todo.title}
+            </li>
+        else:
+            <li>No todos yet!</li>
+    </ul>
+```
+
+### Composition and Slots
+
+Compose views within other views using the slot system:
+
+```python
+view Page(title: str, *, children=None):
+    <html>
+        <head><title>{title}</title></head>
+        <body>
+            <Header />
+            <main>
+                {render_child(children)}
+            </main>
+            <Footer />
+        </body>
+    </html>
+
+view HomePage():
+    <Page title="Home">
+        <h1>Welcome!</h1>
+        <UserCard user={current_user} />
+    </Page>
+```
+
+### Python Integration
+
+Use any Python expression or statement:
+
+```python
+view DataTable(data: list[dict]):
+    data_frame = pd.DataFrame(data)
+    stats = data_frame.describe()
+    
+    <div class="data-table">
+        <h3>Data Summary</h3>
+        <pre>{stats.to_string()}</pre>
+        
+        <table>
+            for row in data_frame.itertuples():
+                <tr>
+                    for value in row[1:]:
+                        <td>{value}</td>
+                </tr>
+        </table>
+    </div>
+```
+
+## FastAPI Integration
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from my_views import UserProfile
+
+app = FastAPI()
+
+@app.get("/user/{user_id}", response_class=HTMLResponse)
+async def get_user(user_id: int):
+    user = await fetch_user(user_id)
+    view = UserProfile(user=user)
+    return view.render()
+```
+
+## HTMX Support
+
+```python
+view SearchBox():
+    <div>
+        <input 
+            type="search" 
+            name="q"
+            hx-get="/search"
+            hx-trigger="keyup changed delay:500ms"
+            hx-target="#results"
+        />
+        <div id="results"></div>
+    </div>
+```
+
+## Architecture
+
+Biscuit follows a multi-stage compilation process:
+
+1. **Lexical Analysis**: Tokenizes `.psx` files into a stream of tokens
+2. **Parsing**: Builds an Abstract Syntax Tree (AST) from tokens  
+3. **Resolution**: Analyzes variable scopes and references
+4. **Transformation**: Converts Biscuit-specific constructs (views, HTML elements) to Python AST
+5. **Code Generation**: Outputs formatted Python code
+
+The compiler is written in Go for performance and reliability.
+
+## Development
+
+### Project Structure
+
+```
+biscuit/
+├── cmd/                  # CLI commands (compile, watch, scan, parse)
+├── compiler/            # Core compiler implementation
+│   ├── ast/            # AST node definitions
+│   ├── lexer/          # Tokenization
+│   ├── parser/         # AST construction
+│   ├── resolver/       # Scope analysis
+│   ├── transformers/   # View to Python AST transformation
+│   └── codegen/        # Python code generation
+├── runtime.py          # Python runtime library
+├── bin/               # Compiled binaries
+└── Makefile          # Build and test commands
+```
+
+### Building from Source
+
+```bash
+# Requirements: Go 1.23+
+
+# Build the compiler
+make build
+
+# Run unit tests
+make test
+
+# Run all tests including golden file tests
+make test-all
+
+# Run specific test categories
+make test-golden-category CATEGORY=views
+
+# Update golden files after changes
+make test-golden-update
+```
+
+### Development Commands
+
+```bash
+# Format Go code
+make fmt
+
+# Run examples
+make run
+
+# Start watch mode
+make watch
+
+# View available test categories
+make test-golden-list
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Write tests for your changes
+4. Ensure all tests pass
+5. Submit a pull request
+
+## Current Status
+
+Biscuit is in active development. Core features are implemented and working:
+
+- ✅ Full Python syntax support
+- ✅ View compilation to Python classes
+- ✅ HTML element generation
+- ✅ Control flow (if/for/while/match)
+- ✅ Expression interpolation
+- ✅ Smart render caching
+- ✅ Fragment support
+- ✅ Comprehensive test suite
+
+### Known Limitations
+
+- Generated code requires the `runtime.py` file
+- Limited error recovery during parsing
+- No source maps for debugging
+
+## License
+
+[License information to be added]
+
+## Documentation
+
+For more detailed information:
+
+- [CLAUDE.md](CLAUDE.md) - Development guide for AI assistants
+- Example code in `compiler/testdata/` directory
+- Test categories showcase various language features
