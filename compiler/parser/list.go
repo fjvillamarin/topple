@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 func (p *Parser) list() (ast.Expr, error) {

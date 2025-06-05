@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // forIfClauses parses one or more for_if_clause according to the grammar:

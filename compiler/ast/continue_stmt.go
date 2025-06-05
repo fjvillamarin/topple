@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/lexer"
 )
 
 // ContinueStmt represents a 'continue' statement.

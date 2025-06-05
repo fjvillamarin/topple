@@ -5,12 +5,12 @@ VERSION := 0.1.0
 
 .PHONY: help
 help:
-	@echo "🚀 Biscuit Compiler - Available Make Targets"
+	@echo "🚀 Sylfie Compiler - Available Make Targets"
 	@echo ""
 	@echo "🔨 Development:"
 	@echo "  run              - Compile and run examples recursively"
 	@echo "  watch            - Watch files for changes and recompile"
-	@echo "  build            - Build the biscuit binary"
+	@echo "  build            - Build the sylfie binary"
 	@echo "  fmt              - Format Go code"
 	@echo ""
 	@echo "🧪 Testing:"
@@ -70,26 +70,26 @@ test-view-transformer-update:
 
 .PHONY: watch
 watch:
-	go run ./cmd/... watch examples/biscuit/01_hello_world/ -d
+	go run ./cmd/... watch examples/sylfie/01_hello_world/ -d
 
 .PHONY: scan
 scan:
-	go run ./cmd/... scan examples/biscuit/ -d -w -r
+	go run ./cmd/... scan examples/sylfie/ -d -w -r
 
 .PHONY: parse
 parse:
-	go run ./cmd/... parse examples/biscuit/ -d -w -r
+	go run ./cmd/... parse examples/sylfie/ -d -w -r
 
 .PHONY: compile
 compile:
-	go run ./cmd/... compile examples/biscuit/01_hello_world/01_hello_world.psx -d -r
+	go run ./cmd/... compile examples/sylfie/01_hello_world/01_hello_world.psx -d -r
 
 .PHONY: web
 web:
-	poetry run uvicorn examples.biscuit.01_hello_world.01_hello_world:app --reload
+	poetry run uvicorn examples.sylfie.01_hello_world.01_hello_world:app --reload
 
 build:
-	go build -ldflags="-X 'main.Version=$(VERSION)'" -o bin/biscuit ./cmd/...
+	go build -ldflags="-X 'main.Version=$(VERSION)'" -o bin/sylfie ./cmd/...
 
 .PHONY: fmt	
 fmt:

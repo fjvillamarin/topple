@@ -1,6 +1,6 @@
 # View Transformer Tests
 
-This directory contains tests for the Biscuit view transformer that follows the same pattern as the codegen tests.
+This directory contains tests for the Sylfie view transformer that follows the same pattern as the codegen tests.
 
 ## Test Structure
 
@@ -35,7 +35,7 @@ go test -v -run TestBasicViewTransformation
 ```go
 package category
 
-import "biscuit/compiler/ast"
+import "sylfie/compiler/ast"
 
 func GetAST() ast.Node {
     return &ast.ViewStmt{

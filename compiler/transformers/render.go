@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // transformViewBody transforms the view body statements into _render method statements

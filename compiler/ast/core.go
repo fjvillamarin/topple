@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/lexer"
 )
 
 // Node is the base interface for all AST nodes.

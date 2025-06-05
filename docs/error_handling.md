@@ -1,10 +1,10 @@
-# Biscuit Compiler Error Handling
+# Sylfie Compiler Error Handling
 
-This document describes how the Biscuit compiler handles and reports errors throughout the compilation pipeline.
+This document describes how the Sylfie compiler handles and reports errors throughout the compilation pipeline.
 
 ## Error Philosophy
 
-The Biscuit compiler follows these principles for error handling:
+The Sylfie compiler follows these principles for error handling:
 
 1. **Clear and Actionable**: Error messages should clearly explain what went wrong and how to fix it
 2. **Precise Location**: Errors include exact file, line, and column information
@@ -287,7 +287,7 @@ type ResolverError struct {
 ### Verbose Mode
 
 ```bash
-biscuit compile app.psx --debug
+sylfie compile app.psx --debug
 ```
 
 Shows additional information:

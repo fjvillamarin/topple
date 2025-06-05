@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/lexer"
 	"fmt"
 )
 

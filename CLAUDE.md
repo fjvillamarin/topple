@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Biscuit is a Python transpiler written in Go that compiles `.psx` (Python Syntax eXtended) files to standard Python. It allows developers to write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
+Sylfie is a Python transpiler written in Go that compiles `.psx` (Python Sylfie eXtension) files to standard Python. It allows developers to write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
 
 **Key Concepts:**
 - Views are components that compile to Python classes inheriting from `BaseView`
@@ -90,25 +90,25 @@ make test-golden-diff-single TEST=literals/string
 ### CLI Commands
 ```bash
 # Compile a PSX file
-biscuit compile file.psx
+sylfie compile file.psx
 
 # Compile with custom output
-biscuit compile file.psx -o output.py
+sylfie compile file.psx -o output.py
 
 # Compile directory recursively
-biscuit compile src/ -r
+sylfie compile src/ -r
 
 # Watch for changes
-biscuit watch src/
+sylfie watch src/
 
 # Debug: show tokens
-biscuit scan file.psx
+sylfie scan file.psx
 
 # Debug: show AST
-biscuit parse file.psx
+sylfie parse file.psx
 
 # Debug: show AST with resolution info
-biscuit parse file.psx -d
+sylfie parse file.psx -d
 ```
 
 ## Code Generation Standards
@@ -213,7 +213,7 @@ class HelloWorld(BaseView):
 compiler/
 ├── ast/          # AST node definitions
 ├── lexer/        # Tokenization (scanner.go, token.go)
-├── parser/       # Parsing logic for all Python/Biscuit constructs
+├── parser/       # Parsing logic for all Python/PSX constructs
 ├── resolver/     # Name resolution and scope analysis
 ├── transformers/ # View → Python class transformation
 ├── codegen/      # Python code generation

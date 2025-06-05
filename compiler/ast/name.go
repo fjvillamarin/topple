@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/lexer"
 )
 
 // Name represents an identifier expression.

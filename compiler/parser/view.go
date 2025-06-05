@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // viewStatement parses a view statement according to the grammar:

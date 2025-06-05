@@ -1,6 +1,6 @@
-# Biscuit: Python-Powered Web Templating Language
+# Sylfie: Python-Powered Web Templating Language
 
-Biscuit is a modern templating language that seamlessly blends Python's power with HTML markup. It compiles `.psx` (Python Syntax eXtended) files into pure Python code, enabling developers to build dynamic web UIs using familiar Python constructs.
+Sylfie is a modern templating language that seamlessly blends Python's power with HTML markup. It compiles `.psx` (Python Sylfie eXtension) files into pure Python code, enabling developers to build dynamic web UIs using familiar Python constructs.
 
 ## Key Features
 
@@ -16,21 +16,21 @@ Biscuit is a modern templating language that seamlessly blends Python's power wi
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/biscuit.git
-cd biscuit
+git clone https://github.com/yourusername/sylfie.git
+cd sylfie
 
-# Build the Biscuit compiler (requires Go 1.23+)
+# Build the Sylfie compiler (requires Go 1.23+)
 make build
 
 # Copy the binary to your PATH
-cp bin/biscuit /usr/local/bin/
+cp bin/sylfie /usr/local/bin/
 # Or add bin/ to your PATH
 export PATH="$PATH:$(pwd)/bin"
 ```
 
 ## Quick Start
 
-### 1. Create a Biscuit View
+### 1. Create a PSX View
 
 Create a file named `hello.psx`:
 
@@ -53,7 +53,7 @@ view HelloWorld(name: str = "World"):
 ### 2. Compile to Python
 
 ```bash
-biscuit compile hello.psx
+sylfie compile hello.psx
 ```
 
 This generates `hello.py` with a pure Python class that can be imported and used in any Python application.
@@ -71,40 +71,40 @@ print(html)
 
 ### Runtime Dependencies
 
-The generated Python code requires the `runtime.py` file from the Biscuit project. Copy it to your project or ensure it's in your Python path.
+The generated Python code requires the `runtime.py` file from the Sylfie project. Copy it to your project or ensure it's in your Python path.
 
 ## CLI Usage
 
-The Biscuit compiler provides several commands:
+The Sylfie compiler provides several commands:
 
 ```bash
 # Compile a single file
-biscuit compile input.psx
+sylfie compile input.psx
 
 # Compile with custom output
-biscuit compile input.psx -o output.py
+sylfie compile input.psx -o output.py
 
 # Compile directory recursively
-biscuit compile src/ -r
+sylfie compile src/ -r
 
 # Watch mode for development
-biscuit watch src/
+sylfie watch src/
 
 # Debug: show tokens
-biscuit scan input.psx
+sylfie scan input.psx
 
 # Debug: show AST
-biscuit parse input.psx
+sylfie parse input.psx
 
 # Debug: show with resolution info
-biscuit parse input.psx -d
+sylfie parse input.psx -d
 ```
 
 ## Language Features
 
 ### Views
 
-Views are the core building blocks in Biscuit:
+Views are the core building blocks in PSX:
 
 ```python
 view UserCard(user: User, show_email: bool = False):
@@ -212,12 +212,12 @@ view SearchBox():
 
 ## Architecture
 
-Biscuit follows a multi-stage compilation process:
+Sylfie follows a multi-stage compilation process:
 
 1. **Lexical Analysis**: Tokenizes `.psx` files into a stream of tokens
 2. **Parsing**: Builds an Abstract Syntax Tree (AST) from tokens  
 3. **Resolution**: Analyzes variable scopes and references
-4. **Transformation**: Converts Biscuit-specific constructs (views, HTML elements) to Python AST
+4. **Transformation**: Converts PSX-specific constructs (views, HTML elements) to Python AST
 5. **Code Generation**: Outputs formatted Python code
 
 The compiler is written in Go for performance and reliability.
@@ -227,7 +227,7 @@ The compiler is written in Go for performance and reliability.
 ### Project Structure
 
 ```
-biscuit/
+sylfie/
 ├── cmd/                  # CLI commands (compile, watch, scan, parse)
 ├── compiler/            # Core compiler implementation
 │   ├── ast/            # AST node definitions
@@ -288,7 +288,7 @@ make test-golden-list
 
 ## Current Status
 
-Biscuit is in active development. Core features are implemented and working:
+Sylfie is in active development. Core features are implemented and working:
 
 - ✅ Full Python syntax support
 - ✅ View compilation to Python classes

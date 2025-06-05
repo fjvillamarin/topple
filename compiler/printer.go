@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // ASTPrinter implements a visitor that prints the AST in a tree-sitter-like format.

@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // isViewParameter checks if a name is a view parameter using the resolution table

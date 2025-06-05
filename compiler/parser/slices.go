@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // slice parses a single slice element as per the grammar:

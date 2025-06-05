@@ -1,7 +1,7 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
+	"sylfie/compiler/ast"
 )
 
 // transformExpression recursively transforms expressions, converting view parameters to self attributes

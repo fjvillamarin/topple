@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"biscuit/compiler"
-	"biscuit/internal/filesystem"
+	"sylfie/compiler"
+	"sylfie/internal/filesystem"
 )
 
 // CompileCmd defines the "compile" command.

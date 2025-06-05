@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // arguments parses function call arguments according to the grammar:

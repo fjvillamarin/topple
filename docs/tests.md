@@ -1,4 +1,4 @@
-# Biscuit Compiler Testing Strategy
+# Sylfie Compiler Testing Strategy
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@
 
 ## Overview
 
-The Biscuit compiler project employs a comprehensive, multi-layered testing strategy that demonstrates a **quality-first philosophy**. With **40+ test files** covering different aspects of the compilation pipeline, the testing approach emphasizes thorough coverage, clear documentation through tests, and automated validation.
+The Sylfie compiler project employs a comprehensive, multi-layered testing strategy that demonstrates a **quality-first philosophy**. With **40+ test files** covering different aspects of the compilation pipeline, the testing approach emphasizes thorough coverage, clear documentation through tests, and automated validation.
 
 ### Testing Philosophy
 
@@ -109,7 +109,7 @@ func TestAdvancedFStringFeatures(t *testing.T) {
 
 ### 2. Parsing - EXCELLENT ✅
 
-**Coverage**: Exhaustive AST generation testing for all Python and Biscuit constructs.
+**Coverage**: Exhaustive AST generation testing for all Python and Sylfie constructs.
 
 #### Specialized Test Files:
 - `view_test.go` (597 lines) - Comprehensive view parsing
@@ -155,7 +155,7 @@ func TestViewParsing(t *testing.T) {
 
 #### Strengths:
 - **Complete Language Coverage**: Every Python construct tested
-- **Biscuit Extensions**: Views, HTML elements, slots thoroughly covered
+- **Sylfie Extensions**: Views, HTML elements, slots thoroughly covered
 - **Error Scenarios**: Malformed input and recovery testing
 - **Edge Cases**: Complex nesting, unusual syntax combinations
 - **Helper Functions**: Rich validation utilities
@@ -170,7 +170,7 @@ func TestViewParsing(t *testing.T) {
 - **LEGB Scoping**: Local, Enclosing, Global, Built-in resolution
 - **Variable Lifecycle**: Definition, usage, and scope tracking
 - **Function Scoping**: Parameter binding and closure analysis
-- **View Parameters**: Biscuit-specific parameter resolution
+- **View Parameters**: Sylfie-specific parameter resolution
 - **Error Detection**: Undefined variables, invalid scope declarations
 
 #### Test Categories:
@@ -310,7 +310,7 @@ make test-golden-single TEST=basic/hello_world  # Single test
 ### Test File Organization
 
 ```
-biscuit/
+sylfie/
 ├── compiler/
 │   ├── lexer/
 │   │   ├── scanner_test.go
@@ -764,7 +764,7 @@ git commit -m "Update golden files for feature X"
 
 ## Conclusion
 
-The Biscuit compiler project demonstrates an **exemplary testing strategy** that prioritizes quality, maintainability, and comprehensive coverage. The testing approach successfully combines:
+The Sylfie compiler project demonstrates an **exemplary testing strategy** that prioritizes quality, maintainability, and comprehensive coverage. The testing approach successfully combines:
 
 - **Thorough unit testing** with excellent patterns and helpers
 - **Sophisticated E2E testing** through the golden file system

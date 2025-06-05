@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // createInitMethod creates the __init__ method for the view class

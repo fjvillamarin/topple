@@ -1,6 +1,6 @@
-# Biscuit Runtime System
+# Sylfie Runtime System
 
-The Biscuit runtime (`runtime.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
+The Sylfie runtime (`runtime.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
 
 ## Runtime Architecture
 
@@ -517,6 +517,6 @@ AttributeError: 'NoneType' object has no attribute 'name'
 
 ## See Also
 
-- [Language Grammar](grammar_biscuit.md) - PSX syntax reference
+- [Language Grammar](grammar_sylfie.md) - PSX syntax reference
 - [Architecture Guide](architecture.md) - Compiler internals
 - [Examples](../examples/) - Example applications

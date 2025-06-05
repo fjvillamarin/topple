@@ -26,7 +26,7 @@ type Globals struct {
 	Debug     bool        `help:"Enable debug logging" short:"d"`
 	Version   VersionFlag `name:"version" help:"Print version information and quit"`
 	Recursive bool        `help:"Process directories recursively" short:"r"`
-	TSLib     string      `help:"Path to the Tree-sitter library binary" short:"t" default:"./tree-sitter-biscuit/biscuit.dylib"`
+	TSLib     string      `help:"Path to the Tree-sitter library binary" short:"t" default:"./tree-sitter-sylfie/sylfie.dylib"`
 }
 
 // CLI holds the root command structure including global flags
@@ -34,7 +34,7 @@ type CLI struct {
 	Globals
 
 	// Commands
-	Compile CompileCmd `cmd:"" help:"Compile Biscuit files to Python"`
+	Compile CompileCmd `cmd:"" help:"Compile PSX files to Python"`
 	Watch   WatchCmd   `cmd:"" help:"Watch for changes and compile on the fly"`
 	Scan    ScanCmd    `cmd:"" help:"Run the scanner and show/output tokens"`
 	Parse   ParseCmd   `cmd:"" help:"Parse source files and show/output AST"`
@@ -52,8 +52,8 @@ func main() {
 
 	// Parse the command line arguments
 	kCtx := kong.Parse(&cli,
-		kong.Name("biscuit"),
-		kong.Description("Biscuit Compiler CLI - compile Biscuit views into Python code"),
+		kong.Name("sylfie"),
+		kong.Description("Sylfie Compiler CLI - compile PSX views into Python code"),
 		kong.UsageOnError(),
 		kong.Vars{
 			"version": "v0.1.0",

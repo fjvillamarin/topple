@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"biscuit/compiler"
-	"biscuit/internal/filesystem"
+	"sylfie/compiler"
+	"sylfie/internal/filesystem"
 )
 
 // WatchCmd defines the "watch" command.
