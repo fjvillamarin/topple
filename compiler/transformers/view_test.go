@@ -1,10 +1,10 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/codegen"
-	"biscuit/compiler/lexer"
-	"biscuit/compiler/resolver"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/codegen"
+	"sylfie/compiler/lexer"
+	"sylfie/compiler/resolver"
 	"os"
 	"path/filepath"
 	"strings"

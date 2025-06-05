@@ -1,8 +1,8 @@
 package codegen
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 	"os"
 	"path/filepath"
 	"strings"

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"biscuit/compiler"
-	"biscuit/internal/filesystem"
+	"sylfie/compiler"
+	"sylfie/internal/filesystem"
 )
 
 // ParseCmd defines the "parse" command which runs the scanner and parser

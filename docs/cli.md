@@ -1,8 +1,8 @@
-# Biscuit CLI Reference
+# Sylfie CLI Reference
 
 ## Overview
 
-The Biscuit compiler provides a command-line interface for transforming `.psx` (Python Syntax eXtended) files into standard Python code. It offers various commands for compilation, development, and debugging.
+The Sylfie compiler provides a command-line interface for transforming `.psx` (Python Syntax eXtended) files into standard Python code. It offers various commands for compilation, development, and debugging.
 
 ## Installation
 
@@ -17,7 +17,7 @@ make install
 ## Command Structure
 
 ```bash
-biscuit <command> [options] [arguments]
+sylfie <command> [options] [arguments]
 ```
 
 ## Commands
@@ -27,7 +27,7 @@ biscuit <command> [options] [arguments]
 Compile PSX files to Python.
 
 ```bash
-biscuit compile [options] <input>
+sylfie compile [options] <input>
 ```
 
 **Arguments:**
@@ -41,16 +41,16 @@ biscuit compile [options] <input>
 **Examples:**
 ```bash
 # Compile a single file
-biscuit compile hello.psx
+sylfie compile hello.psx
 
 # Compile to specific output
-biscuit compile hello.psx -o hello.py
+sylfie compile hello.psx -o hello.py
 
 # Compile directory recursively
-biscuit compile src/ -r
+sylfie compile src/ -r
 
 # Compile with custom output directory
-biscuit compile src/ -o dist/ -r
+sylfie compile src/ -o dist/ -r
 ```
 
 ### watch
@@ -58,7 +58,7 @@ biscuit compile src/ -o dist/ -r
 Watch files for changes and recompile automatically.
 
 ```bash
-biscuit watch [options] <paths...>
+sylfie watch [options] <paths...>
 ```
 
 **Arguments:**
@@ -71,13 +71,13 @@ biscuit watch [options] <paths...>
 **Examples:**
 ```bash
 # Watch a single file
-biscuit watch hello.psx
+sylfie watch hello.psx
 
 # Watch multiple directories
-biscuit watch src/ templates/ components/
+sylfie watch src/ templates/ components/
 
 # Watch with custom output
-biscuit watch src/ -o dist/
+sylfie watch src/ -o dist/
 ```
 
 ### scan
@@ -85,7 +85,7 @@ biscuit watch src/ -o dist/
 Tokenize a file and display the token stream (for debugging).
 
 ```bash
-biscuit scan [options] <input>
+sylfie scan [options] <input>
 ```
 
 **Arguments:**
@@ -97,7 +97,7 @@ biscuit scan [options] <input>
 **Example:**
 ```bash
 # Display tokens for a file
-biscuit scan hello.psx
+sylfie scan hello.psx
 ```
 
 ### parse
@@ -105,7 +105,7 @@ biscuit scan hello.psx
 Parse a file and display the AST (for debugging).
 
 ```bash
-biscuit parse [options] <input>
+sylfie parse [options] <input>
 ```
 
 **Arguments:**
@@ -117,12 +117,12 @@ biscuit parse [options] <input>
 **Example:**
 ```bash
 # Display AST for a file
-biscuit parse hello.psx
+sylfie parse hello.psx
 ```
 
 ## File Extensions
 
-- `.psx`: Biscuit source files (Python Syntax eXtended)
+- `.psx`: Sylfie source files (Python Syntax eXtended)
 - `.py`: Generated Python output files
 
 ## Output Format
@@ -157,12 +157,12 @@ SyntaxError: Unclosed HTML tag 'div'
 ### Basic Development
 
 1. Create `.psx` files with your views
-2. Run `biscuit compile` to generate Python
+2. Run `sylfie compile` to generate Python
 3. Import and use the generated classes
 
 ### Watch Mode Development
 
-1. Start watch mode: `biscuit watch src/`
+1. Start watch mode: `sylfie watch src/`
 2. Edit `.psx` files in your editor
 3. Files are automatically recompiled on save
 4. See compilation errors in terminal
@@ -177,10 +177,10 @@ PY_FILES := $(PSX_FILES:.psx=.py)
 compile: $(PY_FILES)
 
 %.py: %.psx
-    biscuit compile $<
+    sylfie compile $<
 
 watch:
-    biscuit watch src/
+    sylfie watch src/
 
 clean:
     rm -f $(PY_FILES)
@@ -189,8 +189,8 @@ clean:
 #### Poetry/PyProject
 ```toml
 [tool.poetry.scripts]
-build-views = "biscuit compile src/ -r"
-dev = "biscuit watch src/"
+build-views = "sylfie compile src/ -r"
+dev = "sylfie watch src/"
 ```
 
 ## Performance Considerations
@@ -203,27 +203,27 @@ dev = "biscuit watch src/"
 ## Debugging
 
 ### Token Analysis
-Use `biscuit scan` to debug lexical issues:
+Use `sylfie scan` to debug lexical issues:
 ```bash
-biscuit scan problematic.psx > tokens.txt
+sylfie scan problematic.psx > tokens.txt
 ```
 
 ### AST Analysis
-Use `biscuit parse` to debug parsing issues:
+Use `sylfie parse` to debug parsing issues:
 ```bash
-biscuit parse problematic.psx > ast.txt
+sylfie parse problematic.psx > ast.txt
 ```
 
 ### Verbose Output
 Add `--debug` to any command for detailed logging:
 ```bash
-biscuit compile hello.psx --debug
+sylfie compile hello.psx --debug
 ```
 
 ## Environment Variables
 
-- `BISCUIT_DEBUG`: Set to "1" to enable debug output globally
-- `BISCUIT_RUNTIME`: Path to custom runtime module
+- `SYLFIE_DEBUG`: Set to "1" to enable debug output globally
+- `SYLFIE_RUNTIME`: Path to custom runtime module
 
 ## Exit Codes
 
@@ -235,6 +235,6 @@ biscuit compile hello.psx --debug
 
 ## See Also
 
-- [Language Grammar](grammar_biscuit.md) - PSX syntax reference
+- [Language Grammar](grammar_psx.md) - PSX syntax reference
 - [Architecture](architecture.md) - Compiler internals
 - [Examples](../examples/) - Example applications

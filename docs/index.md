@@ -1,11 +1,11 @@
-# Biscuit Documentation
+# Sylfie Documentation
 
-Welcome to the Biscuit documentation! Biscuit is a modern templating language that seamlessly blends Python's power with HTML markup.
+Welcome to the Sylfie documentation! Sylfie is a modern templating language that seamlessly blends Python's power with HTML markup using the PSX (Python Sylfie eXtension) syntax.
 
 ## Getting Started
 
 - [README](../README.md) - Project overview and quick start
-- [Language Grammar](grammar_biscuit.md) - Complete language reference with examples
+- [PSX Language Grammar](grammar_psx.md) - Complete language reference with examples
 - [CLI Reference](cli.md) - Command-line tool documentation
 
 ## Architecture & Design
@@ -46,7 +46,7 @@ The `development/` folder contains internal documentation for contributors:
 
 ## Examples
 
-See the [examples/](../examples/) directory for working Biscuit applications demonstrating various features.
+See the [examples/](../examples/) directory for working Sylfie applications demonstrating various features.
 
 ## Contributing
 
@@ -57,4 +57,4 @@ See the [examples/](../examples/) directory for working Biscuit applications dem
 
 ## Legacy Documentation
 
-- [Legacy Grammar Reference](grammar_biscuit_legacy.md) - Original grammar documentation (historical reference)
+- [Legacy Grammar Reference](grammar_psx_legacy.md) - Original grammar documentation (historical reference)

@@ -1,6 +1,6 @@
-# Biscuit Variable Resolver
+# Sylfie Variable Resolver
 
-This package implements variable resolution for the Biscuit compiler, handling Python-like scoping rules with extensions for Biscuit-specific constructs.
+This package implements variable resolution for the Sylfie compiler, handling Python-like scoping rules with extensions for Sylfie-specific constructs.
 
 ## Overview
 
@@ -43,7 +43,7 @@ generator := codegen.NewCodeGeneratorWithResolution(table)
 - Module-level scope
 - Function scope
 - Class scope (with isolation rules)
-- View scope (Biscuit extension)
+- View scope (Sylfie extension)
 
 ### ✅ Variable Tracking
 - Variable definition and usage

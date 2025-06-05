@@ -1,7 +1,7 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
+	"sylfie/compiler/ast"
 )
 
 // processForLoop processes a for loop in the context of an HTML context

@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"biscuit/compiler/ast"
+	"sylfie/compiler/ast"
 	"strings"
 )
 

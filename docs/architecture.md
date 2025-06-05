@@ -1,4 +1,4 @@
-# Biscuit Compiler Architecture
+# Sylfie Compiler Architecture
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-Biscuit is a modern web framework that extends Python with HTML-like syntax for building server-side rendered applications. The Biscuit compiler is a sophisticated transpiler that converts `.psx` (Biscuit source) files into standard Python code, enabling developers to write component-based web applications with React-like syntax while maintaining full Python compatibility.
+Sylfie is a modern web framework that extends Python with HTML-like syntax for building server-side rendered applications. The Sylfie compiler is a sophisticated transpiler that converts `.psx` (Python Sylfie eXtension) files into standard Python code, enabling developers to write component-based web applications with React-like syntax while maintaining full Python compatibility.
 
 ### Key Features
 
@@ -37,7 +37,7 @@ Biscuit is a modern web framework that extends Python with HTML-like syntax for 
 
 ## Compilation Pipeline
 
-The Biscuit compiler follows a traditional compiler architecture with modern enhancements:
+The Sylfie compiler follows a traditional compiler architecture with modern enhancements:
 
 ```mermaid
 graph TD
@@ -142,7 +142,7 @@ const (
     // Python keywords (36 total)
     And, As, Assert, Async, Await, Break, Class, Continue, Def, Del, Elif, Else, Except, False, Finally, For, From, Global, If, Import, In, Is, Lambda, None, Nonlocal, Not, Or, Pass, Raise, Return, True, Try, While, With, Yield
     
-    // Biscuit keywords
+    // Sylfie keywords
     View, Component
 )
 ```
@@ -317,7 +317,7 @@ type Stmt interface {
 
 #### Key AST Node Types
 
-**Biscuit-specific nodes**:
+**Sylfie-specific nodes**:
 - `ViewStmt` → View definitions with parameters and body
 - `HTMLElement` → HTML elements with attributes and content
 - `HTMLContent` → Mixed text and interpolation content
@@ -356,7 +356,7 @@ func (p *Parser) synchronize() {
 
 ## Semantic Analysis (Resolver)
 
-The resolver implements **Python's LEGB scoping rules** while adding support for **Biscuit's view composition system**.
+The resolver implements **Python's LEGB scoping rules** while adding support for **Sylfie's view composition system**.
 
 ### Scope Management
 
@@ -456,7 +456,7 @@ type Variable struct {
     IsParameter     bool  // Function parameter
     IsGlobal        bool  // 'global' declaration
     IsNonlocal      bool  // 'nonlocal' declaration  
-    IsViewParameter bool  // Biscuit view parameter
+    IsViewParameter bool  // Sylfie view parameter
     
     // Closure analysis
     IsCaptured      bool  // Used in nested scopes
@@ -756,7 +756,7 @@ func (cg *CodeGenerator) VisitBinary(b *ast.Binary) ast.Visitor {
 
 ## Runtime System
 
-The runtime provides the foundation for executing compiled Biscuit applications.
+The runtime provides the foundation for executing compiled Sylfie applications.
 
 ### Core Components
 
@@ -872,10 +872,10 @@ func (w *Watcher) Watch(patterns []string) error {
 
 ### Compilation Modes
 
-1. **Single file compilation**: `biscuit compile file.psx`
-2. **Batch compilation**: `biscuit compile src/`
-3. **Watch mode**: `biscuit watch src/` (live compilation)
-4. **Development tools**: `biscuit scan`, `biscuit parse` for debugging
+1. **Single file compilation**: `sylfie compile file.psx`
+2. **Batch compilation**: `sylfie compile src/`
+3. **Watch mode**: `sylfie watch src/` (live compilation)
+4. **Development tools**: `sylfie scan`, `sylfie parse` for debugging
 
 ## CLI Interface
 
@@ -889,7 +889,7 @@ type CLI struct {
     TreeSitter string `help:"Path to tree-sitter library"`
     
     // Commands
-    Compile CompileCmd `cmd:"" help:"Compile Biscuit files to Python"`
+    Compile CompileCmd `cmd:"" help:"Compile Sylfie files to Python"`
     Watch   WatchCmd   `cmd:"" help:"Watch files and compile on changes"`
     Scan    ScanCmd    `cmd:"" help:"Scan files and output tokens"`
     Parse   ParseCmd   `cmd:"" help:"Parse files and output AST"`
@@ -900,19 +900,19 @@ type CLI struct {
 
 ```bash
 # Compile single file
-biscuit compile src/views/user.psx
+sylfie compile src/views/user.psx
 
 # Compile directory recursively  
-biscuit compile src/ --recursive
+sylfie compile src/ --recursive
 
 # Watch for changes
-biscuit watch src/ 
+sylfie watch src/ 
 
 # Debug tokenization
-biscuit scan src/views/user.psx --debug
+sylfie scan src/views/user.psx --debug
 
 # Debug parsing
-biscuit parse src/views/user.psx --debug
+sylfie parse src/views/user.psx --debug
 ```
 
 ## Examples and Use Cases

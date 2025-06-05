@@ -1,4 +1,4 @@
-module biscuit
+module sylfie
 
 go 1.23.0
 

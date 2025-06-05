@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/lexer"
 	"strings"
 	"testing"
 )

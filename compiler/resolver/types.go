@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/lexer"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 )
 
 // VariableState represents the current state of a variable

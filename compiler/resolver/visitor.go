@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"biscuit/compiler/ast"
+	"sylfie/compiler/ast"
 	"fmt"
 )
 

@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"biscuit/compiler/ast"
-	"biscuit/compiler/resolver"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/resolver"
 	"fmt"
 )
 

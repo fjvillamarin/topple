@@ -137,7 +137,7 @@ const (
 	Case // soft keyword used inside 'match'
 	Type // soft keyword for type aliases
 
-	// biscuit specific tokens
+	// PSX specific tokens
 	View
 	Component
 
