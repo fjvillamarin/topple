@@ -118,7 +118,7 @@ func TestBitwiseOr(t *testing.T) {
 		{"simple or", "x | y", true, lexer.Pipe},
 		{"chained or", "x | y | z", true, lexer.Pipe},
 		{"with parentheses", "(x | y) | z", true, lexer.Pipe},
-		{"mixed with comparison", "x | y == 0", true, lexer.EqualEqual}, // == has higher precedence
+		{"mixed with comparison", "x | y == 0", true, lexer.Pipe}, // bitwiseOr() only parses up to the | operator
 		{"complex expression", "flags | FLAG_A | FLAG_B", true, lexer.Pipe},
 		{"with numbers", "5 | 3", true, lexer.Pipe},
 		{"with variables", "mask | flag", true, lexer.Pipe},
