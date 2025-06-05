@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
+	"sylfie/compiler/lexer"
 )
 
 // Binary represents a binary operation expression (left op right)

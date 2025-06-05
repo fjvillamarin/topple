@@ -1,8 +1,8 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
 	"strings"
+	"sylfie/compiler/ast"
 )
 
 // F-string visitors

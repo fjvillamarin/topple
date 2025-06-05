@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -117,14 +117,14 @@ func TestWhileStatement(t *testing.T) {
 		description       string
 	}{
 		{
-			name:              "simple while",
+			name: "simple while",
 			input: `while x > 0:
     x -= 1`,
 			expectedElseCount: 0,
 			description:       "basic while loop with simple condition",
 		},
 		{
-			name:              "while with else",
+			name: "while with else",
 			input: `while x > 0:
     x -= 1
 else:
@@ -133,7 +133,7 @@ else:
 			description:       "while loop with else clause",
 		},
 		{
-			name:              "while True",
+			name: "while True",
 			input: `while True:
     if done():
         break
@@ -142,7 +142,7 @@ else:
 			description:       "infinite while loop with break condition",
 		},
 		{
-			name:              "while with complex condition",
+			name: "while with complex condition",
 			input: `while x > 0 and not finished:
     process(x)
     x = get_next()`,
@@ -150,7 +150,7 @@ else:
 			description:       "while loop with complex boolean condition",
 		},
 		{
-			name:              "nested while",
+			name: "nested while",
 			input: `while outer:
     while inner:
         do_work()
@@ -159,7 +159,7 @@ else:
 			description:       "nested while loops",
 		},
 		{
-			name:              "while with continue",
+			name: "while with continue",
 			input: `while items:
     item = items.pop()
     if skip(item):
@@ -169,14 +169,14 @@ else:
 			description:       "while loop with continue statement",
 		},
 		{
-			name:              "while with walrus",
+			name: "while with walrus",
 			input: `while (line := file.readline()):
     process(line)`,
 			expectedElseCount: 0,
 			description:       "while loop with walrus operator assignment",
 		},
 		{
-			name:              "empty while",
+			name: "empty while",
 			input: `while waiting():
     pass`,
 			expectedElseCount: 0,
@@ -201,35 +201,35 @@ else:
 // Test while loops with break/continue statements
 func TestWhileBreakContinue(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		hasError        bool
-		errorText       string
-		expectedBreak   bool
+		name             string
+		input            string
+		hasError         bool
+		errorText        string
+		expectedBreak    bool
 		expectedContinue bool
-		description     string
+		description      string
 	}{
 		{
-			name:            "with break",
+			name: "with break",
 			input: `while True:
     if condition:
         break`,
-			expectedBreak:   true,
+			expectedBreak:    true,
 			expectedContinue: false,
-			description:     "while loop containing break statement",
+			description:      "while loop containing break statement",
 		},
 		{
-			name:            "with continue",
+			name: "with continue",
 			input: `while x < 10:
     if x % 2 == 0:
         continue
     process(x)`,
-			expectedBreak:   false,
+			expectedBreak:    false,
 			expectedContinue: true,
-			description:     "while loop containing continue statement",
+			description:      "while loop containing continue statement",
 		},
 		{
-			name:            "with both",
+			name: "with both",
 			input: `while running:
     x = get_next()
     if x < 0:
@@ -237,21 +237,21 @@ func TestWhileBreakContinue(t *testing.T) {
     if x == 0:
         continue
     process(x)`,
-			expectedBreak:   true,
+			expectedBreak:    true,
 			expectedContinue: true,
-			description:     "while loop containing both break and continue",
+			description:      "while loop containing both break and continue",
 		},
 		{
-			name:            "nested break",
+			name: "nested break",
 			input: `while outer:
     while inner:
         if done:
             break
     if finished:
         break`,
-			expectedBreak:   true,
+			expectedBreak:    true,
 			expectedContinue: false,
-			description:     "nested while loops with break statements",
+			description:      "nested while loops with break statements",
 		},
 	}
 
@@ -465,16 +465,16 @@ func TestWhileEdgeCases(t *testing.T) {
 			description: "while loop with indexing and slicing",
 		},
 		{
-			name:        "while with invalid syntax in body",
-			input:       `while True:
+			name: "while with invalid syntax in body",
+			input: `while True:
     def invalid syntax here`,
 			hasError:    true,
 			errorText:   "expected",
 			description: "while loop with invalid syntax in body should fail",
 		},
 		{
-			name:        "while with incomplete condition",
-			input:       `while x >:
+			name: "while with incomplete condition",
+			input: `while x >:
     pass`,
 			hasError:    true,
 			errorText:   "expected",
@@ -490,7 +490,7 @@ func TestWhileEdgeCases(t *testing.T) {
 				validateWhileParseError(t, whileStmt, err, test.errorText, test.description)
 			} else {
 				validateWhileParseSuccess(t, whileStmt, err, test.description)
-				
+
 				// For successful complex cases, just verify basic structure
 				if len(whileStmt.Body) == 0 {
 					t.Errorf("Expected while body to have statements for %s", test.description)

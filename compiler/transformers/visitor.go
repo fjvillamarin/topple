@@ -1,9 +1,9 @@
 package transformers
 
 import (
+	"fmt"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/resolver"
-	"fmt"
 )
 
 // TransformerVisitor is a visitor that transforms PSX-specific AST nodes into Python AST nodes

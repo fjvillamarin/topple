@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
+	"sylfie/compiler/lexer"
 )
 
 // Call represents a function call expression (func(args))

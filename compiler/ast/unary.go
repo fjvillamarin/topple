@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
+	"sylfie/compiler/lexer"
 )
 
 // Unary represents a unary operation expression (-expr)

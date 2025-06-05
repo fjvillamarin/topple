@@ -1,0 +1,14 @@
+a = 1
+b = 1
+c = 1
+x = "hello"
+y = "hello"
+z = "hello"
+_chain_tmp_1 = len([1, 2, 3])
+r = _chain_tmp_1
+q = _chain_tmp_1
+p = _chain_tmp_1
+_chain_tmp_2 = 2 + 3 * 4
+k = _chain_tmp_2
+j = _chain_tmp_2
+i = _chain_tmp_2

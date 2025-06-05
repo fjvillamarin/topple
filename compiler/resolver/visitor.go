@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"sylfie/compiler/ast"
 	"fmt"
+	"sylfie/compiler/ast"
 )
 
 // Visitor implementation - this is where the main resolution logic goes

@@ -51,6 +51,9 @@ mise run watch
 # Start FastAPI dev server
 mise run web
 
+# Format Go code
+mise run fmt
+
 # View all available tasks
 mise run help
 ```
@@ -225,7 +228,12 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    sylfie parse path/to/test.psx -d      # See AST with resolution info
    ```
 
-5. **Commit guidelines**:
+5. **Code formatting**:
+   - **IMPORTANT**: Always run `mise run fmt` before committing Go code
+   - This ensures consistent formatting across the codebase
+   - The formatter will fix indentation, spacing, and add missing newlines
+
+6. **Commit guidelines**:
    - Use conventional commit format: `type(scope): description` or `type: description`
      - `feat(parser): add support for async views`
      - `fix(codegen): handle empty set literals correctly`
@@ -236,7 +244,7 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    - Reference the issue number when relevant: `fix(parser): handle nested f-strings (#22)`
    - Ensure each commit represents a working state
 
-6. **Before pushing**:
+7. **Before pushing**:
    - Run the full test suite: `mise run test-all`
    - Verify no existing tests are broken
    - Check that new tests cover your changes
@@ -244,7 +252,7 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    - Review your changes: `git diff master`
    - Double-check all modified files make sense for the issue
 
-7. **Creating the Pull Request**:
+8. **Creating the Pull Request**:
    ```bash
    # Push your branch
    git push -u origin bug/issue-22

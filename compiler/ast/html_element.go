@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
+	"sylfie/compiler/lexer"
 )
 
 // HTMLElementType represents the type of HTML element

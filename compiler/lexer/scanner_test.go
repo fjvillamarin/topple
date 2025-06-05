@@ -38,7 +38,7 @@ func assertToken(t *testing.T, tok Token, expectedType TokenType, expectedLexeme
 func TestSingleCharacterTokens(t *testing.T) {
 	input := "()[]{},:;+-*/%|&^~@."
 	tokens := scanTokens(input)
-	
+
 	expected := []TokenType{
 		LeftParen, RightParen,
 		LeftBracket, RightBracket,
@@ -48,7 +48,7 @@ func TestSingleCharacterTokens(t *testing.T) {
 		Pipe, Ampersand, Caret, Tilde, At, Dot,
 		EOF,
 	}
-	
+
 	assertTokenTypes(t, tokens, expected)
 }
 
@@ -56,7 +56,7 @@ func TestSingleCharacterTokens(t *testing.T) {
 func TestMultiCharacterOperators(t *testing.T) {
 	input := "+= -= *= /= %= |= &= ^= @= //= **= <<= >>= != == <= >= := -> // ** << >> ="
 	tokens := scanTokens(input)
-	
+
 	expected := []TokenType{
 		PlusEqual, MinusEqual, StarEqual, SlashEqual, PercentEqual,
 		PipeEqual, AmpEqual, CaretEqual, AtEqual,
@@ -65,7 +65,7 @@ func TestMultiCharacterOperators(t *testing.T) {
 		Walrus, Arrow, SlashSlash, StarStar, LessLess, GreaterGreater, Equal,
 		EOF,
 	}
-	
+
 	assertTokenTypes(t, tokens, expected)
 }
 
@@ -73,7 +73,7 @@ func TestMultiCharacterOperators(t *testing.T) {
 func TestKeywords(t *testing.T) {
 	input := "and as assert async await break class continue def del elif else except False finally for from global if import in is lambda match None nonlocal not or pass raise return True try while with yield case type view component"
 	tokens := scanTokens(input)
-	
+
 	expected := []TokenType{
 		And, As, Assert, Async, Await, Break, Class, Continue, Def, Del,
 		Elif, Else, Except, False, Finally, For, From, Global, If, Import,
@@ -81,7 +81,7 @@ func TestKeywords(t *testing.T) {
 		Return, True, Try, While, With, Yield, Case, Type, View, Component,
 		EOF,
 	}
-	
+
 	assertTokenTypes(t, tokens, expected)
 }
 
@@ -89,13 +89,13 @@ func TestKeywords(t *testing.T) {
 func TestIdentifiers(t *testing.T) {
 	input := "x _private __dunder__ CamelCase snake_case CONSTANT_NAME café 变量"
 	tokens := scanTokens(input)
-	
+
 	for i := 0; i < len(tokens)-1; i++ { // -1 to skip EOF
 		if tokens[i].Type != Identifier {
 			t.Errorf("Token %d: expected Identifier, got %v", i, tokens[i].Type)
 		}
 	}
-	
+
 	// Check specific identifiers
 	assertToken(t, tokens[0], Identifier, "x")
 	assertToken(t, tokens[1], Identifier, "_private")
@@ -121,14 +121,14 @@ func TestNumbers(t *testing.T) {
 		{"1e10", 1e10},
 		{"3.14e-2", 3.14e-2},
 	}
-	
+
 	for _, test := range tests {
 		tokens := scanTokens(test.input)
 		if len(tokens) != 2 || tokens[0].Type != Number {
 			t.Errorf("Expected Number token for %s", test.input)
 			continue
 		}
-		
+
 		// Handle both int64 and float64 literals
 		switch expected := test.expected.(type) {
 		case int64:
@@ -165,7 +165,7 @@ single'''`, "triple\nsingle"},
 double"""`, "triple\ndouble"},
 		{`r"raw\nstring"`, `raw\nstring`},
 	}
-	
+
 	for _, test := range tests {
 		tokens := scanTokens(test.input)
 		if len(tokens) != 2 || tokens[0].Type != String {
@@ -189,7 +189,7 @@ func TestIndentation(t *testing.T) {
     z = 3
 `
 	tokens := scanTokens(input)
-	
+
 	// Find all INDENT and DEDENT tokens
 	var indents, dedents int
 	for _, tok := range tokens {
@@ -200,7 +200,7 @@ func TestIndentation(t *testing.T) {
 			dedents++
 		}
 	}
-	
+
 	if indents != 2 {
 		t.Errorf("Expected 2 INDENT tokens, got %d", indents)
 	}
@@ -220,7 +220,7 @@ func TestCompositeTokens(t *testing.T) {
 		{"a is b", []TokenType{Identifier, Is, Identifier, EOF}},
 		{"c not d", []TokenType{Identifier, Not, Identifier, EOF}},
 	}
-	
+
 	for _, test := range tests {
 		tokens := scanTokens(test.input)
 		assertTokenTypes(t, tokens, test.expected)
@@ -264,7 +264,7 @@ func TestFStrings(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tokens := scanTokens(test.input)
@@ -276,8 +276,8 @@ func TestFStrings(t *testing.T) {
 // Test error handling
 func TestErrorHandling(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
+		name     string
+		input    string
 		hasError bool
 	}{
 		{"unterminated string", `"hello`, true},
@@ -285,12 +285,12 @@ func TestErrorHandling(t *testing.T) {
 		{"mixed tabs and spaces", "if True:\n\tx = 1\n    y = 2", true},
 		{"valid code", "x = 1 + 2", false},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			scanner := NewScanner([]byte(test.input))
 			scanner.ScanTokens()
-			
+
 			if test.hasError && len(scanner.Errors) == 0 {
 				t.Error("Expected error but got none")
 			}
@@ -304,8 +304,8 @@ func TestErrorHandling(t *testing.T) {
 // Test line continuations
 func TestLineContinuations(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
+		name       string
+		input      string
 		hasNewline bool
 	}{
 		{
@@ -319,7 +319,7 @@ func TestLineContinuations(t *testing.T) {
 			true,
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tokens := scanTokens(test.input)
@@ -341,7 +341,7 @@ func TestLineContinuations(t *testing.T) {
 func TestEllipsis(t *testing.T) {
 	input := "x = ... # ellipsis"
 	tokens := scanTokens(input)
-	
+
 	expected := []TokenType{Identifier, Equal, Ellipsis, EOF}
 	assertTokenTypes(t, tokens, expected)
 }
@@ -350,12 +350,12 @@ func TestEllipsis(t *testing.T) {
 func TestPositionTracking(t *testing.T) {
 	input := "x = 1\ny = 2"
 	tokens := scanTokens(input)
-	
+
 	// Check first token (x) position
 	if tokens[0].Start().Line != 1 || tokens[0].Start().Column != 1 {
 		t.Errorf("Expected token 'x' at line 1, column 1, got %v", tokens[0].Start())
 	}
-	
+
 	// Check token on second line (y)
 	yToken := tokens[4] // After x, =, 1, newline
 	if yToken.Start().Line != 2 || yToken.Start().Column != 1 {
@@ -369,7 +369,7 @@ func TestHTMLMode(t *testing.T) {
 	scanner := NewScanner([]byte("<div>"))
 	scanner.ctx.viewDepth = 1 // Simulate being inside a view
 	tokens := scanner.ScanTokens()
-	
+
 	// Should produce: TagOpen, Identifier (div), TagClose, EOF
 	expected := []TokenType{TagOpen, Identifier, TagClose, EOF}
 	assertTokenTypes(t, tokens, expected)
@@ -379,7 +379,7 @@ func TestHTMLMode(t *testing.T) {
 func TestUnicodeHandling(t *testing.T) {
 	input := `"你好" + "🌍" # Unicode comment 中文`
 	tokens := scanTokens(input)
-	
+
 	// Check that Unicode strings are properly tokenized
 	if tokens[0].Type != String || tokens[0].Literal != "你好" {
 		t.Errorf("Expected Chinese string, got %v", tokens[0])
@@ -403,7 +403,7 @@ def fibonacci(n):
 for i in range(10):
     print(f"fib({i}) = {fibonacci(i)}")
 `
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scanner := NewScanner([]byte(input))

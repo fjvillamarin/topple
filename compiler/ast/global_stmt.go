@@ -1,9 +1,9 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // GlobalStmt represents a 'global' statement.

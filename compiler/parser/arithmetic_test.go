@@ -9,9 +9,9 @@ import (
 // Test sum operations (addition and subtraction)
 func TestSum(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedOpType lexer.TokenType
+		name             string
+		input            string
+		expectedOpType   lexer.TokenType
 		shouldValidateOp bool
 	}{
 		{"simple addition", "x + y", lexer.Plus, true},
@@ -27,7 +27,7 @@ func TestSum(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.sum()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -50,9 +50,9 @@ func TestSum(t *testing.T) {
 // Test term operations (multiplication, division, modulo)
 func TestTerm(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedOpType lexer.TokenType
+		name             string
+		input            string
+		expectedOpType   lexer.TokenType
 		shouldValidateOp bool
 	}{
 		{"multiplication", "x * y", lexer.Star, true},
@@ -69,7 +69,7 @@ func TestTerm(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.term()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -92,16 +92,16 @@ func TestTerm(t *testing.T) {
 // Test factor operations (unary operators)
 func TestFactor(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedOpType lexer.TokenType
+		name             string
+		input            string
+		expectedOpType   lexer.TokenType
 		shouldValidateOp bool
 	}{
 		{"unary plus", "+x", lexer.Plus, true},
 		{"unary minus", "-x", lexer.Minus, true},
 		{"bitwise not", "~x", lexer.Tilde, true},
 		{"double negative", "--x", lexer.Minus, true}, // outermost operator
-		{"mixed unary", "-+x", lexer.Minus, true}, // outermost operator  
+		{"mixed unary", "-+x", lexer.Minus, true},     // outermost operator
 		{"unary on number", "-42", lexer.Minus, true},
 		{"unary on expression", "-(x + y)", lexer.Minus, true},
 	}
@@ -111,7 +111,7 @@ func TestFactor(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.factor()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -154,7 +154,7 @@ func TestPower(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.factor()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -186,10 +186,10 @@ func TestPower(t *testing.T) {
 // Test operator precedence
 func TestArithmeticPrecedence(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedTopOp  lexer.TokenType // The outermost/lowest precedence operator
-		description    string
+		name          string
+		input         string
+		expectedTopOp lexer.TokenType // The outermost/lowest precedence operator
+		description   string
 	}{
 		{"multiply before add", "x + y * z", lexer.Plus, "multiplication binds tighter"},
 		{"power before multiply", "x * y ** z", lexer.Star, "power binds tighter"},
@@ -205,7 +205,7 @@ func TestArithmeticPrecedence(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			// Parse through sum() which handles the full expression
 			expr, err := parser.sum()
 			if err != nil {
@@ -220,7 +220,7 @@ func TestArithmeticPrecedence(t *testing.T) {
 			// Validate that the top-level operator matches expected precedence
 			if binary, ok := expr.(*ast.Binary); ok {
 				if binary.Operator.Type != test.expectedTopOp {
-					t.Errorf("Expected top-level operator %v, got %v - %s", 
+					t.Errorf("Expected top-level operator %v, got %v - %s",
 						test.expectedTopOp, binary.Operator.Type, test.description)
 				}
 			} else {
@@ -240,7 +240,7 @@ func TestArithmeticErrors(t *testing.T) {
 		{"incomplete subtraction", "x -"},
 		{"incomplete multiplication", "x *"},
 		{"incomplete division", "x /"},
-		{"invalid double star", "x * * y"},  // Two stars without space is not ** operator
+		{"invalid double star", "x * * y"}, // Two stars without space is not ** operator
 		{"missing operand", "* y"},
 		{"invalid power", "x ** ** y"},
 	}
@@ -250,7 +250,7 @@ func TestArithmeticErrors(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			_, err := parser.sum()
 			if err == nil {
 				t.Errorf("Expected error for %s, but got none", test.input)

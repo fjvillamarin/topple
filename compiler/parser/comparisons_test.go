@@ -44,7 +44,7 @@ func TestComparison(t *testing.T) {
 		{"is not", "x is not y", lexer.IsNot, true},
 		{"in", "x in y", lexer.In, true},
 		{"not in", "x not in y", lexer.NotIn, true},
-		
+
 		// Expression comparisons
 		{"with numbers", "5 < 10", lexer.Less, true},
 		{"with function calls", "len(a) > len(b)", lexer.Greater, true},
@@ -95,7 +95,7 @@ func TestChainedComparisons(t *testing.T) {
 				t.Error("Expected non-nil expression for chained comparison")
 				return
 			}
-			
+
 			if test.validateAST {
 				// Verify we have a valid expression structure for chained comparisons
 				// This may be a Binary with nested Binary operands
@@ -129,7 +129,7 @@ func TestBitwiseOr(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.bitwiseOr()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -225,10 +225,10 @@ func TestIdentityOperations(t *testing.T) {
 // Test comparison precedence
 func TestComparisonPrecedence(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedTopOp  lexer.TokenType
-		description    string
+		name          string
+		input         string
+		expectedTopOp lexer.TokenType
+		description   string
 	}{
 		{"comparison vs bitwise or", "a | b == c", lexer.EqualEqual, "== has higher precedence than |"},
 		{"comparison vs bitwise and", "a & b > c", lexer.Greater, "> has higher precedence than &"},
@@ -278,7 +278,7 @@ func TestComparisonErrors(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			_, err := parser.comparison()
 			if err == nil {
 				t.Errorf("Expected error for %s, but got none", test.input)

@@ -98,7 +98,7 @@ string"""`,
 			},
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tokens := scanTokens(test.input)
@@ -124,9 +124,9 @@ match point:
     case _:
         return "Default"
 `
-	
+
 	tokens := scanTokens(input)
-	
+
 	// Count case keywords
 	caseCount := 0
 	for _, tok := range tokens {
@@ -134,7 +134,7 @@ match point:
 			caseCount++
 		}
 	}
-	
+
 	if caseCount != 6 {
 		t.Errorf("Expected 6 case statements, got %d", caseCount)
 	}
@@ -151,9 +151,9 @@ y: list[int] = [1, 2, 3]
 z: dict[str, Any] = {}
 w: tuple[int, ...] = (1, 2, 3)
 `
-	
+
 	tokens := scanTokens(input)
-	
+
 	// Check for proper tokenization of type hints
 	colonCount := 0
 	arrowCount := 0
@@ -165,7 +165,7 @@ w: tuple[int, ...] = (1, 2, 3)
 			arrowCount++
 		}
 	}
-	
+
 	if colonCount < 5 { // At least 5 type annotations
 		t.Errorf("Expected at least 5 colons for type annotations, got %d", colonCount)
 	}
@@ -184,9 +184,9 @@ async def fetch_data():
     async for item in stream:
         process(item)
 `
-	
+
 	tokens := scanTokens(input)
-	
+
 	asyncCount := 0
 	awaitCount := 0
 	for _, tok := range tokens {
@@ -197,7 +197,7 @@ async def fetch_data():
 			awaitCount++
 		}
 	}
-	
+
 	if asyncCount != 3 { // async def, async with, async for
 		t.Errorf("Expected 3 async keywords, got %d", asyncCount)
 	}
@@ -215,16 +215,16 @@ func TestDecorators(t *testing.T) {
 def my_method(self):
     pass
 `
-	
+
 	tokens := scanTokens(input)
-	
+
 	atCount := 0
 	for _, tok := range tokens {
 		if tok.Type == At {
 			atCount++
 		}
 	}
-	
+
 	if atCount != 3 {
 		t.Errorf("Expected 3 @ symbols for decorators, got %d", atCount)
 	}
@@ -238,16 +238,16 @@ if (n := len(data)) > 10:
 while (line := file.readline()):
     process(line)
 `
-	
+
 	tokens := scanTokens(input)
-	
+
 	walrusCount := 0
 	for _, tok := range tokens {
 		if tok.Type == Walrus {
 			walrusCount++
 		}
 	}
-	
+
 	if walrusCount != 2 {
 		t.Errorf("Expected 2 walrus operators, got %d", walrusCount)
 	}
@@ -269,10 +269,10 @@ def outer():
                         pass
     return inner
 `
-	
+
 	scanner := NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
-	
+
 	// Track maximum indentation depth
 	maxDepth := 0
 	currentDepth := 0
@@ -287,11 +287,11 @@ def outer():
 			currentDepth--
 		}
 	}
-	
+
 	if maxDepth != 6 {
 		t.Errorf("Expected maximum indentation depth of 6, got %d", maxDepth)
 	}
-	
+
 	if currentDepth != 0 {
 		t.Errorf("Indentation not balanced, final depth: %d", currentDepth)
 	}
@@ -307,15 +307,15 @@ z = 3
 w = 'another unterminated
 a = 5
 `
-	
+
 	scanner := NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
-	
+
 	// Should have multiple errors
 	if len(scanner.Errors) < 2 {
 		t.Errorf("Expected at least 2 errors, got %d", len(scanner.Errors))
 	}
-	
+
 	// Should still tokenize valid parts
 	identCount := 0
 	numberCount := 0
@@ -327,7 +327,7 @@ a = 5
 			numberCount++
 		}
 	}
-	
+
 	if identCount < 3 { // At least x, z, a
 		t.Errorf("Expected at least 3 identifiers after error recovery, got %d", identCount)
 	}
@@ -349,10 +349,10 @@ def MyComponent(name):
     </div>
     return None
 `
-	
+
 	scanner := NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
-	
+
 	// Should have HTML tokens
 	hasHTMLTokens := false
 	for _, tok := range tokens {
@@ -361,7 +361,7 @@ def MyComponent(name):
 			break
 		}
 	}
-	
+
 	if !hasHTMLTokens {
 		t.Error("Expected HTML tokens in view function")
 	}
@@ -379,19 +379,19 @@ func TestNumberFormats(t *testing.T) {
 		{"0o777", 511, true},
 		{"0xDEADBEEF", 3735928559, true},
 		{"1.23e-4", 0.000123, true},
-		
+
 		// Invalid numbers (should produce errors)
-		{"0b2", 0, false},      // Invalid binary digit
-		{"0o8", 0, false},      // Invalid octal digit  
-		{"0xGHI", 0, false},    // Invalid hex digit
-		{"1.2.3", 0, false},    // Multiple decimal points
-		{"1ee3", 0, false},     // Invalid exponent
+		{"0b2", 0, false},   // Invalid binary digit
+		{"0o8", 0, false},   // Invalid octal digit
+		{"0xGHI", 0, false}, // Invalid hex digit
+		{"1.2.3", 0, false}, // Multiple decimal points
+		{"1ee3", 0, false},  // Invalid exponent
 	}
-	
+
 	for _, test := range tests {
 		scanner := NewScanner([]byte(test.input))
 		tokens := scanner.ScanTokens()
-		
+
 		if test.valid {
 			if len(scanner.Errors) > 0 {
 				t.Errorf("Expected no errors for %s, got %v", test.input, scanner.Errors)
@@ -425,12 +425,12 @@ func TestEdgeCases(t *testing.T) {
 		{"mixed brackets", "([{[({})]}])"},
 		{"lone backslash", "\\"},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			scanner := NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
-			
+
 			// Should always end with EOF
 			if len(tokens) == 0 || tokens[len(tokens)-1].Type != EOF {
 				t.Error("Scanner should always produce EOF token")

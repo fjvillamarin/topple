@@ -84,7 +84,7 @@ func getExprTypeName(expr ast.Expr) string {
 	if expr == nil {
 		return "nil"
 	}
-	
+
 	switch expr.(type) {
 	case *ast.Name:
 		return "*ast.Name"
@@ -142,7 +142,7 @@ func getStmtTypeName(stmt ast.Stmt) string {
 	if stmt == nil {
 		return "nil"
 	}
-	
+
 	switch stmt.(type) {
 	case *ast.Function:
 		return "*ast.Function"
@@ -162,12 +162,12 @@ func getStmtTypeName(stmt ast.Stmt) string {
 // Test comprehensive decorator functionality
 func TestDecorators(t *testing.T) {
 	tests := []struct {
-		name                  string
-		input                 string
-		hasError              bool
+		name                   string
+		input                  string
+		hasError               bool
 		expectedDecoratorCount int
-		expectedStmtType      string
-		expectedExprType      string
+		expectedStmtType       string
+		expectedExprType       string
 	}{
 		// Simple decorators
 		{
@@ -180,7 +180,7 @@ def get_value(self):
 			expectedExprType:       "*ast.Name",
 		},
 		{
-			name: "simple class decorator", 
+			name: "simple class decorator",
 			input: `@dataclass
 class Point:
     pass`,
@@ -264,8 +264,8 @@ async def fetch_data():
 
 		// Error cases
 		{
-			name: "decorator without newline",
-			input: `@property def get_value(self): return self._value`,
+			name:     "decorator without newline",
+			input:    `@property def get_value(self): return self._value`,
 			hasError: true,
 		},
 		{

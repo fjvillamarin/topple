@@ -59,7 +59,7 @@ func getLambdaExpressionTypeName(expr ast.Expr) string {
 	if expr == nil {
 		return "nil"
 	}
-	
+
 	switch expr.(type) {
 	case *ast.Literal:
 		return "*ast.Literal"
@@ -89,41 +89,41 @@ func getLambdaExpressionTypeName(expr ast.Expr) string {
 // Test comprehensive lambda expression functionality
 func TestLambdaExpressions(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name           string
+		input          string
+		hasError       bool
 		expectedParams int
-		bodyType     string
-		description  string
+		bodyType       string
+		description    string
 	}{
 		// Basic lambda expressions
 		{
-			name:         "simple lambda",
-			input:        "lambda x: x + 1",
+			name:           "simple lambda",
+			input:          "lambda x: x + 1",
 			expectedParams: 1,
-			bodyType:     "*ast.Binary",
-			description:  "basic lambda with single parameter and binary operation body",
+			bodyType:       "*ast.Binary",
+			description:    "basic lambda with single parameter and binary operation body",
 		},
 		{
-			name:         "lambda with no parameters",
-			input:        "lambda: 42",
+			name:           "lambda with no parameters",
+			input:          "lambda: 42",
 			expectedParams: 0,
-			bodyType:     "*ast.Literal",
-			description:  "lambda with no parameters and literal body",
+			bodyType:       "*ast.Literal",
+			description:    "lambda with no parameters and literal body",
 		},
 		{
-			name:         "lambda with multiple parameters",
-			input:        "lambda x, y: x + y",
+			name:           "lambda with multiple parameters",
+			input:          "lambda x, y: x + y",
 			expectedParams: 2,
-			bodyType:     "*ast.Binary",
-			description:  "lambda with multiple positional parameters",
+			bodyType:       "*ast.Binary",
+			description:    "lambda with multiple positional parameters",
 		},
 		{
-			name:         "lambda with name reference",
-			input:        "lambda x: x",
+			name:           "lambda with name reference",
+			input:          "lambda x: x",
 			expectedParams: 1,
-			bodyType:     "*ast.Name",
-			description:  "lambda returning parameter as-is",
+			bodyType:       "*ast.Name",
+			description:    "lambda returning parameter as-is",
 		},
 
 		// Error cases

@@ -95,11 +95,11 @@ func validateStarTargets(t *testing.T, targets []ast.Expr, shouldHaveStarred boo
 // Test comprehensive for statement functionality
 func TestForStatement(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     string
-		isAsync   bool
-		hasElse   bool
-		hasError  bool
+		name     string
+		input    string
+		isAsync  bool
+		hasElse  bool
+		hasError bool
 	}{
 		{
 			name: "simple for loop",
@@ -188,8 +188,8 @@ else:
 			hasElse: false,
 		},
 		{
-			name: "single line for",
-			input: `for x in [1, 2, 3]: print(x)`,
+			name:    "single line for",
+			input:   `for x in [1, 2, 3]: print(x)`,
 			isAsync: false,
 			hasElse: false,
 		},
@@ -220,8 +220,8 @@ else:
 			hasError: true,
 		},
 		{
-			name: "empty body",
-			input: `for i in range(10):`,
+			name:     "empty body",
+			input:    `for i in range(10):`,
 			hasError: true,
 		},
 		{
@@ -397,8 +397,8 @@ func TestForEdgeCases(t *testing.T) {
 			hasError: true,
 		},
 		{
-			name: "for without proper structure",
-			input: `for x in items pass`,
+			name:     "for without proper structure",
+			input:    `for x in items pass`,
 			hasError: true,
 		},
 	}

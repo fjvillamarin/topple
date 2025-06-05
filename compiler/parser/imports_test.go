@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -11,20 +11,20 @@ import (
 func parseImportStatement(t *testing.T, input string) (ast.Stmt, error) {
 	scanner := lexer.NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
-	
+
 	// Check for lexer errors
 	if len(scanner.Errors) > 0 {
 		t.Fatalf("Lexer errors encountered: %v", scanner.Errors)
 	}
-	
+
 	parser := NewParser(tokens)
 	stmt, err := parser.importStatement()
-	
+
 	// Check for parser errors
 	if len(parser.Errors) > 0 {
 		t.Fatalf("Parser errors encountered: %v", parser.Errors)
 	}
-	
+
 	return stmt, err
 }
 
@@ -138,15 +138,15 @@ func validateDottedName(t *testing.T, stmt ast.Stmt, expectedParts int) {
 // Test comprehensive import statement functionality
 func TestImportStatements(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		hasError       bool
-		statementType  string
-		expectedCount  int
-		hasAlias       bool
-		aliasName      string
-		dottedParts    int
-		description    string
+		name          string
+		input         string
+		hasError      bool
+		statementType string
+		expectedCount int
+		hasAlias      bool
+		aliasName     string
+		dottedParts   int
+		description   string
 	}{
 		// Basic import statements
 		{
@@ -463,11 +463,11 @@ func TestWildcardImports(t *testing.T) {
 // Test parenthesized imports
 func TestParenthesizedImports(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       string
-		hasError    bool
+		name          string
+		input         string
+		hasError      bool
 		expectedCount int
-		description string
+		description   string
 	}{
 		{
 			name: "simple parenthesized import",
@@ -554,11 +554,11 @@ func TestParenthesizedImports(t *testing.T) {
 // Test import edge cases and complex scenarios
 func TestImportEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		{
 			name:        "very long dotted import",
@@ -600,16 +600,16 @@ func TestImportEdgeCases(t *testing.T) {
 			description:   "relative syntax in regular import",
 		},
 		{
-			name:          "incomplete parenthesized import",
-			input:         "from module import (",
-			hasError:      true,
-			description:   "unclosed parenthesized import",
+			name:        "incomplete parenthesized import",
+			input:       "from module import (",
+			hasError:    true,
+			description: "unclosed parenthesized import",
 		},
 		{
-			name:          "invalid comma usage",
-			input:         "from module import a,, b",
-			hasError:      true,
-			description:   "double comma in import list",
+			name:        "invalid comma usage",
+			input:       "from module import a,, b",
+			hasError:    true,
+			description: "double comma in import list",
 		},
 		{
 			name:          "missing import keyword",
@@ -619,10 +619,10 @@ func TestImportEdgeCases(t *testing.T) {
 			description:   "from without import keyword",
 		},
 		{
-			name:          "invalid alias keyword",
-			input:         "from module import name is alias",
-			hasError:      true,
-			description:   "wrong alias keyword",
+			name:        "invalid alias keyword",
+			input:       "from module import name is alias",
+			hasError:    true,
+			description: "wrong alias keyword",
 		},
 	}
 

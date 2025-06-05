@@ -1,8 +1,8 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
 	"strings"
+	"sylfie/compiler/ast"
 )
 
 // Statement visitors
@@ -176,11 +176,6 @@ func (cg *CodeGenerator) VisitAnnotationStmt(a *ast.AnnotationStmt) ast.Visitor 
 }
 
 func (cg *CodeGenerator) VisitMultiStmt(m *ast.MultiStmt) ast.Visitor {
-	for i, stmt := range m.Stmts {
-		if i > 0 {
-			cg.write("; ")
-		}
-		stmt.Accept(cg)
-	}
-	return cg
+	// MultiStmt should never reach codegen as it's unwrapped in the parser
+	panic("MultiStmt should not reach codegen - it should be unwrapped in the parser")
 }

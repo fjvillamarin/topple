@@ -47,7 +47,7 @@ func TestSimpleAssignment(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			stmt, err := parser.simpleStatement()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -91,7 +91,7 @@ func TestAnnotatedAssignment(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			stmt, err := parser.simpleStatement()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -107,7 +107,7 @@ func TestAnnotatedAssignment(t *testing.T) {
 					assign, _ = s.Stmts[0].(*ast.AnnotationStmt)
 				}
 			}
-			
+
 			if assign == nil {
 				t.Fatalf("Expected AnnotationStmt, got %T", stmt)
 			}
@@ -155,7 +155,7 @@ func TestAugmentedAssignment(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			// Get the augmented assignment operator token
 			if len(tokens) >= 2 {
 				augOp := tokens[1]
@@ -208,7 +208,7 @@ func TestStarredAssignment(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			stmt, err := parser.simpleStatement()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.input, err)
@@ -261,7 +261,7 @@ func TestNamedExpression(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.walrusExpr))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			expr, err := parser.namedExpression()
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", test.walrusExpr, err)
@@ -305,7 +305,7 @@ func TestAssignmentErrors(t *testing.T) {
 			scanner := lexer.NewScanner([]byte(test.input))
 			tokens := scanner.ScanTokens()
 			parser := NewParser(tokens)
-			
+
 			_, err := parser.simpleStatement()
 			if err == nil {
 				// Some errors might be caught at a different level

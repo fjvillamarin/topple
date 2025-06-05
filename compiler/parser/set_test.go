@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -90,11 +90,11 @@ func getSetExpressionType(expr ast.Expr) string {
 // Test comprehensive set expression functionality
 func TestSetExpressions(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		elemCount    int
-		hasError     bool
-		description  string
+		name        string
+		input       string
+		elemCount   int
+		hasError    bool
+		description string
 	}{
 		// Basic set expressions
 		{
@@ -198,78 +198,78 @@ func TestSetExpressions(t *testing.T) {
 // Test set comprehensions and their variations
 func TestSetComprehensions(t *testing.T) {
 	tests := []struct {
-		name              string
-		input             string
+		name               string
+		input              string
 		expectedGenerators int
-		hasCondition      bool
-		hasError          bool
-		description       string
+		hasCondition       bool
+		hasError           bool
+		description        string
 	}{
 		// Basic comprehensions
 		{
-			name:              "simple comprehension",
-			input:             "{x for x in range(10)}",
+			name:               "simple comprehension",
+			input:              "{x for x in range(10)}",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "basic set comprehension with single generator",
+			hasCondition:       false,
+			description:        "basic set comprehension with single generator",
 		},
 		{
-			name:              "with condition",
-			input:             "{x for x in items if x > 0}",
+			name:               "with condition",
+			input:              "{x for x in items if x > 0}",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "set comprehension with filter condition",
+			hasCondition:       true,
+			description:        "set comprehension with filter condition",
 		},
 		{
-			name:              "expression transform",
-			input:             "{x * 2 for x in numbers}",
+			name:               "expression transform",
+			input:              "{x * 2 for x in numbers}",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "set comprehension with expression transformation",
+			hasCondition:       false,
+			description:        "set comprehension with expression transformation",
 		},
 		{
-			name:              "nested generators",
-			input:             "{x + y for x in range(3) for y in range(3)}",
+			name:               "nested generators",
+			input:              "{x + y for x in range(3) for y in range(3)}",
 			expectedGenerators: 2,
-			hasCondition:      false,
-			description:       "set comprehension with multiple generators",
+			hasCondition:       false,
+			description:        "set comprehension with multiple generators",
 		},
 		{
-			name:              "complex comprehension",
-			input:             "{process(x) for x in data if valid(x)}",
+			name:               "complex comprehension",
+			input:              "{process(x) for x in data if valid(x)}",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "set comprehension with function call and condition",
+			hasCondition:       true,
+			description:        "set comprehension with function call and condition",
 		},
 		{
-			name:              "unique values",
-			input:             "{x % 3 for x in range(10)}",
+			name:               "unique values",
+			input:              "{x % 3 for x in range(10)}",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "set comprehension creating unique values",
+			hasCondition:       false,
+			description:        "set comprehension creating unique values",
 		},
 
 		// Advanced comprehensions
 		{
-			name:              "tuple unpacking",
-			input:             "{x + y for x, y in pairs}",
+			name:               "tuple unpacking",
+			input:              "{x + y for x, y in pairs}",
 			expectedGenerators: 1,
-			hasCondition:      false,
-			description:       "set comprehension with tuple unpacking",
+			hasCondition:       false,
+			description:        "set comprehension with tuple unpacking",
 		},
 		{
-			name:              "nested iteration",
-			input:             "{item for row in matrix for item in row}",
+			name:               "nested iteration",
+			input:              "{item for row in matrix for item in row}",
 			expectedGenerators: 2,
-			hasCondition:      false,
-			description:       "set comprehension flattening nested structure",
+			hasCondition:       false,
+			description:        "set comprehension flattening nested structure",
 		},
 		{
-			name:              "complex condition",
-			input:             "{x for x in items if x > 0 and x < 10}",
+			name:               "complex condition",
+			input:              "{x for x in items if x > 0 and x < 10}",
 			expectedGenerators: 1,
-			hasCondition:      true,
-			description:       "set comprehension with complex boolean condition",
+			hasCondition:       true,
+			description:        "set comprehension with complex boolean condition",
 		},
 
 		// Error cases
@@ -475,11 +475,11 @@ func TestDictSetDisambiguation(t *testing.T) {
 // Test set edge cases and complex scenarios
 func TestSetEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		// Complex valid cases
 		{
@@ -512,10 +512,10 @@ func TestSetEdgeCases(t *testing.T) {
 			description:   "set with invalid element syntax",
 		},
 		{
-			name:          "invalid comprehension syntax",
-			input:         "{x for x in for y in items}",
-			hasError:      true,
-			description:   "malformed comprehension syntax",
+			name:        "invalid comprehension syntax",
+			input:       "{x for x in for y in items}",
+			hasError:    true,
+			description: "malformed comprehension syntax",
 		},
 	}
 

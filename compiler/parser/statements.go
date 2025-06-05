@@ -57,7 +57,8 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []ast.Stmt{stmt}, nil
+		// Unwrap MultiStmt nodes even in simple statement blocks
+		return unwrapMultiStmt(stmt), nil
 	}
 
 	// Otherwise expect NEWLINE INDENT statements DEDENT
@@ -83,7 +84,9 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 			return nil, err
 		}
 
-		statements = append(statements, stmt)
+		// Unwrap MultiStmt nodes
+		unwrapped := unwrapMultiStmt(stmt)
+		statements = append(statements, unwrapped...)
 
 		// Consume all the newlines we see
 		for p.check(lexer.Newline) {

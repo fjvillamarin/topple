@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -290,16 +290,16 @@ func TestParameterParsing(t *testing.T) {
 // Test parameter type characteristics
 func TestParameterTypes(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		paramIndex     int
-		expectedName   string
-		hasDefault     bool
-		hasAnnotation  bool
-		isStar         bool
-		isDoubleStar   bool
-		hasError       bool
-		description    string
+		name          string
+		input         string
+		paramIndex    int
+		expectedName  string
+		hasDefault    bool
+		hasAnnotation bool
+		isStar        bool
+		isDoubleStar  bool
+		hasError      bool
+		description   string
 	}{
 		{
 			name:         "simple parameter",
@@ -387,13 +387,13 @@ func TestParameterTypes(t *testing.T) {
 			funcDef := validateFunctionDefinition(t, stmt, -1)
 
 			if test.paramIndex >= len(funcDef.Parameters.Parameters) {
-				t.Errorf("Parameter index %d out of range (have %d parameters)", 
+				t.Errorf("Parameter index %d out of range (have %d parameters)",
 					test.paramIndex, len(funcDef.Parameters.Parameters))
 				return
 			}
 
 			param := funcDef.Parameters.Parameters[test.paramIndex]
-			validateParameter(t, param, test.expectedName, test.hasDefault, 
+			validateParameter(t, param, test.expectedName, test.hasDefault,
 				test.hasAnnotation, test.isStar, test.isDoubleStar)
 		})
 	}
@@ -402,13 +402,13 @@ func TestParameterTypes(t *testing.T) {
 // Test parameter default value expressions
 func TestParameterDefaults(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		paramIndex     int
-		expectedType   string
-		expectedValue  interface{}
-		hasError       bool
-		description    string
+		name          string
+		input         string
+		paramIndex    int
+		expectedType  string
+		expectedValue interface{}
+		hasError      bool
+		description   string
 	}{
 		{
 			name:          "number default",
@@ -636,11 +636,11 @@ func TestParameterAnnotations(t *testing.T) {
 // Test parameter ordering and positioning rules
 func TestParameterOrdering(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		positions    []string
-		hasError     bool
-		description  string
+		name        string
+		input       string
+		positions   []string
+		hasError    bool
+		description string
 	}{
 		{
 			name:        "correct ordering: positional then defaults",
@@ -730,10 +730,10 @@ func TestParameterOrdering(t *testing.T) {
 // Test parameter error cases
 func TestParameterErrors(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
+		name          string
+		input         string
 		errorContains string
-		description  string
+		description   string
 	}{
 		{
 			name:        "default before non-default",
@@ -812,31 +812,31 @@ func TestParameterErrors(t *testing.T) {
 // Test parameter edge cases and complex scenarios
 func TestParameterEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		// Complex valid cases
 		{
-			name: "comprehensive parameter types",
-			input: `def func(a, b=1, /, c, d=2, *args, e, f=3, **kwargs): pass`,
+			name:        "comprehensive parameter types",
+			input:       `def func(a, b=1, /, c, d=2, *args, e, f=3, **kwargs): pass`,
 			description: "function with all parameter types in correct order",
 		},
 		{
-			name: "complex annotations and defaults",
-			input: `def func(x: List[Dict[str, int]] = [], y: Optional[Callable[[int], str]] = None): pass`,
+			name:        "complex annotations and defaults",
+			input:       `def func(x: List[Dict[str, int]] = [], y: Optional[Callable[[int], str]] = None): pass`,
 			description: "parameters with complex type annotations and defaults",
 		},
 		{
-			name: "nested generic annotations",
-			input: `def func(data: Dict[str, List[Tuple[int, str, bool]]]): pass`,
+			name:        "nested generic annotations",
+			input:       `def func(data: Dict[str, List[Tuple[int, str, bool]]]): pass`,
 			description: "parameter with deeply nested generic type annotation",
 		},
 		{
-			name: "annotated special parameters",
-			input: `def func(*args: Tuple[int, ...], **kwargs: Any): pass`,
+			name:        "annotated special parameters",
+			input:       `def func(*args: Tuple[int, ...], **kwargs: Any): pass`,
 			description: "annotated *args and **kwargs parameters",
 		},
 

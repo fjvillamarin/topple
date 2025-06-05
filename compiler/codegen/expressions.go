@@ -1,9 +1,9 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
 	"fmt"
 	"strconv"
+	"sylfie/compiler/ast"
 )
 
 // Expression visitors

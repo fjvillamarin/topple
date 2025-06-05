@@ -293,10 +293,10 @@ func TestDelMultipleTargets(t *testing.T) {
 
 func TestDelParenthesizedTargets(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
-		expectedType string
+		name             string
+		input            string
+		hasError         bool
+		expectedType     string
 		expectedElements int
 	}{
 		{
@@ -305,15 +305,15 @@ func TestDelParenthesizedTargets(t *testing.T) {
 			expectedType: "group",
 		},
 		{
-			name:            "parenthesized tuple",
-			input:           "del (x, y)",
-			expectedType:    "tuple",
+			name:             "parenthesized tuple",
+			input:            "del (x, y)",
+			expectedType:     "tuple",
 			expectedElements: 2,
 		},
 		{
-			name:            "empty parentheses",
-			input:           "del ()",
-			expectedType:    "tuple",
+			name:             "empty parentheses",
+			input:            "del ()",
+			expectedType:     "tuple",
 			expectedElements: 0,
 		},
 		{
@@ -322,9 +322,9 @@ func TestDelParenthesizedTargets(t *testing.T) {
 			expectedType: "group",
 		},
 		{
-			name:            "parenthesized simple tuple",
-			input:           "del (x, y)",
-			expectedType:    "tuple",
+			name:             "parenthesized simple tuple",
+			input:            "del (x, y)",
+			expectedType:     "tuple",
 			expectedElements: 2,
 		},
 		{
@@ -389,34 +389,34 @@ func TestDelParenthesizedTargets(t *testing.T) {
 
 func TestDelListTargets(t *testing.T) {
 	tests := []struct {
-		name            string
-		input           string
-		hasError        bool
+		name             string
+		input            string
+		hasError         bool
 		expectedElements int
 	}{
 		{
-			name:            "list with single variable",
-			input:           "del [x]",
+			name:             "list with single variable",
+			input:            "del [x]",
 			expectedElements: 1,
 		},
 		{
-			name:            "list with multiple variables",
-			input:           "del [x, y, z]",
+			name:             "list with multiple variables",
+			input:            "del [x, y, z]",
 			expectedElements: 3,
 		},
 		{
-			name:            "empty list",
-			input:           "del []",
+			name:             "empty list",
+			input:            "del []",
 			expectedElements: 0,
 		},
 		{
-			name:            "list with simple targets",
-			input:           "del [x, y]",
+			name:             "list with simple targets",
+			input:            "del [x, y]",
 			expectedElements: 2,
 		},
 		{
-			name:            "list with trailing comma",
-			input:           "del [x, y,]",
+			name:             "list with trailing comma",
+			input:            "del [x, y,]",
 			expectedElements: 2,
 		},
 	}

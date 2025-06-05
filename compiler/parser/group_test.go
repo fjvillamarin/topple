@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -11,20 +11,20 @@ import (
 func parseGroupExpression(t *testing.T, input string) (ast.Expr, error) {
 	scanner := lexer.NewScanner([]byte(input))
 	tokens := scanner.ScanTokens()
-	
+
 	// Check for lexer errors
 	if len(scanner.Errors) > 0 {
 		t.Fatalf("Lexer errors encountered: %v", scanner.Errors)
 	}
-	
+
 	parser := NewParser(tokens)
 	expr, err := parser.expression()
-	
+
 	// Check for parser errors
 	if len(parser.Errors) > 0 {
 		t.Fatalf("Parser errors encountered: %v", parser.Errors)
 	}
-	
+
 	return expr, err
 }
 
@@ -90,7 +90,7 @@ func validateGroupExpr(t *testing.T, expr ast.Expr, expectedInnerType string) *a
 	if expectedInnerType != "" {
 		actualType := getGroupExpressionType(group.Expression)
 		if actualType != expectedInnerType {
-			t.Errorf("Expected inner expression type %s, got %s (actual: %T)", 
+			t.Errorf("Expected inner expression type %s, got %s (actual: %T)",
 				expectedInnerType, actualType, group.Expression)
 		}
 	}
@@ -117,7 +117,7 @@ func countNestedGroups(expr ast.Expr) int {
 func validateExpressionType(t *testing.T, expr ast.Expr, expectedType string) {
 	actualType := getGroupExpressionType(expr)
 	if actualType != expectedType {
-		t.Errorf("Expected expression type %s, got %s (actual: %T)", 
+		t.Errorf("Expected expression type %s, got %s (actual: %T)",
 			expectedType, actualType, expr)
 	}
 }
@@ -261,7 +261,7 @@ func TestGroupedExpressions(t *testing.T) {
 		{
 			name:          "grouped list comprehension",
 			input:         "([x for x in items])",
-			expectedInner: "list_comp",  // Parser correctly identifies this as list comprehension
+			expectedInner: "list_comp", // Parser correctly identifies this as list comprehension
 			isGroup:       true,
 			description:   "grouped list comprehension",
 		},
@@ -297,7 +297,7 @@ func TestGroupedExpressions(t *testing.T) {
 		{
 			name:          "single element tuple",
 			input:         "(x,)",
-			expectedInner: "",  // Don't check inner type as this might be parsed differently
+			expectedInner: "", // Don't check inner type as this might be parsed differently
 			isGroup:       false,
 			description:   "single element tuple with trailing comma",
 		},
@@ -506,7 +506,7 @@ func TestGroupingPrecedence(t *testing.T) {
 
 			isGroup := getGroupExpressionType(expr) == "group"
 			if isGroup != test.expectGroup {
-				t.Errorf("Expected group=%v for %s, got group=%v (actual type: %s)", 
+				t.Errorf("Expected group=%v for %s, got group=%v (actual type: %s)",
 					test.expectGroup, test.description, isGroup, getGroupExpressionType(expr))
 			}
 		})
@@ -516,41 +516,41 @@ func TestGroupingPrecedence(t *testing.T) {
 // Test error cases and edge scenarios
 func TestGroupExpressionEdgeCases(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		hasError     bool
+		name          string
+		input         string
+		hasError      bool
 		errorContains string
-		description  string
+		description   string
 	}{
 		{
-			name:          "deeply nested expression",
-			input:         "(((((((a + b)))))))",
-			hasError:      false,
-			description:   "very deeply nested grouping",
+			name:        "deeply nested expression",
+			input:       "(((((((a + b)))))))",
+			hasError:    false,
+			description: "very deeply nested grouping",
 		},
 		{
-			name:          "grouped complex chained operations",
-			input:         "(a.b().c[0].d)",
-			hasError:      false,
-			description:   "grouped method chaining and attribute access",
+			name:        "grouped complex chained operations",
+			input:       "(a.b().c[0].d)",
+			hasError:    false,
+			description: "grouped method chaining and attribute access",
 		},
 		{
-			name:          "grouped f-string",
-			input:         `(f"hello {name}")`,
-			hasError:      false,
-			description:   "grouped f-string expression",
+			name:        "grouped f-string",
+			input:       `(f"hello {name}")`,
+			hasError:    false,
+			description: "grouped f-string expression",
 		},
 		{
-			name:          "grouped starred expression",
-			input:         "(*args)",
-			hasError:      false,
-			description:   "grouped starred expression",
+			name:        "grouped starred expression",
+			input:       "(*args)",
+			hasError:    false,
+			description: "grouped starred expression",
 		},
 		{
-			name:          "grouped complex comprehension",
-			input:         "([x for x in range(10) if x % 2 == 0])",
-			hasError:      false,
-			description:   "grouped list comprehension with condition",
+			name:        "grouped complex comprehension",
+			input:       "([x for x in range(10) if x % 2 == 0])",
+			hasError:    false,
+			description: "grouped list comprehension with condition",
 		},
 
 		// Error cases
@@ -571,16 +571,16 @@ func TestGroupExpressionEdgeCases(t *testing.T) {
 			description:   "nested missing closing parenthesis",
 		},
 		{
-			name:          "mismatched nesting",
-			input:         "(((42))",
-			hasError:      true,
-			description:   "unbalanced nested parentheses",
+			name:        "mismatched nesting",
+			input:       "(((42))",
+			hasError:    true,
+			description: "unbalanced nested parentheses",
 		},
 		{
-			name:          "invalid expression in group",
-			input:         "(def)",
-			hasError:      true,
-			description:   "invalid keyword in group",
+			name:        "invalid expression in group",
+			input:       "(def)",
+			hasError:    true,
+			description: "invalid keyword in group",
 		},
 	}
 

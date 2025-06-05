@@ -12,15 +12,15 @@ func TestExpressions(t *testing.T) {
 		input  string
 		parser string // which parser method to test
 		want   struct {
-			nodeType    string
-			hasError    bool
-			errorMsg    string
-			hasValue    bool   // for yield, return statements
-			isFrom      bool   // for yield from
-			isStar      bool   // for star expressions
-			elemCount   int    // for tuples, lists
-			nameCount   int    // for name lists
-			operator    string // for binary expressions
+			nodeType  string
+			hasError  bool
+			errorMsg  string
+			hasValue  bool   // for yield, return statements
+			isFrom    bool   // for yield from
+			isStar    bool   // for star expressions
+			elemCount int    // for tuples, lists
+			nameCount int    // for name lists
+			operator  string // for binary expressions
 		}
 	}{
 		// Basic expression parsing
@@ -29,15 +29,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "name"},
 		},
 		{
@@ -45,15 +45,15 @@ func TestExpressions(t *testing.T) {
 			input:  "lambda x: x + 1",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "lambda"},
 		},
 		{
@@ -61,15 +61,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x if condition else y",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "ternary"},
 		},
 		{
@@ -77,15 +77,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a or b",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "or"},
 		},
 		{
@@ -93,15 +93,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a and b",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "and"},
 		},
 		{
@@ -109,15 +109,15 @@ func TestExpressions(t *testing.T) {
 			input:  "not x",
 			parser: "expression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "unary", operator: "not"},
 		},
 
@@ -127,15 +127,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a or b",
 			parser: "disjunction",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "or"},
 		},
 		{
@@ -143,15 +143,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a or b or c",
 			parser: "disjunction",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "or"},
 		},
 		{
@@ -159,15 +159,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x",
 			parser: "disjunction",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "name"},
 		},
 
@@ -177,15 +177,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a and b",
 			parser: "conjunction",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "and"},
 		},
 		{
@@ -193,15 +193,15 @@ func TestExpressions(t *testing.T) {
 			input:  "a and b and c",
 			parser: "conjunction",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "and"},
 		},
 
@@ -211,15 +211,15 @@ func TestExpressions(t *testing.T) {
 			input:  "not x",
 			parser: "inversion",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "unary", operator: "not"},
 		},
 		{
@@ -227,15 +227,15 @@ func TestExpressions(t *testing.T) {
 			input:  "not not x",
 			parser: "inversion",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "unary", operator: "not"},
 		},
 		{
@@ -243,15 +243,15 @@ func TestExpressions(t *testing.T) {
 			input:  "not x < y",
 			parser: "inversion",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "unary", operator: "not"},
 		},
 		{
@@ -259,15 +259,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x < y",
 			parser: "inversion",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "<"},
 		},
 
@@ -277,15 +277,15 @@ func TestExpressions(t *testing.T) {
 			input:  "yield",
 			parser: "yieldExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "yield", hasValue: false, isFrom: false},
 		},
 		{
@@ -293,15 +293,15 @@ func TestExpressions(t *testing.T) {
 			input:  "yield 42",
 			parser: "yieldExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "yield", hasValue: true, isFrom: false},
 		},
 		{
@@ -309,15 +309,15 @@ func TestExpressions(t *testing.T) {
 			input:  "yield from items",
 			parser: "yieldExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "yield", hasValue: true, isFrom: true},
 		},
 
@@ -327,15 +327,15 @@ func TestExpressions(t *testing.T) {
 			input:  "*args",
 			parser: "starExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "star", isStar: true},
 		},
 		{
@@ -343,15 +343,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x",
 			parser: "starExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "name", isStar: false},
 		},
 		{
@@ -359,15 +359,15 @@ func TestExpressions(t *testing.T) {
 			input:  "*func()",
 			parser: "starExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "star", isStar: true},
 		},
 
@@ -377,15 +377,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x",
 			parser: "starExpressions",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "name"},
 		},
 		{
@@ -393,15 +393,15 @@ func TestExpressions(t *testing.T) {
 			input:  "*args",
 			parser: "starExpressions",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "star", isStar: true},
 		},
 		{
@@ -409,15 +409,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x,",
 			parser: "starExpressions",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "tuple", elemCount: 1},
 		},
 		{
@@ -425,15 +425,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x, y, z",
 			parser: "starExpressions",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "tuple", elemCount: 3},
 		},
 
@@ -443,15 +443,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x := 42",
 			parser: "namedExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "assign"},
 		},
 		{
@@ -459,15 +459,15 @@ func TestExpressions(t *testing.T) {
 			input:  "result := func()",
 			parser: "namedExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "assign"},
 		},
 		{
@@ -475,15 +475,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x + y",
 			parser: "namedExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "binary", operator: "+"},
 		},
 
@@ -493,15 +493,15 @@ func TestExpressions(t *testing.T) {
 			input:  "*args",
 			parser: "starNamedExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "star", isStar: true},
 		},
 		{
@@ -509,15 +509,15 @@ func TestExpressions(t *testing.T) {
 			input:  "x := 42",
 			parser: "starNamedExpression",
 			want: struct {
-				nodeType    string
-				hasError    bool
-				errorMsg    string
-				hasValue    bool
-				isFrom      bool
-				isStar      bool
-				elemCount   int
-				nameCount   int
-				operator    string
+				nodeType  string
+				hasError  bool
+				errorMsg  string
+				hasValue  bool
+				isFrom    bool
+				isStar    bool
+				elemCount int
+				nameCount int
+				operator  string
 			}{nodeType: "assign"},
 		},
 	}
@@ -633,9 +633,9 @@ func TestExpressions(t *testing.T) {
 
 func TestParseNameList(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input string
-		want struct {
+		want  struct {
 			count    int
 			hasError bool
 			errorMsg string
@@ -644,37 +644,65 @@ func TestParseNameList(t *testing.T) {
 		{
 			name:  "single_name",
 			input: "x",
-			want:  struct{ count int; hasError bool; errorMsg string }{count: 1},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{count: 1},
 		},
 		{
 			name:  "two_names",
 			input: "x, y",
-			want:  struct{ count int; hasError bool; errorMsg string }{count: 2},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{count: 2},
 		},
 		{
 			name:  "three_names",
 			input: "a, b, c",
-			want:  struct{ count int; hasError bool; errorMsg string }{count: 3},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{count: 3},
 		},
 		{
 			name:  "names_with_spaces",
 			input: "first, second, third",
-			want:  struct{ count int; hasError bool; errorMsg string }{count: 3},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{count: 3},
 		},
 		{
 			name:  "empty_input_error",
 			input: "",
-			want:  struct{ count int; hasError bool; errorMsg string }{hasError: true, errorMsg: "expected identifier"},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{hasError: true, errorMsg: "expected identifier"},
 		},
 		{
 			name:  "trailing_comma_error",
 			input: "x,",
-			want:  struct{ count int; hasError bool; errorMsg string }{hasError: true, errorMsg: "expected identifier after ','"},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{hasError: true, errorMsg: "expected identifier after ','"},
 		},
 		{
 			name:  "non_identifier_error",
 			input: "123",
-			want:  struct{ count int; hasError bool; errorMsg string }{hasError: true, errorMsg: "expected identifier"},
+			want: struct {
+				count    int
+				hasError bool
+				errorMsg string
+			}{hasError: true, errorMsg: "expected identifier"},
 		},
 	}
 

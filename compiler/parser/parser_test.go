@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
-	"strings"
 	"testing"
 )
 
@@ -107,9 +107,9 @@ func validateParseErrorStruct(t *testing.T, err *ParseError, expectedToken lexer
 // Test parser initialization
 func TestNewParser(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     string
-		tokenLen  int
+		name     string
+		input    string
+		tokenLen int
 	}{
 		{
 			name:     "empty input",
@@ -579,7 +579,7 @@ func TestParserErrorAccumulation(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			parser := createParser(t, test.input)
-			
+
 			// Check initial state
 			if len(parser.Errors) != 0 {
 				t.Errorf("Expected no initial errors but got %d", len(parser.Errors))

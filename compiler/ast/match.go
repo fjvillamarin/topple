@@ -1,9 +1,9 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
 	"fmt"
 	"strings"
+	"sylfie/compiler/lexer"
 )
 
 // MatchStmt represents a match statement: match subject_expr: case_blocks

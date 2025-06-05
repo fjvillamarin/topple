@@ -8,13 +8,13 @@ import (
 
 func TestSimpleSlices(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		hasError      bool
-		isSlice       bool
-		hasStart      bool
-		hasEnd        bool
-		hasStep       bool
+		name            string
+		input           string
+		hasError        bool
+		isSlice         bool
+		hasStart        bool
+		hasEnd          bool
+		hasStep         bool
 		expectedIndices int
 	}{
 		{
@@ -198,44 +198,44 @@ func TestSimpleSlices(t *testing.T) {
 
 func TestMultiDimensionalSlices(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		hasError      bool
+		name            string
+		input           string
+		hasError        bool
 		expectedIndices int
 	}{
 		{
-			name:          "two dimensional index",
-			input:         "matrix[0, 1]",
+			name:            "two dimensional index",
+			input:           "matrix[0, 1]",
 			expectedIndices: 2,
 		},
 		{
-			name:          "two dimensional slice",
-			input:         "matrix[1:3, 2:4]",
+			name:            "two dimensional slice",
+			input:           "matrix[1:3, 2:4]",
 			expectedIndices: 2,
 		},
 		{
-			name:          "mixed index and slice",
-			input:         "matrix[0, 1:3]",
+			name:            "mixed index and slice",
+			input:           "matrix[0, 1:3]",
 			expectedIndices: 2,
 		},
 		{
-			name:          "slice with step in multi-dim",
-			input:         "matrix[::2, 1:]",
+			name:            "slice with step in multi-dim",
+			input:           "matrix[::2, 1:]",
 			expectedIndices: 2,
 		},
 		{
-			name:          "complex multi-dimensional",
-			input:         "tensor[i, j:k, ::2]",
+			name:            "complex multi-dimensional",
+			input:           "tensor[i, j:k, ::2]",
 			expectedIndices: 3,
 		},
 		{
-			name:          "three dimensional",
-			input:         "cube[x, y, z]",
+			name:            "three dimensional",
+			input:           "cube[x, y, z]",
 			expectedIndices: 3,
 		},
 		{
-			name:          "trailing comma allowed",
-			input:         "matrix[0, 1,]",
+			name:            "trailing comma allowed",
+			input:           "matrix[0, 1,]",
 			expectedIndices: 2,
 		},
 	}

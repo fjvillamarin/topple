@@ -1,23 +1,23 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
 	"os"
 	"path/filepath"
 	"strings"
+	"sylfie/compiler/ast"
+	"sylfie/compiler/lexer"
 	"testing"
 )
 
 // TestCodeGeneration tests code generation using golden files
 func TestCodeGeneration(t *testing.T) {
 	updateGolden := os.Getenv("UPDATE_GOLDEN") == "1"
-	
+
 	testCases := []struct {
-		category    string
-		name        string
-		buildAST    func() ast.Node
-		skipReason  string // If non-empty, test will be skipped with this reason
+		category   string
+		name       string
+		buildAST   func() ast.Node
+		skipReason string // If non-empty, test will be skipped with this reason
 	}{
 		// Literals
 		{
@@ -302,20 +302,6 @@ func TestCodeGeneration(t *testing.T) {
 				}
 			},
 		},
-		{
-			category:   "statements",
-			name:       "multi_statement",
-			skipReason: "Known bug: MultiStmt incorrectly generates newlines between semicolons",
-			buildAST: func() ast.Node {
-				return &ast.MultiStmt{
-					Stmts: []ast.Stmt{
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "a"}}},
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "b"}}},
-						&ast.ExprStmt{Expr: &ast.Name{Token: lexer.Token{Lexeme: "c"}}},
-					},
-				}
-			},
-		},
 
 		// Functions
 		{
@@ -548,7 +534,7 @@ func TestCodeGeneration(t *testing.T) {
 				if err := os.MkdirAll(filepath.Dir(expectedPath), 0755); err != nil {
 					t.Fatalf("Failed to create expected directory: %v", err)
 				}
-				
+
 				// Update golden file
 				err := os.WriteFile(expectedPath, []byte(generated), 0644)
 				if err != nil {
