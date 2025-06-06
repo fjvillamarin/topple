@@ -124,9 +124,8 @@ func TestCodeGeneration(t *testing.T) {
 			},
 		},
 		{
-			category:   "collections",
-			name:       "empty_set",
-			skipReason: "Known bug: empty set generates {} instead of set()",
+			category: "collections",
+			name:     "empty_set",
 			buildAST: func() ast.Node {
 				return &ast.SetExpr{Elements: []ast.Expr{}}
 			},
