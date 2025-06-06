@@ -1,5 +1,5 @@
 class Greeting(BaseView):
-    def __init__(self, name: str, title: str = "Mr."):
+    def __init__(self, name: str, title: str="Mr."):
         super().__init__()
         self.name = name
         self.title = title

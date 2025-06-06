@@ -1,3 +1,3 @@
-def greet(name = "World"):
+def greet(name="World"):
     pass
 

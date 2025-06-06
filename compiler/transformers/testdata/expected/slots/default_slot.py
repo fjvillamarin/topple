@@ -1,5 +1,5 @@
 class Card(BaseView):
-    def __init__(self, *, children = None):
+    def __init__(self, *, children=None):
         super().__init__()
         self.children = children
 

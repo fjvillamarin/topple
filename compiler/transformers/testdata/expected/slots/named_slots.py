@@ -1,5 +1,5 @@
 class Layout(BaseView):
-    def __init__(self, *, children = None, header = None, footer = None):
+    def __init__(self, *, children=None, header=None, footer=None):
         super().__init__()
         self.children = children
         self.header = header
