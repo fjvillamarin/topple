@@ -336,6 +336,11 @@ func (p *Parser) starTargets() ([]ast.Expr, error) {
 		}
 	}
 
+	// Validate that only one starred expression exists at this level
+	if err := p.validateStarredTargets(targets); err != nil {
+		return nil, err
+	}
+
 	return targets, nil
 }
 
@@ -640,4 +645,18 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 tryStarAtom:
 	// If we couldn't parse as t_primary with an accessor, try as star_atom
 	return p.starAtom()
+}
+
+// validateStarredTargets checks that only one starred expression exists at the current nesting level
+func (p *Parser) validateStarredTargets(targets []ast.Expr) error {
+	starCount := 0
+	for _, target := range targets {
+		if _, isStar := target.(*ast.StarExpr); isStar {
+			starCount++
+			if starCount > 1 {
+				return p.error(p.peek(), "multiple starred expressions in assignment")
+			}
+		}
+	}
+	return nil
 }
