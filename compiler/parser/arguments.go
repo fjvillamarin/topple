@@ -149,7 +149,7 @@ func (p *Parser) kwargs() ([]*ast.Argument, error) {
 }
 
 // parseArg parses a single argument (non-keyword)
-// This handles: starred_expression | expression
+// This handles: starred_expression | expression | generator_expression
 func (p *Parser) parseArg() (*ast.Argument, error) {
 	startPos := p.peek().Start()
 
@@ -173,6 +173,23 @@ func (p *Parser) parseArg() (*ast.Argument, error) {
 	expr, err := p.expression()
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if this starts a generator expression
+	// Python allows bare generator expressions as function arguments:
+	// func(x for x in items) is equivalent to func((x for x in items))
+	if p.check(lexer.For) || (p.check(lexer.Async) && p.checkNext(lexer.For)) {
+		// Parse as generator expression
+		clauses, err := p.forIfClauses()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.GenExpr{
+			Element: expr,
+			Clauses: clauses,
+			Span:    lexer.Span{Start: startPos, End: p.previous().End()},
+		}
 	}
 
 	// Check that it's not followed by '=' (which would make it a keyword arg)
