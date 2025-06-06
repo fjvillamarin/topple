@@ -163,6 +163,11 @@ func (p *Parser) parameters() (*ast.ParameterList, error) {
 				}
 			}
 
+			// Set IsKeywordOnly if we're in phase 2 (after * or *args)
+			if paramPhase == 2 {
+				param.IsKeywordOnly = true
+			}
+
 			// Add the parameter
 			paramList.Parameters = append(paramList.Parameters, param)
 
