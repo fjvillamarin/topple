@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
 	"testing"
@@ -268,8 +269,6 @@ func TestComparisonErrors(t *testing.T) {
 		{"invalid is", "x is"},
 		{"invalid in", "x in"},
 		{"empty comparison", ""},
-		{"incomplete not in", "x not"},
-		{"incomplete is not", "x is not"},
 		{"invalid operator sequence", "x <=> y"},
 	}
 
@@ -282,6 +281,38 @@ func TestComparisonErrors(t *testing.T) {
 			_, err := parser.comparison()
 			if err == nil {
 				t.Errorf("Expected error for %s, but got none", test.input)
+			}
+		})
+	}
+}
+
+// TestIncompleteExpressionStatements tests incomplete expressions at the statement level
+func TestIncompleteExpressionStatements(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		errorContains string
+	}{
+		{"incomplete not in", "x not", ""},
+		{"incomplete is not", "x is not", ""},
+		{"trailing not", "x not and y", ""},
+		{"if with incomplete not", "if x not: pass", ""},
+		{"incomplete addition", "x +", ""},
+		{"incomplete multiplication", "x *", ""},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scanner := lexer.NewScanner([]byte(test.input))
+			tokens := scanner.ScanTokens()
+			parser := NewParser(tokens)
+
+			// Parse as a complete program
+			_, errs := parser.Parse()
+			if len(errs) == 0 {
+				t.Errorf("Expected error for '%s', but got none", test.input)
+			} else if test.errorContains != "" && !strings.Contains(errs[0].Error(), test.errorContains) {
+				t.Errorf("Expected error containing '%s' for '%s', but got: %v", test.errorContains, test.input, errs[0])
 			}
 		})
 	}
