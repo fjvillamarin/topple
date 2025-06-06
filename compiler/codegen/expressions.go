@@ -146,6 +146,13 @@ func (cg *CodeGenerator) VisitTupleExpr(t *ast.TupleExpr) ast.Visitor {
 }
 
 func (cg *CodeGenerator) VisitSetExpr(s *ast.SetExpr) ast.Visitor {
+	// Special case: empty set must use set() constructor
+	if len(s.Elements) == 0 {
+		cg.write("set()")
+		return cg
+	}
+
+	// Non-empty sets use {} syntax
 	cg.write("{")
 	for i, elem := range s.Elements {
 		if i > 0 {
