@@ -204,13 +204,28 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    git checkout -b feat/issue-22
    ```
 
-3. **Work on the issue**:
+3. **Create a todo list** to track your progress:
+   - Use the TodoWrite tool to create a comprehensive list of tasks
+   - Break down the issue into specific, actionable items
+   - Include tasks for:
+     - Understanding the issue and examining relevant code
+     - Implementing the fix or feature
+     - Writing/updating tests
+     - Running tests and checking for regressions
+     - Code formatting
+     - Committing changes
+     - Creating the pull request
+   - Mark tasks as `in_progress` when you start them
+   - Mark tasks as `completed` immediately after finishing them
+   - Add new tasks as you discover additional work needed
+
+4. **Work on the issue**:
    - Make incremental commits as you progress
    - Ensure all existing tests continue to pass
    - Add new tests if implementing a feature or fixing a bug
    - Follow the existing code style and patterns
 
-4. **Testing requirements**:
+5. **Testing requirements**:
    ```bash
    # Run all tests before committing
    mise run test
@@ -228,12 +243,12 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    sylfie parse path/to/test.psx -d      # See AST with resolution info
    ```
 
-5. **Code formatting**:
+6. **Code formatting**:
    - **IMPORTANT**: Always run `mise run fmt` before committing Go code
    - This ensures consistent formatting across the codebase
    - The formatter will fix indentation, spacing, and add missing newlines
 
-6. **Commit guidelines**:
+7. **Commit guidelines**:
    - Use conventional commit format: `type(scope): description` or `type: description`
      - `feat(parser): add support for async views`
      - `fix(codegen): handle empty set literals correctly`
@@ -244,7 +259,17 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    - Reference the issue number when relevant: `fix(parser): handle nested f-strings (#22)`
    - Ensure each commit represents a working state
 
-7. **Before pushing**:
+8. **Commit your changes**:
+   - Stage and commit your changes following the guidelines above
+   - Make sure all tests pass before committing
+   - Example:
+     ```bash
+     git add -A
+     git commit -m "fix(parser): handle nested f-strings correctly (#22)"
+     ```
+   - Update your todo list to mark the commit task as completed
+
+9. **Before pushing**:
    - Run the full test suite: `mise run test-all`
    - Verify no existing tests are broken
    - Check that new tests cover your changes
@@ -252,7 +277,7 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    - Review your changes: `git diff master`
    - Double-check all modified files make sense for the issue
 
-8. **Creating the Pull Request**:
+10. **Creating the Pull Request**:
    ```bash
    # Push your branch
    git push -u origin bug/issue-22

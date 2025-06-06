@@ -347,7 +347,7 @@ except *ExceptionGroup as eg:
 else:
     pass`,
 			hasError:    true,
-			errorText:   "expected",
+			errorText:   "'else' clause requires at least one 'except' clause",
 			description: "else clause without except should fail",
 		},
 		{
@@ -651,7 +651,7 @@ finally:
 else:
     pass`,
 			valid:       false,
-			errorText:   "expected",
+			errorText:   "'else' clause requires at least one 'except' clause",
 			description: "else clause without except handlers",
 		},
 		{
@@ -663,7 +663,7 @@ else:
 except:
     pass`,
 			valid:       false,
-			errorText:   "expected",
+			errorText:   "'else' clause requires at least one 'except' clause",
 			description: "else clause before except handlers",
 		},
 		{
@@ -675,7 +675,7 @@ finally:
 except:
     pass`,
 			valid:       false,
-			errorText:   "expected",
+			errorText:   "'except' clause cannot appear after 'finally'",
 			description: "finally clause before except handlers",
 		},
 		{
@@ -689,7 +689,7 @@ finally:
 else:
     pass`,
 			valid:       false,
-			errorText:   "expected",
+			errorText:   "'else' clause cannot appear after 'finally'",
 			description: "finally clause before else clause",
 		},
 	}
