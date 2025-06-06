@@ -62,6 +62,14 @@ func (p *Parser) tryStatement() (ast.Stmt, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// Check for invalid clauses after finally
+			if p.check(lexer.Except) {
+				return nil, p.error(p.peek(), "'except' clause cannot appear after 'finally'")
+			}
+			if p.check(lexer.Else) {
+				return nil, p.error(p.peek(), "'else' clause cannot appear after 'finally'")
+			}
 		}
 	} else if p.match(lexer.Finally) {
 		// Just a finally block without any except blocks
@@ -69,6 +77,17 @@ func (p *Parser) tryStatement() (ast.Stmt, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Check for invalid clauses after finally
+		if p.check(lexer.Except) {
+			return nil, p.error(p.peek(), "'except' clause cannot appear after 'finally'")
+		}
+		if p.check(lexer.Else) {
+			return nil, p.error(p.peek(), "'else' clause cannot appear after 'finally'")
+		}
+	} else if p.check(lexer.Else) {
+		// Else without except is invalid
+		return nil, p.error(p.peek(), "'else' clause requires at least one 'except' clause")
 	} else {
 		return nil, p.error(p.peek(), "expected 'except' or 'finally' after try block")
 	}
