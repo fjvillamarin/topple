@@ -126,24 +126,7 @@ func (vm *ViewTransformer) transformViewBody(body []ast.Stmt) ([]ast.Stmt, error
 func (vm *ViewTransformer) processViewStatement(stmt ast.Stmt) ([]ast.Stmt, error) {
 	switch s := stmt.(type) {
 	case *ast.HTMLElement:
-		// Check if this is a view component
-		if viewStmt, isView := vm.isViewElement(s); isView {
-			// Transform view component with slots
-			transformedCall, err := vm.transformViewCallWithSlots(viewStmt, s)
-			if err != nil {
-				return nil, err
-			}
-
-			// If we're in a context, append to it
-			if vm.currentContext != "" {
-				appendStmt := vm.createAppendStatement(vm.currentContext, transformedCall)
-				return []ast.Stmt{appendStmt}, nil
-			}
-
-			// Otherwise return as expression statement
-			return []ast.Stmt{&ast.ExprStmt{Expr: transformedCall, Span: s.Span}}, nil
-		}
-		// Regular HTML element
+		// Process all HTML elements through processHTMLElement which handles validation
 		return vm.processHTMLElement(s)
 	case *ast.For:
 		return vm.processForLoop(s)
