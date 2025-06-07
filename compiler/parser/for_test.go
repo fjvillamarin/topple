@@ -361,7 +361,7 @@ func TestForEdgeCases(t *testing.T) {
 			name: "for with subscript target",
 			input: `for data[key] in values:
     handle(data[key])`,
-			hasError: true, // PARSER BUG: Should support subscript targets like Python
+			hasError: false,
 		},
 		{
 			name: "async for without async context warning",
