@@ -57,7 +57,7 @@ type FileSystem interface {
 
 	// Directory Operations
 	ListFiles(dir string, recursive bool) ([]string, error)
-	ListBiscuitFiles(dir string, recursive bool) ([]string, error)
+	ListPSXFiles(dir string, recursive bool) ([]string, error)
 	MkdirAll(path string, perm os.FileMode) error
 
 	// Path Operations
@@ -198,24 +198,24 @@ func (s *StandardFileSystem) ListFiles(dir string, recursive bool) ([]string, er
 	return files, nil
 }
 
-// ListBiscuitFiles lists all .psx files in a directory
-func (s *StandardFileSystem) ListBiscuitFiles(dir string, recursive bool) ([]string, error) {
-	s.logger.Debug("Listing biscuit files", "directory", dir, "recursive", recursive)
+// ListPSXFiles lists all .psx files in a directory
+func (s *StandardFileSystem) ListPSXFiles(dir string, recursive bool) ([]string, error) {
+	s.logger.Debug("Listing PSX files", "directory", dir, "recursive", recursive)
 
 	files, err := s.ListFiles(dir, recursive)
 	if err != nil {
 		return nil, err
 	}
 
-	var biscuitFiles []string
+	var psxFiles []string
 	for _, file := range files {
 		if strings.HasSuffix(file, ".psx") {
-			biscuitFiles = append(biscuitFiles, file)
+			psxFiles = append(psxFiles, file)
 		}
 	}
 
-	s.logger.Debug("Found biscuit files", "directory", dir, "count", len(biscuitFiles))
-	return biscuitFiles, nil
+	s.logger.Debug("Found PSX files", "directory", dir, "count", len(psxFiles))
+	return psxFiles, nil
 }
 
 // MkdirAll creates a directory and all necessary parent directories
@@ -291,7 +291,7 @@ func (s *StandardFileSystem) GetOutputPath(inputPath, outputDir string) (string,
 		return "", err
 	}
 
-	// Check if input is a Biscuit file
+	// Check if input is a PSX file
 	if !strings.HasSuffix(absInputPath, ".psx") {
 		s.logger.Error("Input file must be a .psx file", "path", inputPath)
 		return "", fmt.Errorf("input file must be a .psx file: %s", inputPath)

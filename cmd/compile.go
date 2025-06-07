@@ -16,7 +16,7 @@ import (
 // and various customization flags.
 type CompileCmd struct {
 	// Positional arguments
-	Input  string `arg:"" required:"" help:"Path to a Biscuit file or directory"`
+	Input  string `arg:"" required:"" help:"Path to a PSX file or directory"`
 	Output string `arg:"" optional:"" help:"Output directory for compiled Python files (default: same as input)"`
 }
 
@@ -64,13 +64,13 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 		// Process directory
 		log.DebugContext(*ctx, "Input is a directory", slog.String("path", c.Input))
 
-		// List all biscuit files
-		files, err := fs.ListBiscuitFiles(c.Input, globals.Recursive)
+		// List all PSX files
+		files, err := fs.ListPSXFiles(c.Input, globals.Recursive)
 		if err != nil {
-			return fmt.Errorf("error listing biscuit files: %w", err)
+			return fmt.Errorf("error listing PSX files: %w", err)
 		}
 
-		log.InfoContext(*ctx, "Found biscuit files", slog.Int("count", len(files)))
+		log.InfoContext(*ctx, "Found PSX files", slog.Int("count", len(files)))
 
 		for _, file := range files {
 			if err := compileFile(fs, compiler, file, c.Output, log, *ctx); err != nil {
@@ -97,7 +97,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 	return nil
 }
 
-// compileFile compiles a single biscuit file to a Python file
+// compileFile compiles a single PSX file to a Python file
 func compileFile(fs filesystem.FileSystem, cmp compiler.Compiler, inputPath, outputDir string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Compiling file", slog.String("input", inputPath))
 

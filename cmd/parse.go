@@ -16,7 +16,7 @@ import (
 // and prints the AST or writes it to a file.
 type ParseCmd struct {
 	// Positional arguments – kept identical to CompileCmd for convenience
-	Input  string `arg:"" required:"" help:"Path to a Python/Biscuit file or directory"`
+	Input  string `arg:"" required:"" help:"Path to a Python/PSX file or directory"`
 	Output string `arg:"" optional:"" help:"Output directory for AST files (default: none)"`
 
 	// Whether to write output files
@@ -47,10 +47,10 @@ func (p *ParseCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 	start := time.Now()
 
 	if isDir {
-		// Use the specialized method to get Biscuit (.psx) files
-		sources, err := fs.ListBiscuitFiles(p.Input, globals.Recursive)
+		// Use the specialized method to get PSX (.psx) files
+		sources, err := fs.ListPSXFiles(p.Input, globals.Recursive)
 		if err != nil {
-			return fmt.Errorf("error listing biscuit files: %w", err)
+			return fmt.Errorf("error listing PSX files: %w", err)
 		}
 
 		log.InfoContext(*ctx, "Parsing files in directory", slog.Int("fileCount", len(sources)))
