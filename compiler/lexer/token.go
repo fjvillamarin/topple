@@ -263,7 +263,7 @@ var tokenTypeNames = [...]string{
 	"Case",
 	"Type",
 
-	// biscuit specific tokens
+	// PSX specific tokens
 	"View",
 	"Component",
 
@@ -367,7 +367,7 @@ var Keywords = map[string]TokenType{
 	"case": Case,
 	"type": Type,
 
-	// biscuit specific keywords
+	// PSX specific keywords
 	"view":      View,
 	"component": Component,
 }

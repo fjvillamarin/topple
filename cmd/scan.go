@@ -16,7 +16,7 @@ import (
 // and prints the tokens or writes them to a file.
 type ScanCmd struct {
 	// Positional arguments – kept identical to CompileCmd for convenience
-	Input  string `arg:"" required:"" help:"Path to a Python/Biscuit file or directory"`
+	Input  string `arg:"" required:"" help:"Path to a Python/PSX file or directory"`
 	Output string `arg:"" optional:"" help:"Output directory for token files (default: none)"`
 
 	// Whether to write output files
@@ -47,7 +47,7 @@ func (s *ScanCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger) 
 	start := time.Now()
 
 	if isDir {
-		// Include both Biscuit (.bsct) and Python (.py) source files so the
+		// Include both PSX (.psx) and Python (.py) source files so the
 		// scanner can be run against either.
 		files, err := fs.ListFiles(s.Input, globals.Recursive)
 		if err != nil {

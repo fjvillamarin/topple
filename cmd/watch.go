@@ -110,9 +110,9 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 				slog.String("event", event.Type.String()),
 				slog.Time("timestamp", event.Timestamp))
 
-			// Check if this is a .bsct file or a Python file generated from a .bsct file
+			// Check if this is a .psx file or a Python file generated from a .psx file
 			if !isBiscuitRelatedFile(event.Path) {
-				log.DebugContext(*ctx, "Ignoring non-biscuit file", slog.String("path", event.Path))
+				log.DebugContext(*ctx, "Ignoring non-PSX file", slog.String("path", event.Path))
 				continue
 			}
 
@@ -143,15 +143,15 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 	}
 }
 
-// compileDirectory compiles all biscuit files in a directory
+// compileDirectory compiles all PSX files in a directory
 func compileDirectory(fs filesystem.FileSystem, cmp compiler.Compiler, inputDir, outputDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
-	// List all biscuit files
+	// List all PSX files
 	files, err := fs.ListBiscuitFiles(inputDir, recursive)
 	if err != nil {
-		return fmt.Errorf("error listing biscuit files: %w", err)
+		return fmt.Errorf("error listing PSX files: %w", err)
 	}
 
-	log.InfoContext(ctx, "Found biscuit files to compile", slog.Int("count", len(files)))
+	log.InfoContext(ctx, "Found PSX files to compile", slog.Int("count", len(files)))
 
 	// Track compilation time
 	startTime := time.Now()
@@ -184,16 +184,16 @@ func clearTerminal() {
 	}
 }
 
-// isBiscuitRelatedFile checks if a file is a .bsct file or a .py file that was generated from a .bsct file
+// isBiscuitRelatedFile checks if a file is a .psx file or a .py file that was generated from a .psx file
 func isBiscuitRelatedFile(path string) bool {
 	ext := filepath.Ext(path)
 	if ext == ".psx" {
 		return true
 	}
 	// if ext == ".py" {
-	// 	// Check if there's a corresponding .bsct file
-	// 	bscFile := strings.TrimSuffix(path, ".py") + ".bsct"
-	// 	if _, err := os.Stat(bscFile); err == nil {
+	// 	// Check if there's a corresponding .psx file
+	// 	psxFile := strings.TrimSuffix(path, ".py") + ".psx"
+	// 	if _, err := os.Stat(psxFile); err == nil {
 	// 		return true
 	// 	}
 	// }
