@@ -65,7 +65,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 		log.DebugContext(*ctx, "Input is a directory", slog.String("path", c.Input))
 
 		// List all PSX files
-		files, err := fs.ListBiscuitFiles(c.Input, globals.Recursive)
+		files, err := fs.ListPSXFiles(c.Input, globals.Recursive)
 		if err != nil {
 			return fmt.Errorf("error listing PSX files: %w", err)
 		}

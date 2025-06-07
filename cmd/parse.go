@@ -48,7 +48,7 @@ func (p *ParseCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 	if isDir {
 		// Use the specialized method to get PSX (.psx) files
-		sources, err := fs.ListBiscuitFiles(p.Input, globals.Recursive)
+		sources, err := fs.ListPSXFiles(p.Input, globals.Recursive)
 		if err != nil {
 			return fmt.Errorf("error listing PSX files: %w", err)
 		}

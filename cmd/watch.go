@@ -146,7 +146,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 // compileDirectory compiles all PSX files in a directory
 func compileDirectory(fs filesystem.FileSystem, cmp compiler.Compiler, inputDir, outputDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
 	// List all PSX files
-	files, err := fs.ListBiscuitFiles(inputDir, recursive)
+	files, err := fs.ListPSXFiles(inputDir, recursive)
 	if err != nil {
 		return fmt.Errorf("error listing PSX files: %w", err)
 	}

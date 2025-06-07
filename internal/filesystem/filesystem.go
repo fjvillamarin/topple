@@ -57,7 +57,7 @@ type FileSystem interface {
 
 	// Directory Operations
 	ListFiles(dir string, recursive bool) ([]string, error)
-	ListBiscuitFiles(dir string, recursive bool) ([]string, error) // TODO: rename to ListPSXFiles
+	ListPSXFiles(dir string, recursive bool) ([]string, error)
 	MkdirAll(path string, perm os.FileMode) error
 
 	// Path Operations
@@ -198,9 +198,8 @@ func (s *StandardFileSystem) ListFiles(dir string, recursive bool) ([]string, er
 	return files, nil
 }
 
-// ListBiscuitFiles lists all .psx files in a directory
-// TODO: This method should be renamed to ListPSXFiles for consistency
-func (s *StandardFileSystem) ListBiscuitFiles(dir string, recursive bool) ([]string, error) {
+// ListPSXFiles lists all .psx files in a directory
+func (s *StandardFileSystem) ListPSXFiles(dir string, recursive bool) ([]string, error) {
 	s.logger.Debug("Listing PSX files", "directory", dir, "recursive", recursive)
 
 	files, err := s.ListFiles(dir, recursive)
