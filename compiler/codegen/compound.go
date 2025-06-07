@@ -240,7 +240,7 @@ func (cg *CodeGenerator) VisitParameter(p *ast.Parameter) ast.Visitor {
 	}
 
 	if p.Default != nil {
-		cg.write(" = ")
+		cg.write("=")
 		p.Default.Accept(cg)
 	}
 
