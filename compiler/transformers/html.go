@@ -6,6 +6,14 @@ import (
 	"sylfie/compiler/lexer"
 )
 
+// validateViewElementContent checks if a view element has nested content and returns an error if it does
+func (vm *ViewTransformer) validateViewElementContent(element *ast.HTMLElement) error {
+	if len(element.Content) > 0 {
+		return fmt.Errorf("view element '%s' cannot have nested content", element.TagName.Lexeme)
+	}
+	return nil
+}
+
 // processHTMLElement processes an HTMLElement and returns the transformed statements
 func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.Stmt, error) {
 	var statements []ast.Stmt
@@ -13,8 +21,8 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
-		if len(element.Content) > 0 {
-			return nil, fmt.Errorf("view element '%s' cannot have nested content", element.TagName.Lexeme)
+		if err := vm.validateViewElementContent(element); err != nil {
+			return nil, err
 		}
 
 		// Validate slot usage before processing
@@ -93,8 +101,8 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
-		if len(element.Content) > 0 {
-			return nil, fmt.Errorf("view element '%s' cannot have nested content", element.TagName.Lexeme)
+		if err := vm.validateViewElementContent(element); err != nil {
+			return nil, err
 		}
 		// This is a view composition - create a view instantiation call
 		return vm.transformViewCall(viewStmt, element.Attributes), nil
