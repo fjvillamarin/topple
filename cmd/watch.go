@@ -111,7 +111,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 				slog.Time("timestamp", event.Timestamp))
 
 			// Check if this is a .psx file or a Python file generated from a .psx file
-			if !isBiscuitRelatedFile(event.Path) {
+			if !isPSXRelatedFile(event.Path) {
 				log.DebugContext(*ctx, "Ignoring non-PSX file", slog.String("path", event.Path))
 				continue
 			}
@@ -184,8 +184,8 @@ func clearTerminal() {
 	}
 }
 
-// isBiscuitRelatedFile checks if a file is a .psx file or a .py file that was generated from a .psx file
-func isBiscuitRelatedFile(path string) bool {
+// isPSXRelatedFile checks if a file is a .psx file or a .py file that was generated from a .psx file
+func isPSXRelatedFile(path string) bool {
 	ext := filepath.Ext(path)
 	if ext == ".psx" {
 		return true
