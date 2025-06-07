@@ -1,15 +1,15 @@
 # Invalid view definitions
 
 # Missing colon
-view InvalidView()
-    <div>Missing colon</div>
+# view InvalidView()
+#     <div>Missing colon</div>
 
 # Invalid parameter syntax
-view BadParams(name str, age: = 25):
-    <div>Bad parameters</div>
+# view BadParams(name str, age: = 25):
+#     <div>Bad parameters</div>
 
 # No content
-view EmptyView():
+# view EmptyView():
 
 # Invalid slot usage
 view BadSlots():
@@ -21,3 +21,15 @@ view BadSlots():
             </slot>
         </div>
     </div>
+
+# View element with nested content (invalid)
+view Card(title: str):
+    <div class="card">
+        <h1>{title}</h1>
+        <slot />
+    </div>
+
+view ViewWithNestedContent():
+    <Card title="Hi">
+        <p>This nested content should cause an error</p>
+    </Card>

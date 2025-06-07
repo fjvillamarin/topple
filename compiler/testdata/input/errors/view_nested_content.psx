@@ -1,0 +1,14 @@
+# Test case for view elements with nested content validation
+
+# Define a view that accepts content via slots
+view Card(title: str):
+    <div class="card">
+        <h1>{title}</h1>
+        <slot />
+    </div>
+
+# This should fail: view element with nested content
+view InvalidNestedContent():
+    <Card title="Hello">
+        <p>This nested content should cause a compile error</p>
+    </Card>

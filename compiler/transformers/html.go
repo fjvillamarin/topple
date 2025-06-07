@@ -1,6 +1,7 @@
 package transformers
 
 import (
+	"fmt"
 	"sylfie/compiler/ast"
 	"sylfie/compiler/lexer"
 )
@@ -11,6 +12,11 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
+		// Validate that view elements don't have nested content
+		if len(element.Content) > 0 {
+			return nil, fmt.Errorf("view element '%s' cannot have nested content", element.TagName.Lexeme)
+		}
+
 		// Validate slot usage before processing
 		if err := vm.validateSlotUsage(element); err != nil {
 			return nil, err
@@ -86,6 +92,10 @@ func (vm *ViewTransformer) createAppendStatement(arrayName string, element ast.E
 func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.Expr, error) {
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
+		// Validate that view elements don't have nested content
+		if len(element.Content) > 0 {
+			return nil, fmt.Errorf("view element '%s' cannot have nested content", element.TagName.Lexeme)
+		}
 		// This is a view composition - create a view instantiation call
 		return vm.transformViewCall(viewStmt, element.Attributes), nil
 	}

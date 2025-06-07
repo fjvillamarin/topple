@@ -1,0 +1,1 @@
+COMPILATION_ERRORS: [failed to transform view InvalidNestedContent: view element 'Card' cannot have nested content]
