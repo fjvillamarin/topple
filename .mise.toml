@@ -1,4 +1,4 @@
-# Sylfie Compiler - Mise Configuration
+# Topple Compiler - Mise Configuration
 # Migrated from Makefile
 
 [env]
@@ -19,8 +19,8 @@ description = "Watch files for changes and recompile"
 run = "go run ./cmd/... watch examples/ -r -d"
 
 [tasks.build]
-description = "Build the sylfie binary"
-run = 'go build -ldflags="-X main.Version=$VERSION" -o bin/sylfie ./cmd/...'
+description = "Build the topple binary"
+run = 'go build -ldflags="-X main.Version=$VERSION" -o bin/topple ./cmd/...'
 
 [tasks.fmt]
 description = "Format Go code"
@@ -219,31 +219,31 @@ echo "✅ Generated files cleaned!"
 # Compiler Operations
 [tasks.scan]
 description = "Scan source files and show tokens"
-run = "go run ./cmd/... scan examples/sylfie/ -d -w -r"
+run = "go run ./cmd/... scan examples/ -d -w -r"
 
 [tasks.parse]
 description = "Parse source files and show AST"
-run = "go run ./cmd/... parse examples/sylfie/ -d -w -r"
+run = "go run ./cmd/... parse examples/ -d -w -r"
 
 [tasks.compile]
 description = "Compile a single source file"
-run = "go run ./cmd/... compile examples/sylfie/01_hello_world/01_hello_world.psx -d -r"
+run = "go run ./cmd/... compile examples/01_hello_world/01_hello_world.psx -d -r"
 
 # Web Development
 [tasks.web]
 description = "Start development web server"
-run = "poetry run uvicorn examples.sylfie.01_hello_world.01_hello_world:app --reload"
+run = "poetry run uvicorn examples.01_hello_world.01_hello_world:app --reload"
 
 # Help Task
 [tasks.help]
 description = "Show available tasks"
 run = """
-echo "🚀 Sylfie Compiler - Available Tasks"
+echo "🚀 Topple Compiler - Available Tasks"
 echo ""
 echo "🔨 Development:"
 echo "  mise run run              - Compile and run examples recursively"
 echo "  mise run watch            - Watch files for changes and recompile"
-echo "  mise run build            - Build the sylfie binary"
+echo "  mise run build            - Build the topple binary"
 echo "  mise run fmt              - Format Go code"
 echo ""
 echo "🧪 Testing:"

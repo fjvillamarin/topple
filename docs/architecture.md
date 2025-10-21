@@ -1,4 +1,4 @@
-# Sylfie Compiler Architecture
+# Topple Compiler Architecture
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-Sylfie is a modern web framework that extends Python with HTML-like syntax for building server-side rendered applications. The Sylfie compiler is a sophisticated transpiler that converts `.psx` (Python Sylfie eXtension) files into standard Python code, enabling developers to write component-based web applications with React-like syntax while maintaining full Python compatibility.
+Topple is a modern web framework that extends Python with HTML-like syntax for building server-side rendered applications. The Topple compiler is a sophisticated transpiler that converts `.psx` (Python Syntax eXtension) files into standard Python code, enabling developers to write component-based web applications with React-like syntax while maintaining full Python compatibility.
 
 ### Key Features
 
@@ -37,7 +37,7 @@ Sylfie is a modern web framework that extends Python with HTML-like syntax for b
 
 ## Compilation Pipeline
 
-The Sylfie compiler follows a traditional compiler architecture with modern enhancements:
+The Topple compiler follows a traditional compiler architecture with modern enhancements:
 
 ```mermaid
 graph TD
@@ -142,7 +142,7 @@ const (
     // Python keywords (36 total)
     And, As, Assert, Async, Await, Break, Class, Continue, Def, Del, Elif, Else, Except, False, Finally, For, From, Global, If, Import, In, Is, Lambda, None, Nonlocal, Not, Or, Pass, Raise, Return, True, Try, While, With, Yield
     
-    // Sylfie keywords
+    // Topple keywords
     View, Component
 )
 ```
@@ -317,7 +317,7 @@ type Stmt interface {
 
 #### Key AST Node Types
 
-**Sylfie-specific nodes**:
+**Topple-specific nodes**:
 - `ViewStmt` → View definitions with parameters and body
 - `HTMLElement` → HTML elements with attributes and content
 - `HTMLContent` → Mixed text and interpolation content
@@ -356,7 +356,7 @@ func (p *Parser) synchronize() {
 
 ## Semantic Analysis (Resolver)
 
-The resolver implements **Python's LEGB scoping rules** while adding support for **Sylfie's view composition system**.
+The resolver implements **Python's LEGB scoping rules** while adding support for **Topple's view composition system**.
 
 ### Scope Management
 
@@ -456,7 +456,7 @@ type Variable struct {
     IsParameter     bool  // Function parameter
     IsGlobal        bool  // 'global' declaration
     IsNonlocal      bool  // 'nonlocal' declaration  
-    IsViewParameter bool  // Sylfie view parameter
+    IsViewParameter bool  // Topple view parameter
     
     // Closure analysis
     IsCaptured      bool  // Used in nested scopes
@@ -695,7 +695,7 @@ func (cg *CodeGenerator) VisitModule(m *ast.Module) ast.Visitor {
 The generator automatically adds necessary runtime imports:
 
 ```python
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, el, escape, Element, FragmentElement, fragment, render_child
 ```
 
 ### Class Generation
@@ -756,7 +756,7 @@ func (cg *CodeGenerator) VisitBinary(b *ast.Binary) ast.Visitor {
 
 ## Runtime System
 
-The runtime provides the foundation for executing compiled Sylfie applications.
+The runtime provides the foundation for executing compiled Topple applications.
 
 ### Core Components
 
@@ -872,10 +872,10 @@ func (w *Watcher) Watch(patterns []string) error {
 
 ### Compilation Modes
 
-1. **Single file compilation**: `sylfie compile file.psx`
-2. **Batch compilation**: `sylfie compile src/`
-3. **Watch mode**: `sylfie watch src/` (live compilation)
-4. **Development tools**: `sylfie scan`, `sylfie parse` for debugging
+1. **Single file compilation**: `topple compile file.psx`
+2. **Batch compilation**: `topple compile src/`
+3. **Watch mode**: `topple watch src/` (live compilation)
+4. **Development tools**: `topple scan`, `topple parse` for debugging
 
 ## CLI Interface
 
@@ -889,7 +889,7 @@ type CLI struct {
     TreeSitter string `help:"Path to tree-sitter library"`
     
     // Commands
-    Compile CompileCmd `cmd:"" help:"Compile Sylfie files to Python"`
+    Compile CompileCmd `cmd:"" help:"Compile Topple files to Python"`
     Watch   WatchCmd   `cmd:"" help:"Watch files and compile on changes"`
     Scan    ScanCmd    `cmd:"" help:"Scan files and output tokens"`
     Parse   ParseCmd   `cmd:"" help:"Parse files and output AST"`
@@ -900,19 +900,19 @@ type CLI struct {
 
 ```bash
 # Compile single file
-sylfie compile src/views/user.psx
+topple compile src/views/user.psx
 
 # Compile directory recursively  
-sylfie compile src/ --recursive
+topple compile src/ --recursive
 
 # Watch for changes
-sylfie watch src/ 
+topple watch src/ 
 
 # Debug tokenization
-sylfie scan src/views/user.psx --debug
+topple scan src/views/user.psx --debug
 
 # Debug parsing
-sylfie parse src/views/user.psx --debug
+topple parse src/views/user.psx --debug
 ```
 
 ## Examples and Use Cases
@@ -961,7 +961,7 @@ view BlogLayout():
 
 #### Generated: `blog.py`
 ```python
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, el, escape, Element, FragmentElement, fragment, render_child
 from typing import List
 
 class BlogPost(BaseView):

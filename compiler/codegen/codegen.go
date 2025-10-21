@@ -3,7 +3,7 @@ package codegen
 import (
 	"fmt"
 	"strings"
-	"sylfie/compiler/ast"
+	"topple/compiler/ast"
 )
 
 type CodeGenerator struct {

@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 	"strings"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // ListComp represents a list comprehension: [expression for_if_clauses]

@@ -1,6 +1,10 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView
+from topple.psx import Element
+from topple.psx import el
+from topple.psx import escape
+from topple.psx import fragment
 class Greeting(BaseView):
-    def __init__(self, name: str, age: int = 25):
+    def __init__(self, name: str, age: int=25):
         super().__init__()
         self.name = name
         self.age = age

@@ -1,4 +1,8 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView
+from topple.psx import Element
+from topple.psx import el
+from topple.psx import escape
+from topple.psx import fragment
 from dataclasses import dataclass
 from typing import List
 @dataclass
@@ -22,14 +26,9 @@ class UserList(BaseView):
         self.users = users
 
     def _render(self) -> Element:
-        _view_children_1000 = []
-        adults = filter_adults(self.users)
-        _div_children_2000 = []
-        _div_children_2000.append(el("h1", "User Management"))
-        _div_children_2000.append(el("p", f"f"Total users:{escape(len(self.users))}, Adults:{escape(len(adults))}""))
-        _div_children_2000.append(el("h2", "All Users"))
-        for user in self.users:
-            _div_children_2000.append(el("div", [el("h3", escape(user.display_name)), el("p", f"Email:{escape(user.email)}"), el("p", f"Status:{escape("Adult" if user.is_adult() else "Minor")}")], {"class": escape(f"user {"adult" if user.is_adult() else "minor"}")}))
-        _view_children_1000.append(el("div", _div_children_2000))
-        return fragment(_view_children_1000)
+        _root_children_1000 = []
+        _chain_tmp_1 = filter_adults(self.users)
+        adults = _chain_tmp_1
+        _root_children_1000.append(el("div", [el("h1", "User Management"), el("p", f"f"Total users:{escape(len(self.users))}, Adults:{escape(len(adults))}""), el("h2", "All Users"), ""]))
+        return fragment(_root_children_1000)
 

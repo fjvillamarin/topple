@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sylfie is a Python transpiler written in Go that compiles `.psx` (Python Sylfie eXtension) files to standard Python. It allows developers to write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
+Topple is a Python transpiler written in Go that compiles `.psx` (Python Syntax eXtension) files to standard Python. It allows developers to write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
+
+**PSX** is the syntax specification for embedding HTML-like markup in Python code. **Topple** is the reference implementation (compiler + runtime + tooling) for PSX.
 
 **Key Concepts:**
 - Views are components that compile to Python classes inheriting from `BaseView`
@@ -98,25 +100,25 @@ mise run test-golden-diff-single TEST=literals/string
 ### CLI Commands
 ```bash
 # Compile a PSX file
-sylfie compile file.psx
+topple compile file.psx
 
 # Compile with custom output
-sylfie compile file.psx -o output.py
+topple compile file.psx -o output.py
 
 # Compile directory recursively
-sylfie compile src/ -r
+topple compile src/ -r
 
 # Watch for changes
-sylfie watch src/
+topple watch src/
 
 # Debug: show tokens
-sylfie scan file.psx
+topple scan file.psx
 
 # Debug: show AST
-sylfie parse file.psx
+topple parse file.psx
 
 # Debug: show AST with resolution info
-sylfie parse file.psx -d
+topple parse file.psx -d
 ```
 
 ## Code Generation Standards
@@ -163,13 +165,13 @@ view HelloWorld(name: str = "World"):
     <div>Hello, {name}!</div>
 
 # Output (.py)
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, el, escape, Element, FragmentElement, fragment, render_child
 
 class HelloWorld(BaseView):
     def __init__(self, name: str = "World"):
         super().__init__()
         self.name = name
-    
+
     def _render(self) -> Element:
         return el("div", f"Hello, {self.name}!")
 ```
@@ -237,10 +239,10 @@ When working on a GitHub issue (e.g., #22), follow these steps:
    mise run test-golden-update
    
    # Debug by running compiler on individual files
-   sylfie compile path/to/test.psx        # See compiled output
-   sylfie scan path/to/test.psx          # See token stream
-   sylfie parse path/to/test.psx         # See AST structure
-   sylfie parse path/to/test.psx -d      # See AST with resolution info
+   topple compile path/to/test.psx        # See compiled output
+   topple scan path/to/test.psx          # See token stream
+   topple parse path/to/test.psx         # See AST structure
+   topple parse path/to/test.psx -d      # See AST with resolution info
    ```
 
 6. **Code formatting**:
@@ -353,15 +355,19 @@ When working on a GitHub issue (e.g., #22), follow these steps:
 ## Project Structure
 
 ```
-compiler/
-├── ast/          # AST node definitions
-├── lexer/        # Tokenization (scanner.go, token.go)
-├── parser/       # Parsing logic for all Python/PSX constructs
-├── resolver/     # Name resolution and scope analysis
-├── transformers/ # View → Python class transformation
-├── codegen/      # Python code generation
-│   └── testdata/ # Golden file tests
-└── e2e_test.go   # End-to-end compiler tests
+topple/
+├── cmd/          # CLI commands (compile, watch, scan, parse)
+├── compiler/
+│   ├── ast/          # AST node definitions
+│   ├── lexer/        # Tokenization (scanner.go, token.go)
+│   ├── parser/       # Parsing logic for all Python/PSX constructs
+│   ├── resolver/     # Name resolution and scope analysis
+│   ├── transformers/ # View → Python class transformation
+│   ├── codegen/      # Python code generation
+│   └── testdata/     # Golden file tests
+├── topple/       # Python runtime package
+│   └── psx/      # PSX runtime module (BaseView, el, etc.)
+└── .mise.toml    # Task runner configuration
 ```
 
 ## Test Categories
@@ -388,7 +394,7 @@ The golden file tests cover these categories:
 
 ## Important Notes
 
-1. **Runtime Dependency**: Generated code requires `runtime.py` to be available
+1. **Runtime Dependency**: Generated code requires the Topple runtime package (`pip install topple`)
+   - Imports from `topple.psx` (e.g., `from topple.psx import BaseView, el`)
 2. **Go Version**: Requires Go 1.23+ for building
 3. **Python Version**: Generated code targets Python 3.12+
-4. **Branch**: Active development on `feat/codegen-refactor`

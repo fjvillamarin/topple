@@ -26,7 +26,7 @@ type Globals struct {
 	Debug     bool        `help:"Enable debug logging" short:"d"`
 	Version   VersionFlag `name:"version" help:"Print version information and quit"`
 	Recursive bool        `help:"Process directories recursively" short:"r"`
-	TSLib     string      `help:"Path to the Tree-sitter library binary" short:"t" default:"./tree-sitter-sylfie/sylfie.dylib"`
+	TSLib     string      `help:"Path to the Tree-sitter library binary" short:"t" default:"./tree-sitter-topple/topple.dylib"`
 }
 
 // CLI holds the root command structure including global flags
@@ -52,8 +52,8 @@ func main() {
 
 	// Parse the command line arguments
 	kCtx := kong.Parse(&cli,
-		kong.Name("sylfie"),
-		kong.Description("Sylfie Compiler CLI - compile PSX views into Python code"),
+		kong.Name("topple"),
+		kong.Description("Topple Compiler CLI - compile PSX (Python Syntax eXtension) views into Python code"),
 		kong.UsageOnError(),
 		kong.Vars{
 			"version": "v0.1.0",

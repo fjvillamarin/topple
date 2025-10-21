@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // ListExpr represents a list expression [items]

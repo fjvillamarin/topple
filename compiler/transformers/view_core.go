@@ -2,9 +2,9 @@ package transformers
 
 import (
 	"fmt"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
-	"sylfie/compiler/resolver"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
+	"topple/compiler/resolver"
 )
 
 // ViewTransformer transforms PSX view statements into Python classes

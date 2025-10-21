@@ -2,8 +2,8 @@ package parser
 
 import (
 	"strings"
-	"sylfie/compiler/lexer"
 	"testing"
+	"topple/compiler/lexer"
 )
 
 // Helper function to create a parser from input string

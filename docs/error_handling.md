@@ -1,10 +1,10 @@
-# Sylfie Compiler Error Handling
+# Topple Compiler Error Handling
 
-This document describes how the Sylfie compiler handles and reports errors throughout the compilation pipeline.
+This document describes how the Topple compiler handles and reports errors throughout the compilation pipeline.
 
 ## Error Philosophy
 
-The Sylfie compiler follows these principles for error handling:
+The Topple compiler follows these principles for error handling:
 
 1. **Clear and Actionable**: Error messages should clearly explain what went wrong and how to fix it
 2. **Precise Location**: Errors include exact file, line, and column information
@@ -287,7 +287,7 @@ type ResolverError struct {
 ### Verbose Mode
 
 ```bash
-sylfie compile app.psx --debug
+topple compile app.psx --debug
 ```
 
 Shows additional information:

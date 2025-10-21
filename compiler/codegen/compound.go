@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
+	"topple/compiler/ast"
 )
 
 // Compound statement visitors

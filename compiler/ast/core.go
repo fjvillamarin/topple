@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // Node is the base interface for all AST nodes.

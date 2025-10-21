@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // RuntimeError is an error that occurs in the runtime.

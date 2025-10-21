@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // createInitMethod creates the __init__ method for the view class

@@ -2,8 +2,8 @@ package transformers
 
 import (
 	"fmt"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // validateViewElementContent checks if a view element has nested content and returns an error if it does

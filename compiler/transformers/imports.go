@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // GetRequiredImports returns the import statements required for the transformed view
@@ -16,7 +16,14 @@ func (vm *ViewTransformer) GetRequiredImports() []*ast.ImportFromStmt {
 				Names: []*ast.Name{
 					{
 						Token: lexer.Token{
-							Lexeme: "psx_runtime",
+							Lexeme: "topple",
+							Type:   lexer.Identifier,
+						},
+						Span: lexer.Span{},
+					},
+					{
+						Token: lexer.Token{
+							Lexeme: "psx",
 							Type:   lexer.Identifier,
 						},
 						Span: lexer.Span{},
@@ -52,7 +59,14 @@ func (vm *ViewTransformer) GetRequiredImports() []*ast.ImportFromStmt {
 				Names: []*ast.Name{
 					{
 						Token: lexer.Token{
-							Lexeme: "psx_runtime",
+							Lexeme: "topple",
+							Type:   lexer.Identifier,
+						},
+						Span: lexer.Span{},
+					},
+					{
+						Token: lexer.Token{
+							Lexeme: "psx",
 							Type:   lexer.Identifier,
 						},
 						Span: lexer.Span{},
@@ -88,7 +102,14 @@ func (vm *ViewTransformer) GetRequiredImports() []*ast.ImportFromStmt {
 				Names: []*ast.Name{
 					{
 						Token: lexer.Token{
-							Lexeme: "psx_runtime",
+							Lexeme: "topple",
+							Type:   lexer.Identifier,
+						},
+						Span: lexer.Span{},
+					},
+					{
+						Token: lexer.Token{
+							Lexeme: "psx",
 							Type:   lexer.Identifier,
 						},
 						Span: lexer.Span{},
@@ -124,7 +145,14 @@ func (vm *ViewTransformer) GetRequiredImports() []*ast.ImportFromStmt {
 				Names: []*ast.Name{
 					{
 						Token: lexer.Token{
-							Lexeme: "psx_runtime",
+							Lexeme: "topple",
+							Type:   lexer.Identifier,
+						},
+						Span: lexer.Span{},
+					},
+					{
+						Token: lexer.Token{
+							Lexeme: "psx",
 							Type:   lexer.Identifier,
 						},
 						Span: lexer.Span{},
@@ -160,7 +188,14 @@ func (vm *ViewTransformer) GetRequiredImports() []*ast.ImportFromStmt {
 				Names: []*ast.Name{
 					{
 						Token: lexer.Token{
-							Lexeme: "psx_runtime",
+							Lexeme: "topple",
+							Type:   lexer.Identifier,
+						},
+						Span: lexer.Span{},
+					},
+					{
+						Token: lexer.Token{
+							Lexeme: "psx",
 							Type:   lexer.Identifier,
 						},
 						Span: lexer.Span{},

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"sylfie/compiler"
-	"sylfie/internal/filesystem"
+	"topple/compiler"
+	"topple/internal/filesystem"
 )
 
 // CompileCmd defines the "compile" command.

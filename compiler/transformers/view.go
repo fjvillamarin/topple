@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // isViewElement checks if an HTML element represents a view component

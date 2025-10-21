@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"sylfie/compiler/lexer"
-	"sylfie/internal/filesystem"
+	"topple/compiler/lexer"
+	"topple/internal/filesystem"
 )
 
 // ScanCmd defines the "scan" command which runs just the scanner

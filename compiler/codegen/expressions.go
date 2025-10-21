@@ -3,7 +3,7 @@ package codegen
 import (
 	"fmt"
 	"strconv"
-	"sylfie/compiler/ast"
+	"topple/compiler/ast"
 )
 
 // Expression visitors
