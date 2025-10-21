@@ -1,6 +1,6 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from psx.runtime import BaseView, Element, el, escape, fragment
 class BooleanAttributes(BaseView):
-    def __init__(self, is_editable: bool = False, is_required: bool = True):
+    def __init__(self, is_editable: bool=False, is_required: bool=True):
         super().__init__()
         self.is_editable = is_editable
         self.is_required = is_required

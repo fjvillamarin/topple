@@ -1,17 +1,11 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from psx.runtime import BaseView, Element, el, escape, fragment
 class ValidationErrors(BaseView):
     def __init__(self, errors: dict):
         super().__init__()
         self.errors = errors
 
     def _render(self) -> Element:
-        _div_children_1000 = []
-        _div_children_1000.append(el("h3", "Please correct the following errors:"))
-        _ul_children_2000 = []
-        for (field, error) in self.errors.items():
-            _ul_children_2000.append(el("li", f"{escape(field)}:{escape(error)}"))
-        _div_children_1000.append(el("ul", _ul_children_2000))
-        return el("div", _div_children_1000, {"class": "error-banner"})
+        return el("div", [el("h3", "Please correct the following errors:"), el("ul", "")], {"class": "error-banner"})
 
 class ContactForm(BaseView):
     def __init__(self):

@@ -1,6 +1,6 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from psx.runtime import BaseView, Element, el, escape, fragment
 class Greeting(BaseView):
-    def __init__(self, name: str, age: int = 25):
+    def __init__(self, name: str, age: int=25):
         super().__init__()
         self.name = name
         self.age = age

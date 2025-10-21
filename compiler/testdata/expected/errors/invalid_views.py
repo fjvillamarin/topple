@@ -1,2 +1,1 @@
-COMPILATION_ERRORS: [at '
-': expected ':' after view definition (position L4:19-L5:1)]
+COMPILATION_ERRORS: [failed to transform view ViewWithNestedContent: view element 'Card' cannot have nested content]
