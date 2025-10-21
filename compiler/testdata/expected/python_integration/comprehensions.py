@@ -1,8 +1,4 @@
-from topple.psx import BaseView
-from topple.psx import Element
-from topple.psx import el
-from topple.psx import escape
-from topple.psx import fragment
+from topple.psx import BaseView, Element, el, escape, fragment
 class Comprehensions(BaseView):
     def __init__(self, numbers: list, items: list):
         super().__init__()

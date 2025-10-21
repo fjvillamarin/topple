@@ -1,8 +1,4 @@
-from topple.psx import BaseView
-from topple.psx import Element
-from topple.psx import el
-from topple.psx import escape
-from topple.psx import fragment
+from topple.psx import BaseView, Element, el, escape, fragment
 from typing import List, Optional, Dict
 class ComplexView(BaseView):
     def __init__(self, title: str, items: List[str]=[], metadata: Optional[Dict[str, str]]=None, *args, **kwargs):

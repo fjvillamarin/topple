@@ -1,8 +1,4 @@
-from topple.psx import BaseView
-from topple.psx import Element
-from topple.psx import el
-from topple.psx import escape
-from topple.psx import fragment
+from topple.psx import BaseView, Element, el, escape, fragment
 class EarlyReturnView(BaseView):
     def __init__(self, items: list, show_empty: bool=True):
         super().__init__()
