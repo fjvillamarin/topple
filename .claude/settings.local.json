@@ -30,7 +30,8 @@
       "Bash(cp:*)",
       "Bash(mv:*)",
       "Bash(rm:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
