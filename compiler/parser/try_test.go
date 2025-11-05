@@ -948,9 +948,8 @@ except TypeError:
     pass
 except 123:
     pass`,
-			hasError:    true,
-			errorText:   "expected",
-			description: "except with invalid exception expression",
+			hasError:    false,
+			description: "except with literal expression (Python allows at parse time, fails at runtime)",
 		},
 		{
 			name: "nested syntax error",
