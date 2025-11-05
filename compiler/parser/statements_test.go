@@ -369,8 +369,8 @@ func TestSimpleStatements(t *testing.T) {
 		{
 			name:         "list item assignment",
 			input:        "items[0] = value",
-			expectedType: "expr",
-			description:  "list subscript assignment (parsed as expression)",
+			expectedType: "assign",
+			description:  "list subscript assignment",
 		},
 		{
 			name:         "attribute assignment",

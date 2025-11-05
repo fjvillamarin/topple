@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(go test:*)",
+      "Bash(go run:*)",
+      "Bash(go build:*)",
+      "Bash(go fmt:*)",
+      "Bash(go mod:*)",
+      "Bash(./topple:*)",
+      "Bash(./bin/topple:*)",
+      "Bash(topple:*)",
+      "Bash(python:*)",
+      "Bash(poetry:*)",
+      "Bash(uvicorn:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(diff:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(tee:*)",
+      "Bash(python3:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

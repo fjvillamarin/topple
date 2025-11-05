@@ -532,6 +532,18 @@ func TestDelErrors(t *testing.T) {
 			name:  "unclosed parentheses",
 			input: "del (x, y",
 		},
+		{
+			name:  "del function call",
+			input: "del f()",
+		},
+		{
+			name:  "del method call",
+			input: "del obj.method()",
+		},
+		{
+			name:  "del chained method call",
+			input: "del obj.method().result()",
+		},
 	}
 
 	for _, tt := range tests {

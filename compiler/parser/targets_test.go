@@ -441,6 +441,8 @@ func TestStarTargetSequences(t *testing.T) {
 			input:         "*x, y, *z",
 			expectedCount: 3,
 			description:   "mixed starred and regular targets",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 		{
 			name:          "complex mixed targets",
@@ -479,10 +481,11 @@ func TestStarTargetSequences(t *testing.T) {
 			description:   "list targets with starred element",
 		},
 		{
-			name:          "attribute and method targets",
-			input:         "obj.attr, instance.method(), *extras",
-			expectedCount: 3,
-			description:   "attribute and method call targets",
+			name:        "attribute and method targets",
+			input:       "obj.attr, instance.method(), *extras",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call in target sequence should be rejected",
 		},
 	}
 
@@ -670,6 +673,38 @@ func TestTargetEdgeCases(t *testing.T) {
 			errorText:   "expected",
 			description: "incomplete subscript access missing closing bracket",
 		},
+		{
+			name:        "function call as target",
+			input:       "f()",
+			method:      "targetWithStarAtom",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "function call should be rejected as assignment target",
+		},
+		{
+			name:        "method call as target",
+			input:       "obj.method()",
+			method:      "targetWithStarAtom",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call should be rejected as assignment target",
+		},
+		{
+			name:        "function call in singleSubscriptAttributeTarget",
+			input:       "f()",
+			method:      "singleSubscriptAttributeTarget",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "function call rejected by singleSubscriptAttributeTarget",
+		},
+		{
+			name:        "method call in singleSubscriptAttributeTarget",
+			input:       "obj.method()",
+			method:      "singleSubscriptAttributeTarget",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call rejected by singleSubscriptAttributeTarget",
+		},
 	}
 
 	for _, test := range tests {
@@ -729,12 +764,16 @@ func TestStarTargetValidation(t *testing.T) {
 			input:         "*a, b, *c, d",
 			expectedStars: 2,
 			description:   "sequence with multiple starred elements",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 		{
 			name:          "starred complex expressions",
 			input:         "*obj.attr, regular, *data[key]",
 			expectedStars: 2,
 			description:   "starred elements with complex expressions",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 	}
 
@@ -793,7 +832,7 @@ func TestTargetComplexNesting(t *testing.T) {
 	}{
 		{
 			name:        "deeply nested attribute chain",
-			input:       "obj.module.class.instance.attribute.value",
+			input:       "obj.module.klass.instance.attribute.value",
 			method:      "singleTarget",
 			description: "very deep attribute access chain in target",
 		},

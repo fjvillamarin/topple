@@ -25,51 +25,35 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 
 	// Check if there's a lookahead token - required for all t_primary rules
 	// This implements the &t_lookahead part of the grammar
+	// The grammar's &t_lookahead means "atom must have at least one accessor",
+	// not "check lookahead after every accessor"
 	if !p.tLookahead() {
 		return nil, p.error(p.peek(), "expected accessor token ('.', '[', or '(')")
 	}
 
-	// Iteratively handle the recursive cases for t_primary
-	// This transforms the left-recursive grammar into an iterative implementation
-	for {
-		// Save the current position in case we need to restore it
-		originalPosition := p.Current
-
+	// Consume ALL accessors greedily, like primary() does
+	// This fixes the bug where internal lookahead checks caused premature loop exit
+	for p.tLookahead() {
 		if p.match(lexer.Dot) {
-			// Rule: t_primary '.' NAME &t_lookahead
+			// Rule: t_primary '.' NAME
 			name, err := p.consume(lexer.Identifier, "expected identifier after '.'")
 			if err != nil {
 				return nil, err
 			}
 
-			// Check if there's another lookahead after this accessor
-			if !p.tLookahead() {
-				// No lookahead after NAME, so we need to backtrack
-				// This accessor should be handled by the caller (e.g., singleSubscriptAttributeTarget)
-				p.Current = originalPosition
-				break
-			}
-
 			expr = &ast.Attribute{
 				Object: expr,
 				Name:   name,
-
-				Span: lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
+				Span:   lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
 			}
 		} else if p.match(lexer.LeftParen) {
-			// Rule: t_primary '(' [arguments] ')' &t_lookahead
+			// Rule: t_primary '(' [arguments] ')'
 			expr, err = p.finishCall(expr)
 			if err != nil {
 				return nil, err
 			}
-
-			// Check if there's another lookahead after this accessor
-			if !p.tLookahead() {
-				// No more accessors, we're done
-				break
-			}
 		} else if p.match(lexer.LeftBracket) {
-			// Rule: t_primary '[' slices ']' &t_lookahead
+			// Rule: t_primary '[' slices ']'
 			indices, err := p.slices()
 			if err != nil {
 				return nil, err
@@ -80,21 +64,13 @@ func (p *Parser) tPrimary() (ast.Expr, error) {
 				return nil, err
 			}
 
-			// Check if there's another lookahead after this accessor
-			if !p.tLookahead() {
-				// No more accessors, we're done
-				break
-			}
-
 			expr = &ast.Subscript{
 				Object:  expr,
 				Indices: indices,
-
-				Span: lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
+				Span:    lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
 			}
 		} else {
-			// If we didn't consume any accessor, we're done
-			// Either we have atom &t_lookahead or we've finished a chain
+			// Not an accessor token, stop
 			break
 		}
 	}
@@ -119,59 +95,29 @@ func (p *Parser) tLookahead() bool {
 //	| t_primary '.' NAME !t_lookahead
 //	| t_primary '[' slices ']' !t_lookahead
 func (p *Parser) singleSubscriptAttributeTarget() (ast.Expr, error) {
-	// Parse the t_primary expression
+	// Parse the t_primary expression (which now greedily consumes all accessors)
 	expr, err := p.tPrimary()
 	if err != nil {
 		return nil, err
 	}
 
-	// Check which form it is
-	if p.match(lexer.Dot) {
-		// Handle attribute access: t_primary.NAME
-		name, err := p.consume(lexer.Identifier, "expected identifier after '.'")
-		if err != nil {
-			return nil, err
-		}
-		result := &ast.Attribute{
-			Object: expr,
-			Name:   name,
-
-			Span: lexer.Span{Start: expr.GetSpan().Start, End: name.End()},
-		}
-
+	// With the fixed greedy tPrimary(), it already consumed all accessors
+	// Just verify it's an Attribute or Subscript (grammar requirement)
+	switch expr.(type) {
+	case *ast.Attribute, *ast.Subscript:
 		// Check negative lookahead - must NOT be followed by another accessor
 		if p.tLookahead() {
-			return nil, p.error(p.peek(), "unexpected accessor after attribute target")
+			return nil, p.error(p.peek(), "unexpected accessor after target")
 		}
-
-		return result, nil
-	} else if p.match(lexer.LeftBracket) {
-		// Handle subscript access: t_primary[slices]
-		indices, err := p.slices()
-		if err != nil {
-			return nil, err
-		}
-
-		right, err := p.consume(lexer.RightBracket, "expected ']' after index")
-		if err != nil {
-			return nil, err
-		}
-		result := &ast.Subscript{
-			Object:  expr,
-			Indices: indices,
-
-			Span: lexer.Span{Start: expr.GetSpan().Start, End: right.End()},
-		}
-
-		// Check negative lookahead - must NOT be followed by another accessor
-		if p.tLookahead() {
-			return nil, p.error(p.peek(), "unexpected accessor after subscript target")
-		}
-
-		return result, nil
+		return expr, nil
+	case *ast.Call:
+		// Function calls cannot be assignment targets
+		return nil, p.error(p.peek(), "cannot assign to function call")
+	default:
+		// tPrimary() returned something other than Attribute/Subscript
+		// This shouldn't happen with correct grammar, but handle gracefully
+		return nil, p.error(p.peek(), "expected attribute or subscript target")
 	}
-
-	return nil, p.error(p.peek(), "expected '.' or '[' after primary expression")
 }
 
 // singleTarget parses a single target as per the grammar:
@@ -531,119 +477,46 @@ func (p *Parser) starAtom() (ast.Expr, error) {
 //	| t_primary '[' slices ']' !t_lookahead
 //	| star_atom
 func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
-	// Special case: handle simple subscripts like arr[0] that don't have further chaining
-	if p.check(lexer.Identifier) {
-		startPos := p.Current
-		name := p.advance()
-
-		if p.match(lexer.LeftBracket) {
-			// Handle simple subscript: name[index]
-			indices, err := p.slices()
-			if err != nil {
-				return nil, err
-			}
-
-			right, err := p.consume(lexer.RightBracket, "expected ']' after index")
-			if err != nil {
-				return nil, err
-			}
-
-			// Check if there's more chaining
-			if !p.tLookahead() {
-				// Simple subscript, return it
-				return &ast.Subscript{
-					Object: &ast.Name{
-						Token: name,
-						Span:  lexer.Span{Start: name.Start(), End: name.End()},
-					},
-					Indices: indices,
-					Span:    lexer.Span{Start: name.Start(), End: right.End()},
-				}, nil
-			}
-
-			// There's more chaining, fall through to use t_primary path
-			p.Current = startPos
-		} else if p.check(lexer.Dot) || p.check(lexer.LeftParen) {
-			// Has chaining, fall through to use t_primary path
-			p.Current = startPos
-		} else {
-			// Just a name, return it
-			return &ast.Name{
-				Token: name,
-				Span:  lexer.Span{Start: name.Start(), End: name.End()},
-			}, nil
-		}
-	}
-
-	// Try to parse as t_primary if the next token could start a t_primary
+	// Try to parse as t_primary if the next token could start one
+	// With the fixed greedy tPrimary(), it will consume all chained accessors
 	if p.check(lexer.Identifier) || p.check(lexer.LeftParen) || p.check(lexer.LeftBracket) ||
 		p.check(lexer.False) || p.check(lexer.True) || p.check(lexer.None) ||
 		p.check(lexer.Number) || p.check(lexer.String) || p.check(lexer.Ellipsis) {
 
-		// First, save the current position
 		startPos := p.Current
 
-		// Try to parse a t_primary followed by '.'
+		// Try to parse a t_primary (which now greedily consumes all accessors)
 		primary, err := p.tPrimary()
 		if err != nil {
-			// We failed to parse as t_primary, so try as star_atom
-			// Restore the position and try again
+			// Failed to parse as t_primary, restore and try star_atom
 			p.Current = startPos
 			goto tryStarAtom
 		}
 
-		if p.match(lexer.Dot) {
-			// Handle attribute access: t_primary.NAME
-			name, err := p.consume(lexer.Identifier, "expected identifier after '.'")
-			if err != nil {
-				return nil, err
-			}
-
-			// Check negative lookahead - must NOT be followed by another accessor
-			if p.tLookahead() {
-				return nil, p.error(p.peek(), "unexpected accessor after attribute target")
-			}
-
-			return &ast.Attribute{
-				Object: primary,
-				Name:   name,
-
-				Span: lexer.Span{Start: primary.GetSpan().Start, End: name.End()},
-			}, nil
+		// tPrimary() already consumed all accessors, just verify no more follow
+		// (implements the !t_lookahead in the grammar)
+		if p.tLookahead() {
+			return nil, p.error(p.peek(), "unexpected accessor after target")
 		}
 
-		// Restore position and try t_primary followed by '['
-		if p.match(lexer.LeftBracket) {
-			// Handle subscript access: t_primary[slices]
-			indices, err := p.slices()
-			if err != nil {
-				return nil, err
-			}
-
-			right, err := p.consume(lexer.RightBracket, "expected ']' after index")
-			if err != nil {
-				return nil, err
-			}
-
-			// Check negative lookahead - must NOT be followed by another accessor
-			if p.tLookahead() {
-				return nil, p.error(p.peek(), "unexpected accessor after subscript target")
-			}
-
-			return &ast.Subscript{
-				Object:  primary,
-				Indices: indices,
-
-				Span: lexer.Span{Start: primary.GetSpan().Start, End: right.End()},
-			}, nil
+		// Check that tPrimary() returned a valid target type
+		// The grammar requires that the chain ends with .NAME or [slices], not ()
+		switch primary.(type) {
+		case *ast.Attribute, *ast.Subscript:
+			// Valid: chain ended with .NAME or [slices]
+			return primary, nil
+		case *ast.Call:
+			// Invalid: chain ended with () - function calls cannot be assignment targets
+			return nil, p.error(p.peek(), "cannot assign to function call")
+		default:
+			// Shouldn't happen with greedy tPrimary(), but handle gracefully
+			p.Current = startPos
+			goto tryStarAtom
 		}
-
-		// Reset position if we couldn't match t_primary with an accessor
-		p.Current = startPos
 	}
 
 tryStarAtom:
-	// If we couldn't parse as t_primary with an accessor, try as star_atom
+	// If we couldn't parse as t_primary, try as star_atom
 	return p.starAtom()
 }
 

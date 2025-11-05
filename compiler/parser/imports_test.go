@@ -25,6 +25,16 @@ func parseImportStatement(t *testing.T, input string) (ast.Stmt, error) {
 		t.Fatalf("Parser errors encountered: %v", parser.Errors)
 	}
 
+	// Verify that all tokens were consumed (only EOF or Newline should remain)
+	if err == nil && !parser.isAtEnd() {
+		nextToken := parser.peek()
+		// Allow Newline or EOF
+		if nextToken.Type != lexer.Newline && nextToken.Type != lexer.EOF {
+			// Create an error for unconsumed tokens
+			return stmt, parser.error(nextToken, "unexpected token after import statement")
+		}
+	}
+
 	return stmt, err
 }
 

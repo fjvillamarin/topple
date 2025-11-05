@@ -541,10 +541,11 @@ func TestGroupExpressionEdgeCases(t *testing.T) {
 			description: "grouped f-string expression",
 		},
 		{
-			name:        "grouped starred expression",
-			input:       "(*args)",
-			hasError:    false,
-			description: "grouped starred expression",
+			name:          "grouped starred expression",
+			input:         "(*args)",
+			hasError:      true,
+			errorContains: "starred expression",
+			description:   "grouped starred expression is invalid",
 		},
 		{
 			name:        "grouped complex comprehension",

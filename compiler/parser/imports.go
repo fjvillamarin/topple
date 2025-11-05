@@ -27,6 +27,11 @@ func (p *Parser) importName() (ast.Stmt, error) {
 		return nil, err
 	}
 
+	// Check for relative import syntax (which is not allowed in 'import' statements)
+	if p.check(lexer.Dot) || p.check(lexer.Ellipsis) {
+		return nil, p.error(p.peek(), "relative import syntax not allowed in 'import' statements (use 'from ... import' instead)")
+	}
+
 	// Parse dotted_as_names
 	names, err := p.parseDottedAsNames()
 	if err != nil {
@@ -203,8 +208,8 @@ func (p *Parser) parseDottedAsName() (*ast.ImportName, error) {
 func (p *Parser) parseDottedName() (*ast.DottedName, error) {
 	startPos := p.peek().Start()
 
-	// First name
-	nameToken, err := p.consume(lexer.Identifier, "expected identifier")
+	// First name - accept identifiers or keywords
+	nameToken, err := p.consumeNameOrKeyword("")
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +224,7 @@ func (p *Parser) parseDottedName() (*ast.DottedName, error) {
 
 	// Parse additional names with dots
 	for p.match(lexer.Dot) {
-		nameToken, err = p.consume(lexer.Identifier, "expected identifier after '.'")
+		nameToken, err = p.consumeNameOrKeyword(" after '.'")
 		if err != nil {
 			return nil, err
 		}

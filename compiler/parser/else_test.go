@@ -142,7 +142,7 @@ func TestElseBlock(t *testing.T) {
 			input: `else:
     del items[0]`,
 			shouldHaveElse: true,
-			expectedLen:    2, // del statement may parse as multiple internal statements
+			expectedLen:    1, // del statement is a single statement
 		},
 		{
 			name: "else with yield",

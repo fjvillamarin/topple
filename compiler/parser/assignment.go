@@ -224,6 +224,20 @@ tryStarTargets:
 				return nil, p.error(p.peek(), "unexpected '=' in assignment")
 			}
 
+			// Check if this is a single assignment (not a chain like a = b = c = 1)
+			if len(targetChain) == 1 {
+				// Single assignment - create a simple AssignStmt directly
+				// No need for temp variable optimization
+				return &ast.AssignStmt{
+					Targets: targetChain[0],
+					Value:   rhs,
+					Span: lexer.Span{
+						Start: startPos,
+						End:   rhs.GetSpan().End,
+					},
+				}, nil
+			}
+
 			// For chain assignments (a = b = c = 1), we optimize by evaluating the RHS only once
 			// This is important for expressions with side effects or expensive computations
 			var stmts []ast.Stmt
