@@ -1,3 +1,6 @@
+**GitHub Issue**: [#68](https://github.com/fjvillamarin/topple/issues/68)
+
+
 # 🐛 Parser Bug: Complex Target Parsing Failures
 
 **STATUS UPDATE (2025-11-05)**: **MOSTLY FIXED** ✅
