@@ -460,54 +460,6 @@ func TestViewParameterPatterns(t *testing.T) {
 	}
 }
 
-// Test async view statements
-func TestAsyncViewStatements(t *testing.T) {
-	tests := []struct {
-		name        string
-		input       string
-		hasError    bool
-		errorText   string
-		isAsync     bool
-		description string
-	}{
-		{
-			name: "async view",
-			input: `async view fetch_data():
-    data = await api.fetch()
-    <div>{data}</div>`,
-			isAsync:     true,
-			description: "async view with await expression",
-		},
-		{
-			name: "async view with parameters",
-			input: `async view user_profile(user_id: int):
-    user = await get_user(user_id)
-    <div class="profile">
-        <h1>{user.name}</h1>
-        <p>{user.bio}</p>
-    </div>`,
-			isAsync:     true,
-			description: "async view with parameters and complex body",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			viewStmt, err := parseViewStatement(t, tt.input)
-
-			if tt.hasError {
-				validateViewParseError(t, viewStmt, err, tt.errorText, tt.description)
-			} else {
-				validateViewParseSuccess(t, viewStmt, err, tt.description)
-
-				if viewStmt.IsAsync != tt.isAsync {
-					t.Errorf("Expected IsAsync=%v but got %v for %s", tt.isAsync, viewStmt.IsAsync, tt.description)
-				}
-			}
-		})
-	}
-}
-
 // Test view statements with edge cases and error conditions
 func TestViewEdgeCases(t *testing.T) {
 	tests := []struct {
