@@ -33,72 +33,45 @@ func (p *Parser) delStatement() (ast.Stmt, error) {
 //	| t_primary '.' NAME !t_lookahead
 //	| t_primary '[' slices ']' !t_lookahead
 //	| del_t_atom
+//
+// NOTE: We can't use the greedy tPrimary() here because del_target grammar
+// requires "t_primary" followed by ONE MORE accessor. The greedy tPrimary()
+// consumes all accessors, leaving nothing for us to add.
+// Instead, we check if tPrimary() returns Attribute/Subscript (already complete)
+// and just validate it, or if it returns something else, we're at del_t_atom.
 func (p *Parser) delTarget() (ast.Expr, error) {
 	// Try to parse as t_primary if the next token could start a t_primary
 	if p.check(lexer.Identifier) || p.check(lexer.LeftParen) || p.check(lexer.LeftBracket) ||
 		p.check(lexer.False) || p.check(lexer.True) || p.check(lexer.None) ||
 		p.check(lexer.Number) || p.check(lexer.String) || p.check(lexer.Ellipsis) {
 
-		// First, save the current position
 		startPos := p.Current
 
-		// Try to parse a t_primary followed by '.'
+		// Try to parse as t_primary
+		// The greedy tPrimary() will consume ALL accessors
 		primary, err := p.tPrimary()
-		if err == nil && p.match(lexer.Dot) {
-			// Handle attribute access: t_primary.NAME
-			name, err := p.consume(lexer.Identifier, "expected identifier after '.'")
-			if err != nil {
-				return nil, err
+		if err == nil {
+			// tPrimary() consumed everything - verify it's Attribute or Subscript
+			switch result := primary.(type) {
+			case *ast.Attribute, *ast.Subscript:
+				// Perfect! tPrimary() returned a complete target
+				// Just verify negative lookahead (no more accessors)
+				if p.tLookahead() {
+					return nil, p.error(p.peek(), "unexpected accessor after del target")
+				}
+				return result, nil
+			default:
+				// tPrimary() returned something that's not Attribute/Subscript
+				// This means it's just an atom (like a simple name)
+				// Fall through to try del_t_atom
 			}
-			result := &ast.Attribute{
-				Object: primary,
-				Name:   name,
-
-				Span: lexer.Span{Start: primary.GetSpan().Start, End: name.End()},
-			}
-
-			// Check negative lookahead - must NOT be followed by another accessor
-			if p.tLookahead() {
-				return nil, p.error(p.peek(), "unexpected accessor after attribute in del target")
-			}
-
-			return result, nil
 		}
 
-		// Restore position and try t_primary followed by '['
-		p.Current = startPos
-		primary, err = p.tPrimary()
-		if err == nil && p.match(lexer.LeftBracket) {
-			// Handle subscript access: t_primary[slices]
-			indices, err := p.slices()
-			if err != nil {
-				return nil, err
-			}
-
-			right, err := p.consume(lexer.RightBracket, "expected ']' after index")
-			if err != nil {
-				return nil, err
-			}
-			result := &ast.Subscript{
-				Object:  primary,
-				Indices: indices,
-
-				Span: lexer.Span{Start: primary.GetSpan().Start, End: right.End()},
-			}
-
-			// Check negative lookahead - must NOT be followed by another accessor
-			if p.tLookahead() {
-				return nil, p.error(p.peek(), "unexpected accessor after subscript in del target")
-			}
-
-			return result, nil
-		}
-
-		// Reset position if we couldn't match t_primary with an accessor
+		// Couldn't parse as t_primary or got non-Attribute/Subscript, restore and try del_t_atom
 		p.Current = startPos
 	}
 
-	// If we couldn't parse as t_primary with an accessor, try as del_t_atom
+	// If we couldn't parse as t_primary with accessors, try as del_t_atom
 	return p.delTAtom()
 }
 

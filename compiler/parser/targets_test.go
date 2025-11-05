@@ -441,6 +441,8 @@ func TestStarTargetSequences(t *testing.T) {
 			input:         "*x, y, *z",
 			expectedCount: 3,
 			description:   "mixed starred and regular targets",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 		{
 			name:          "complex mixed targets",
@@ -729,12 +731,16 @@ func TestStarTargetValidation(t *testing.T) {
 			input:         "*a, b, *c, d",
 			expectedStars: 2,
 			description:   "sequence with multiple starred elements",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 		{
 			name:          "starred complex expressions",
 			input:         "*obj.attr, regular, *data[key]",
 			expectedStars: 2,
 			description:   "starred elements with complex expressions",
+			hasError:      true, // Multiple starred expressions not allowed in Python
+			errorText:     "multiple starred",
 		},
 	}
 
@@ -793,7 +799,7 @@ func TestTargetComplexNesting(t *testing.T) {
 	}{
 		{
 			name:        "deeply nested attribute chain",
-			input:       "obj.module.class.instance.attribute.value",
+			input:       "obj.module.klass.instance.attribute.value",
 			method:      "singleTarget",
 			description: "very deep attribute access chain in target",
 		},
