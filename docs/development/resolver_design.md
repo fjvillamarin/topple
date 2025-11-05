@@ -1,4 +1,4 @@
-# Variable Resolver Design for Sylfie Compiler
+# Variable Resolver Design for Topple Compiler
 
 ## Overview
 
@@ -9,7 +9,7 @@ The Variable Resolver is a compiler pass that runs after parsing and before code
 1. **Variable Binding**: Bind every `Name` node in the AST to its corresponding variable definition
 2. **Scope Analysis**: Track variable scopes and detect scope-related errors
 3. **Python Compatibility**: Handle Python's complex scoping rules (global/nonlocal declarations, class scopes, comprehensions)
-4. **Sylfie Extensions**: Support Sylfie-specific constructs like view parameters
+4. **Topple Extensions**: Support Topple-specific constructs like view parameters
 5. **Error Detection**: Identify undefined variables, invalid global/nonlocal declarations
 
 ## Core Data Structures
@@ -27,7 +27,7 @@ type Variable struct {
     IsGlobal       bool          // Declared with 'global'
     IsNonlocal     bool          // Declared with 'nonlocal'
     IsImported     bool          // Bound by import statement
-    IsViewParameter bool         // Sylfie view parameter
+    IsViewParameter bool         // Topple view parameter
     IsExceptionVar bool          // Exception handler variable
     
     // Usage tracking
@@ -68,7 +68,7 @@ const (
     ModuleScopeType ScopeType = iota
     FunctionScopeType
     ClassScopeType
-    ViewScopeType              // Sylfie view scope
+    ViewScopeType              // Topple view scope
     ComprehensionScopeType
     ExceptScopeType            // Exception handler scope
     WithScopeType             // With statement scope
@@ -98,7 +98,7 @@ type Resolver struct {
     // Context tracking
     InClassScope    bool
     InFunctionScope bool
-    InViewScope     bool                  // Sylfie views
+    InViewScope     bool                  // Topple views
     CurrentFunction *ast.Function
     CurrentView     *ast.ViewStmt
 }
@@ -515,7 +515,7 @@ The resolver handles this by skipping class scopes when resolving names in funct
 
 ### View Parameter Transformation
 
-Sylfie view parameters need special handling for the transformation phase:
+Topple view parameters need special handling for the transformation phase:
 
 ```go
 func (r *Resolver) VisitViewStmt(v *ast.ViewStmt) Visitor {
@@ -571,4 +571,4 @@ The resolver detects various scoping errors:
 2. **Dataflow analysis**: Track variable assignments and usage patterns
 3. **Optimization hints**: Identify variables that can be optimized
 4. **Import analysis**: Better handling of imported names
-5. **Sylfie-specific constructs**: Slot parameters, special view behaviors 
+5. **Topple-specific constructs**: Slot parameters, special view behaviors 

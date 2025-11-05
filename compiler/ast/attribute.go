@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // Attribute represents an attribute access expression (obj.attr)

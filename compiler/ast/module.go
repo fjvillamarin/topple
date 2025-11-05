@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // Module is the root node of a program, containing a list of statements.

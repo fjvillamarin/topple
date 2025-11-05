@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // Slice represents a slice expression (start:end:step)

@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
 	"testing"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // TestCodeGeneration tests code generation using golden files

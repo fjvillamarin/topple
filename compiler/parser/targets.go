@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // tPrimary parses a primary expression that must be followed by an accessor.

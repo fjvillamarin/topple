@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // VariableState represents the current state of a variable

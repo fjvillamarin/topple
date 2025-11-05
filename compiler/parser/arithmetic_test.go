@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
 	"testing"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // Test sum operations (addition and subtraction)

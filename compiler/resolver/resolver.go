@@ -2,8 +2,8 @@ package resolver
 
 import (
 	"fmt"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // Resolver implements variable resolution for Python-like scoping

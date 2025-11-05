@@ -1,8 +1,8 @@
-# Sylfie CLI Reference
+# Topple CLI Reference
 
 ## Overview
 
-The Sylfie compiler provides a command-line interface for transforming `.psx` (Python Syntax eXtended) files into standard Python code. It offers various commands for compilation, development, and debugging.
+The Topple compiler provides a command-line interface for transforming `.psx` (Python Syntax eXtended) files into standard Python code. It offers various commands for compilation, development, and debugging.
 
 ## Installation
 
@@ -10,15 +10,15 @@ The Sylfie compiler provides a command-line interface for transforming `.psx` (P
 # Build from source
 mise run build
 
-# The binary will be in bin/sylfie
+# The binary will be in bin/topple
 # Add to PATH or copy to system location:
-cp bin/sylfie /usr/local/bin/
+cp bin/topple /usr/local/bin/
 ```
 
 ## Command Structure
 
 ```bash
-sylfie <command> [options] [arguments]
+topple <command> [options] [arguments]
 ```
 
 ## Commands
@@ -28,7 +28,7 @@ sylfie <command> [options] [arguments]
 Compile PSX files to Python.
 
 ```bash
-sylfie compile [options] <input>
+topple compile [options] <input>
 ```
 
 **Arguments:**
@@ -42,16 +42,16 @@ sylfie compile [options] <input>
 **Examples:**
 ```bash
 # Compile a single file
-sylfie compile hello.psx
+topple compile hello.psx
 
 # Compile to specific output
-sylfie compile hello.psx -o hello.py
+topple compile hello.psx -o hello.py
 
 # Compile directory recursively
-sylfie compile src/ -r
+topple compile src/ -r
 
 # Compile with custom output directory
-sylfie compile src/ -o dist/ -r
+topple compile src/ -o dist/ -r
 ```
 
 ### watch
@@ -59,7 +59,7 @@ sylfie compile src/ -o dist/ -r
 Watch files for changes and recompile automatically.
 
 ```bash
-sylfie watch [options] <paths...>
+topple watch [options] <paths...>
 ```
 
 **Arguments:**
@@ -72,13 +72,13 @@ sylfie watch [options] <paths...>
 **Examples:**
 ```bash
 # Watch a single file
-sylfie watch hello.psx
+topple watch hello.psx
 
 # Watch multiple directories
-sylfie watch src/ templates/ components/
+topple watch src/ templates/ components/
 
 # Watch with custom output
-sylfie watch src/ -o dist/
+topple watch src/ -o dist/
 ```
 
 ### scan
@@ -86,7 +86,7 @@ sylfie watch src/ -o dist/
 Tokenize a file and display the token stream (for debugging).
 
 ```bash
-sylfie scan [options] <input>
+topple scan [options] <input>
 ```
 
 **Arguments:**
@@ -98,7 +98,7 @@ sylfie scan [options] <input>
 **Example:**
 ```bash
 # Display tokens for a file
-sylfie scan hello.psx
+topple scan hello.psx
 ```
 
 ### parse
@@ -106,7 +106,7 @@ sylfie scan hello.psx
 Parse a file and display the AST (for debugging).
 
 ```bash
-sylfie parse [options] <input>
+topple parse [options] <input>
 ```
 
 **Arguments:**
@@ -118,12 +118,12 @@ sylfie parse [options] <input>
 **Example:**
 ```bash
 # Display AST for a file
-sylfie parse hello.psx
+topple parse hello.psx
 ```
 
 ## File Extensions
 
-- `.psx`: Sylfie source files (Python Syntax eXtended)
+- `.psx`: Topple source files (Python Syntax eXtended)
 - `.py`: Generated Python output files
 
 ## Output Format
@@ -158,12 +158,12 @@ SyntaxError: Unclosed HTML tag 'div'
 ### Basic Development
 
 1. Create `.psx` files with your views
-2. Run `sylfie compile` to generate Python
+2. Run `topple compile` to generate Python
 3. Import and use the generated classes
 
 ### Watch Mode Development
 
-1. Start watch mode: `sylfie watch src/`
+1. Start watch mode: `topple watch src/`
 2. Edit `.psx` files in your editor
 3. Files are automatically recompiled on save
 4. See compilation errors in terminal
@@ -175,11 +175,11 @@ SyntaxError: Unclosed HTML tag 'div'
 # In .mise.toml
 [tasks.compile-views]
 description = "Compile all PSX views"
-run = "sylfie compile src/ -r"
+run = "topple compile src/ -r"
 
 [tasks.dev]
 description = "Start development mode"
-run = "sylfie watch src/"
+run = "topple watch src/"
 
 [tasks.clean-views]
 description = "Clean generated Python files"
@@ -189,8 +189,8 @@ run = 'find src -name "*.py" -type f | grep -E "view.*\.py$" | xargs rm -f'
 #### Poetry/PyProject
 ```toml
 [tool.poetry.scripts]
-build-views = "sylfie compile src/ -r"
-dev = "sylfie watch src/"
+build-views = "topple compile src/ -r"
+dev = "topple watch src/"
 ```
 
 ## Performance Considerations
@@ -203,21 +203,21 @@ dev = "sylfie watch src/"
 ## Debugging
 
 ### Token Analysis
-Use `sylfie scan` to debug lexical issues:
+Use `topple scan` to debug lexical issues:
 ```bash
-sylfie scan problematic.psx > tokens.txt
+topple scan problematic.psx > tokens.txt
 ```
 
 ### AST Analysis
-Use `sylfie parse` to debug parsing issues:
+Use `topple parse` to debug parsing issues:
 ```bash
-sylfie parse problematic.psx > ast.txt
+topple parse problematic.psx > ast.txt
 ```
 
 ### Verbose Output
 Add `--debug` to any command for detailed logging:
 ```bash
-sylfie compile hello.psx --debug
+topple compile hello.psx --debug
 ```
 
 ## Environment Variables

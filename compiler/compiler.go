@@ -4,12 +4,12 @@ import (
 	"context"
 	"log/slog"
 
-	"sylfie/compiler/ast"
-	"sylfie/compiler/codegen"
-	"sylfie/compiler/lexer"
-	"sylfie/compiler/parser"
-	"sylfie/compiler/resolver"
-	"sylfie/compiler/transformers"
+	"topple/compiler/ast"
+	"topple/compiler/codegen"
+	"topple/compiler/lexer"
+	"topple/compiler/parser"
+	"topple/compiler/resolver"
+	"topple/compiler/transformers"
 )
 
 // File represents a file in the Biscuit compiler

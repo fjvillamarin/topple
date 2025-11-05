@@ -1,6 +1,6 @@
-# Sylfie: Python-Powered Web Templating Language
+# Topple: Python-Powered Web Templating Framework
 
-Sylfie is a modern templating language that seamlessly blends Python's power with HTML markup. It compiles `.psx` (Python Sylfie eXtension) files into pure Python code, enabling developers to build dynamic web UIs using familiar Python constructs.
+Topple is a modern web templating framework that seamlessly blends Python's power with HTML markup. It compiles `.psx` (Python Syntax eXtension) files into pure Python code, enabling developers to build dynamic web UIs using familiar Python constructs.
 
 ## Key Features
 
@@ -16,14 +16,14 @@ Sylfie is a modern templating language that seamlessly blends Python's power wit
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sylfie.git
-cd sylfie
+git clone https://github.com/yourusername/topple.git
+cd topple
 
-# Build the Sylfie compiler (requires Go 1.23+)
+# Build the Topple compiler (requires Go 1.23+)
 make build
 
 # Copy the binary to your PATH
-cp bin/sylfie /usr/local/bin/
+cp bin/topple /usr/local/bin/
 # Or add bin/ to your PATH
 export PATH="$PATH:$(pwd)/bin"
 ```
@@ -53,7 +53,7 @@ view HelloWorld(name: str = "World"):
 ### 2. Compile to Python
 
 ```bash
-sylfie compile hello.psx
+topple compile hello.psx
 ```
 
 This generates `hello.py` with a pure Python class that can be imported and used in any Python application.
@@ -71,33 +71,42 @@ print(html)
 
 ### Runtime Dependencies
 
-The generated Python code requires the `runtime.py` file from the Sylfie project. Copy it to your project or ensure it's in your Python path.
+The generated Python code requires the Topple runtime library. Install it with:
+
+```bash
+pip install topple
+```
+
+Generated code imports from `topple.psx`:
+```python
+from topple.psx import BaseView, el, Element
+```
 
 ## CLI Usage
 
-The Sylfie compiler provides several commands:
+The Topple compiler provides several commands:
 
 ```bash
 # Compile a single file
-sylfie compile input.psx
+topple compile input.psx
 
 # Compile with custom output
-sylfie compile input.psx -o output.py
+topple compile input.psx -o output.py
 
 # Compile directory recursively
-sylfie compile src/ -r
+topple compile src/ -r
 
 # Watch mode for development
-sylfie watch src/
+topple watch src/
 
 # Debug: show tokens
-sylfie scan input.psx
+topple scan input.psx
 
 # Debug: show AST
-sylfie parse input.psx
+topple parse input.psx
 
 # Debug: show with resolution info
-sylfie parse input.psx -d
+topple parse input.psx -d
 ```
 
 ## Language Features
@@ -212,7 +221,7 @@ view SearchBox():
 
 ## Architecture
 
-Sylfie follows a multi-stage compilation process:
+Topple follows a multi-stage compilation process:
 
 1. **Lexical Analysis**: Tokenizes `.psx` files into a stream of tokens
 2. **Parsing**: Builds an Abstract Syntax Tree (AST) from tokens  
@@ -227,7 +236,7 @@ The compiler is written in Go for performance and reliability.
 ### Project Structure
 
 ```
-sylfie/
+topple/
 ├── cmd/                  # CLI commands (compile, watch, scan, parse)
 ├── compiler/            # Core compiler implementation
 │   ├── ast/            # AST node definitions
@@ -236,7 +245,8 @@ sylfie/
 │   ├── resolver/       # Scope analysis
 │   ├── transformers/   # View to Python AST transformation
 │   └── codegen/        # Python code generation
-├── runtime.py          # Python runtime library
+├── topple/             # Python runtime package
+│   └── psx/           # PSX runtime module (BaseView, el, etc.)
 ├── bin/               # Compiled binaries
 └── .mise.toml         # Task runner configuration
 ```
@@ -297,7 +307,7 @@ mise run test-golden-list
 
 ## Current Status
 
-Sylfie is in active development. Core features are implemented and working:
+Topple is in active development. Core features are implemented and working:
 
 - ✅ Full Python syntax support
 - ✅ View compilation to Python classes
@@ -310,7 +320,7 @@ Sylfie is in active development. Core features are implemented and working:
 
 ### Known Limitations
 
-- Generated code requires the `runtime.py` file
+- Generated code requires the Topple runtime package (`pip install topple`)
 - Limited error recovery during parsing
 - No source maps for debugging
 

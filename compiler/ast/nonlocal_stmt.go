@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 	"strings"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // NonlocalStmt represents a 'nonlocal' statement.

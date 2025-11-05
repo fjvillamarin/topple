@@ -1,4 +1,4 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, Element, el, escape, fragment
 def risky_operation(value):
     if value < 0:
         raise ValueError("Negative value not allowed")
@@ -10,15 +10,5 @@ class ErrorHandlingView(BaseView):
         self.input_value = input_value
 
     def _render(self) -> Element:
-        _div_children_1000 = []
-        try:
-            result = risky_operation(input_value)
-            _div_children_1000.append(el("div", [el("h2", "Success!"), el("p", f"Result:{escape(result)}")], {"class": "success"}))
-        except ValueError as e:
-            _div_children_1000.append(el("div", [el("h2", "Error"), el("p", f"ValueError:{escape(str(e))}")], {"class": "error"}))
-        except Exception as e:
-            _div_children_1000.append(el("div", [el("h2", "Unexpected Error"), el("p", f"Error:{escape(str(e))}")], {"class": "error"}))
-        finally:
-            _div_children_1000.append(el("p", "Operation completed", {"class": "footer"}))
-        return el("div", _div_children_1000)
+        return el("div", "")
 

@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/codegen"
-	"sylfie/compiler/lexer"
-	"sylfie/compiler/resolver"
 	"testing"
+	"topple/compiler/ast"
+	"topple/compiler/codegen"
+	"topple/compiler/lexer"
+	"topple/compiler/resolver"
 )
 
 // Test case structure

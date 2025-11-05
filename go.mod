@@ -1,4 +1,4 @@
-module sylfie
+module topple
 
 go 1.23.0
 

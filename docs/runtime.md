@@ -1,6 +1,6 @@
-# Sylfie Runtime System
+# Topple Runtime System
 
-The Sylfie runtime (`runtime.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
+The Topple runtime (`runtime.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
 
 ## Runtime Architecture
 
@@ -147,7 +147,7 @@ view HelloWorld():
 
 **Generated Python:**
 ```python
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, el, escape, Element, FragmentElement, fragment, render_child
 
 class HelloWorld(BaseView):
     def __init__(self):
@@ -517,6 +517,6 @@ AttributeError: 'NoneType' object has no attribute 'name'
 
 ## See Also
 
-- [Language Grammar](grammar_sylfie.md) - PSX syntax reference
+- [Language Grammar](grammar_topple.md) - PSX syntax reference
 - [Architecture Guide](architecture.md) - Compiler internals
 - [Examples](../examples/) - Example applications

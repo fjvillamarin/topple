@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"sylfie/compiler/ast"
+	"topple/compiler/ast"
 )
 
 // PSX-specific visitors that should not be called after mutation

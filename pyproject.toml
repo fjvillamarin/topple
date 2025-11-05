@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "sylfie"
+name = "topple"
 version = "0.1.0"
-description = ""
+description = "Topple - A Python transpiler for PSX (Python Syntax eXtension)"
 authors = ["fjvillamarin <ferriverodiaz@gmail.com>"]
 readme = "README.md"
 

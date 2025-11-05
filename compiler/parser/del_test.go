@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
 	"testing"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // parseStmt is a test helper that scans and parses the given source string

@@ -1,6 +1,6 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, Element, el, escape, fragment
 class Button(BaseView):
-    def __init__(self, text: str, variant: str = "primary"):
+    def __init__(self, text: str, variant: str="primary"):
         super().__init__()
         self.text = text
         self.variant = variant

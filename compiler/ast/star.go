@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // StarExpr represents a star expression (*expr)

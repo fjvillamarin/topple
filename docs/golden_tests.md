@@ -1,6 +1,6 @@
 # Golden File Tests
 
-This document describes the golden file testing system for the Sylfie compiler.
+This document describes the golden file testing system for the Topple compiler.
 
 ## Overview
 

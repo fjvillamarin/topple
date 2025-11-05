@@ -2,8 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // The scaffold parses only *one-line expression statements* so that you can

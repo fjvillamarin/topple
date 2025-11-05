@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
 	"testing"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // Helper to extract AssignStmt from statement (might be wrapped in MultiStmt or ExprStmt)

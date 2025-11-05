@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"sylfie/compiler"
-	"sylfie/internal/filesystem"
+	"topple/compiler"
+	"topple/internal/filesystem"
 )
 
 // WatchCmd defines the "watch" command.

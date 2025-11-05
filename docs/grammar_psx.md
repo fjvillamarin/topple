@@ -1,6 +1,6 @@
 # PSX Language Grammar
 
-PSX (Python Sylfie eXtension) is a templating language that seamlessly blends Python's programming capabilities with HTML markup for creating dynamic web views. It allows developers to write UI components using familiar Python syntax directly within HTML structures, offering a development experience similar to JSX/TSX in the JavaScript ecosystem.
+PSX (Python Syntax eXtension) is a templating language that seamlessly blends Python's programming capabilities with HTML markup for creating dynamic web views. It allows developers to write UI components using familiar Python syntax directly within HTML structures, offering a development experience similar to JSX/TSX in the JavaScript ecosystem.
 
 ## Introduction
 
@@ -18,11 +18,11 @@ Key benefits of PSX:
 
 ```bash
 # Clone and build from source
-git clone https://github.com/yourusername/sylfie.git
-cd sylfie
+git clone https://github.com/yourusername/topple.git
+cd topple
 mise run build
 # Copy binary to PATH or add bin/ to your PATH
-cp bin/sylfie /usr/local/bin/
+cp bin/topple /usr/local/bin/
 ```
 
 ### Your First View
@@ -33,14 +33,14 @@ Create a file `hello.psx`:
 view HelloWorld():
     <div>
         <h1>Hello, World!</h1>
-        <p>Welcome to Sylfie!</p>
+        <p>Welcome to Topple!</p>
     </div>
 ```
 
 Compile it:
 
 ```bash
-sylfie compile hello.psx
+topple compile hello.psx
 ```
 
 This generates `hello.py` which you can import and use in any Python application.
@@ -478,10 +478,10 @@ app = FastAPI()
 view HomePage(request: Request):
     <html>
         <head>
-            <title>Sylfie App</title>
+            <title>Topple App</title>
         </head>
         <body>
-            <h1>Welcome to Sylfie!</h1>
+            <h1>Welcome to Topple!</h1>
             <p>Hello, visitor from {request.client.host}</p>
         </body>
     </html>

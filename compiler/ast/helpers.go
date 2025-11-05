@@ -2,7 +2,7 @@ package ast
 
 import (
 	"strings"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // Helper functions for constructing AST nodes in tests.

@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // BreakStmt represents a 'break' statement.

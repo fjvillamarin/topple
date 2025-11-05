@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"sylfie/compiler"
-	"sylfie/internal/filesystem"
+	"topple/compiler"
+	"topple/internal/filesystem"
 )
 
 // ParseCmd defines the "parse" command which runs the scanner and parser

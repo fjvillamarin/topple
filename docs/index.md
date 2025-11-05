@@ -1,6 +1,6 @@
-# Sylfie Documentation
+# Topple Documentation
 
-Welcome to the Sylfie documentation! Sylfie is a modern templating language that seamlessly blends Python's power with HTML markup using the PSX (Python Sylfie eXtension) syntax.
+Welcome to the Topple documentation! Topple is a modern templating language that seamlessly blends Python's power with HTML markup using the PSX (Python Syntax eXtension) syntax.
 
 ## Getting Started
 
@@ -46,7 +46,7 @@ The `development/` folder contains internal documentation for contributors:
 
 ## Examples
 
-See the [examples/](../examples/) directory for working Sylfie applications demonstrating various features.
+See the [examples/](../examples/) directory for working Topple applications demonstrating various features.
 
 ## Contributing
 

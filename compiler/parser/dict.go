@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // dictOrSet determines whether to parse a dictionary or set by looking ahead

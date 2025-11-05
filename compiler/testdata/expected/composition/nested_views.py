@@ -1,4 +1,4 @@
-from runtime import BaseView, el, escape, Element, FragmentElement, fragment, render_child
+from topple.psx import BaseView, Element, el, escape, fragment
 class Icon(BaseView):
     def __init__(self, name: str):
         super().__init__()
@@ -8,17 +8,13 @@ class Icon(BaseView):
         return el("i", "", {"class": "icon icon-{name}"})
 
 class Button(BaseView):
-    def __init__(self, text: str, icon: str = ""):
+    def __init__(self, text: str, icon: str=""):
         super().__init__()
         self.text = text
         self.icon = icon
 
     def _render(self) -> Element:
-        _button_children_1000 = []
-        if self.icon:
-            _button_children_1000.append(Icon(name=self.icon))
-        _button_children_1000.append(el("span", escape(self.text)))
-        return el("button", _button_children_1000)
+        return el("button", ["", el("span", escape(self.text))])
 
 class Toolbar(BaseView):
     def __init__(self, title: str):

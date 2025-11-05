@@ -1,10 +1,10 @@
-# Sylfie AST Reference
+# Topple AST Reference
 
-This document provides a comprehensive reference for all AST (Abstract Syntax Tree) node types used in the Sylfie compiler.
+This document provides a comprehensive reference for all AST (Abstract Syntax Tree) node types used in the Topple compiler.
 
 ## Overview
 
-The Sylfie AST extends Python's AST with additional nodes for view definitions and HTML elements. All AST nodes implement the visitor pattern for traversal and transformation.
+The Topple AST extends Python's AST with additional nodes for view definitions and HTML elements. All AST nodes implement the visitor pattern for traversal and transformation.
 
 ## Base Types
 
@@ -49,7 +49,7 @@ type Module struct {
 
 ## Statements
 
-### View Statement (Sylfie-specific)
+### View Statement (Topple-specific)
 
 ```go
 type ViewStmt struct {
@@ -67,7 +67,7 @@ view HelloWorld(name: str = "World"):
     <div>Hello, {name}!</div>
 ```
 
-### HTML Element (Sylfie-specific)
+### HTML Element (Topple-specific)
 
 ```go
 type HTMLElement struct {

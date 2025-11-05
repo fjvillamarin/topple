@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"sylfie/compiler/ast"
-	"sylfie/compiler/lexer"
+	"topple/compiler/ast"
+	"topple/compiler/lexer"
 )
 
 // ASTPrinter implements a visitor that prints the AST in a tree-sitter-like format.

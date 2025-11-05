@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 	"strings"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // FString represents an f-string literal: f"text {expr} more text"

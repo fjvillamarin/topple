@@ -1,7 +1,7 @@
 package transformers
 
 import (
-	"sylfie/compiler/ast"
+	"topple/compiler/ast"
 )
 
 // processForLoop processes a for loop in the context of an HTML context

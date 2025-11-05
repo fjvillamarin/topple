@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"sylfie/compiler/lexer"
+	"topple/compiler/lexer"
 )
 
 // TernaryExpr represents a ternary expression (condition ? trueExpr : falseExpr)
