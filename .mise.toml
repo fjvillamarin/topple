@@ -5,8 +5,7 @@
 VERSION = "0.1.0"
 
 [tools]
-# Use system go for now due to mise go toolchain issues
-# go = "1.23"
+go = "1.23"
 python = "3.12"
 
 # Development Tasks
