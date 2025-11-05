@@ -60,6 +60,9 @@ func (p *Parser) delTarget() (ast.Expr, error) {
 					return nil, p.error(p.peek(), "unexpected accessor after del target")
 				}
 				return result, nil
+			case *ast.Call:
+				// Function calls cannot be deleted
+				return nil, p.error(p.peek(), "cannot delete function call")
 			default:
 				// tPrimary() returned something that's not Attribute/Subscript
 				// This means it's just an atom (like a simple name)

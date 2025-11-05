@@ -481,10 +481,11 @@ func TestStarTargetSequences(t *testing.T) {
 			description:   "list targets with starred element",
 		},
 		{
-			name:          "attribute and method targets",
-			input:         "obj.attr, instance.method(), *extras",
-			expectedCount: 3,
-			description:   "attribute and method call targets",
+			name:        "attribute and method targets",
+			input:       "obj.attr, instance.method(), *extras",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call in target sequence should be rejected",
 		},
 	}
 
@@ -671,6 +672,38 @@ func TestTargetEdgeCases(t *testing.T) {
 			hasError:    true,
 			errorText:   "expected",
 			description: "incomplete subscript access missing closing bracket",
+		},
+		{
+			name:        "function call as target",
+			input:       "f()",
+			method:      "targetWithStarAtom",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "function call should be rejected as assignment target",
+		},
+		{
+			name:        "method call as target",
+			input:       "obj.method()",
+			method:      "targetWithStarAtom",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call should be rejected as assignment target",
+		},
+		{
+			name:        "function call in singleSubscriptAttributeTarget",
+			input:       "f()",
+			method:      "singleSubscriptAttributeTarget",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "function call rejected by singleSubscriptAttributeTarget",
+		},
+		{
+			name:        "method call in singleSubscriptAttributeTarget",
+			input:       "obj.method()",
+			method:      "singleSubscriptAttributeTarget",
+			hasError:    true,
+			errorText:   "cannot assign to function call",
+			description: "method call rejected by singleSubscriptAttributeTarget",
 		},
 	}
 

@@ -110,6 +110,9 @@ func (p *Parser) singleSubscriptAttributeTarget() (ast.Expr, error) {
 			return nil, p.error(p.peek(), "unexpected accessor after target")
 		}
 		return expr, nil
+	case *ast.Call:
+		// Function calls cannot be assignment targets
+		return nil, p.error(p.peek(), "cannot assign to function call")
 	default:
 		// tPrimary() returned something other than Attribute/Subscript
 		// This shouldn't happen with correct grammar, but handle gracefully
@@ -496,8 +499,20 @@ func (p *Parser) targetWithStarAtom() (ast.Expr, error) {
 			return nil, p.error(p.peek(), "unexpected accessor after target")
 		}
 
-		// Return the result - it's already an Attribute or Subscript from tPrimary()
-		return primary, nil
+		// Check that tPrimary() returned a valid target type
+		// The grammar requires that the chain ends with .NAME or [slices], not ()
+		switch primary.(type) {
+		case *ast.Attribute, *ast.Subscript:
+			// Valid: chain ended with .NAME or [slices]
+			return primary, nil
+		case *ast.Call:
+			// Invalid: chain ended with () - function calls cannot be assignment targets
+			return nil, p.error(p.peek(), "cannot assign to function call")
+		default:
+			// Shouldn't happen with greedy tPrimary(), but handle gracefully
+			p.Current = startPos
+			goto tryStarAtom
+		}
 	}
 
 tryStarAtom:
