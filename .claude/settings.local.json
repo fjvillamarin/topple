@@ -33,7 +33,14 @@
       "Bash(tee:*)",
       "Bash(python3:*)",
       "Bash(./bin/topple compile:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(UPDATE_GOLDEN=1 mise run:*)",
+      "Bash(UPDATE_GOLDEN=1 go test:*)",
+      "Bash(for:*)",
+      "Bash(do mv \"$f\" \"$f%.py.psx\")",
+      "Bash(done)",
+      "Bash(do echo \"=== Compiling $f ===\")",
+      "Bash(do cp \"/Users/ferri/projects/topple/psx/compiler/testdata/input/control_flow/$f.py\" \"/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow/$f.py\")"
     ],
     "deny": [],
     "ask": []
