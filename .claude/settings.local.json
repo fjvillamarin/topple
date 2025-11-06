@@ -40,7 +40,8 @@
       "Bash(do mv \"$f\" \"$f%.py.psx\")",
       "Bash(done)",
       "Bash(do echo \"=== Compiling $f ===\")",
-      "Bash(do cp \"/Users/ferri/projects/topple/psx/compiler/testdata/input/control_flow/$f.py\" \"/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow/$f.py\")"
+      "Bash(do cp \"/Users/ferri/projects/topple/psx/compiler/testdata/input/control_flow/$f.py\" \"/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow/$f.py\")",
+      "WebFetch(domain:htmx.org)"
     ],
     "deny": [],
     "ask": []
