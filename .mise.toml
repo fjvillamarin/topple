@@ -7,6 +7,7 @@ VERSION = "0.1.0"
 [tools]
 go = "1.23"
 python = "3.12"
+poetry = "latest"
 
 # Development Tasks
 [tasks.run]
@@ -231,7 +232,7 @@ run = "go run ./cmd/... compile examples/01_hello_world/01_hello_world.psx -d -r
 # Web Development
 [tasks.web]
 description = "Start development web server"
-run = "poetry run uvicorn examples.01_hello_world.01_hello_world:app --reload"
+run = "poetry run uvicorn examples.homepage.main:app --reload"
 
 # Help Task
 [tasks.help]
