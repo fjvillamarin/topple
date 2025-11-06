@@ -52,7 +52,15 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 	}
 
 	// Regular HTML element processing...
-	// Transform the element into an el() call
+
+	// Check if the element's content requires hierarchical processing
+	// (contains compound statements like for/if/while/try/match/with)
+	if vm.needsHierarchicalProcessing(element.Content) {
+		// Use statement-based transformation for complex content
+		return vm.transformHTMLElementWithStatements(element)
+	}
+
+	// Simple content - use expression-based transformation
 	transformedElement, err := vm.transformHTMLElement(element)
 	if err != nil {
 		return nil, err
@@ -129,6 +137,83 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 	}
 
 	return vm.createElCall(tagName, contentExpr, attrsExpr), nil
+}
+
+// transformHTMLElementWithStatements transforms an HTML element whose content
+// requires hierarchical processing (contains compound statements like for/if/while).
+// This is used when the element's content cannot be represented as a simple expression.
+func (vm *ViewTransformer) transformHTMLElementWithStatements(
+	element *ast.HTMLElement,
+) ([]ast.Stmt, error) {
+	// Extract the tag name
+	tagName := element.TagName.Lexeme
+
+	// Transform attributes (same as expression mode)
+	var attrsExpr ast.Expr
+	if len(element.Attributes) > 0 {
+		transformedAttrs, err := vm.transformHTMLAttributes(element.Attributes)
+		if err != nil {
+			return nil, err
+		}
+		attrsExpr = transformedAttrs
+	}
+
+	// Push a new context for this element's children
+	// This creates a unique variable name like "_div_children_1000"
+	contextName := vm.pushContext(tagName)
+
+	// Create the children array initialization: _div_children_1000 = []
+	createArray := &ast.AssignStmt{
+		Targets: []ast.Expr{
+			&ast.Name{
+				Token: lexer.Token{Lexeme: contextName, Type: lexer.Identifier},
+				Span:  lexer.Span{},
+			},
+		},
+		Value: &ast.ListExpr{
+			Elements: []ast.Expr{},
+			Span:     lexer.Span{},
+		},
+		Span: lexer.Span{},
+	}
+
+	statements := []ast.Stmt{createArray}
+
+	// Process each content statement in this context.
+	// HTML elements will be appended to the children array.
+	// Compound statements (for/if/while/etc) will contain append statements in their bodies.
+	for _, stmt := range element.Content {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			vm.popContext()
+			return nil, err
+		}
+		statements = append(statements, processedStmts...)
+	}
+
+	// Pop the context to restore the previous one
+	vm.popContext()
+
+	// Create the el() call with the children array as content
+	elCall := vm.createElCall(tagName, &ast.Name{
+		Token: lexer.Token{Lexeme: contextName, Type: lexer.Identifier},
+		Span:  lexer.Span{},
+	}, attrsExpr)
+
+	// If we're in a parent context, append this element to it
+	if vm.currentContext != "" {
+		appendStmt := vm.createAppendStatement(vm.currentContext, elCall)
+		statements = append(statements, appendStmt)
+		return statements, nil
+	}
+
+	// If no parent context (top level), return the element as an expression statement
+	statements = append(statements, &ast.ExprStmt{
+		Expr: elCall,
+		Span: element.Span,
+	})
+
+	return statements, nil
 }
 
 // transformHTMLAttributes transforms HTML attributes into a Python dictionary expression
@@ -265,13 +350,14 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 		}
 
 	default:
-		// Other statements (if/for blocks, etc.) - for now, skip them
-		// TODO: Handle control flow statements properly
-		return &ast.Literal{
-			Type:  ast.LiteralTypeString,
-			Value: "", // placeholder
-			Span:  lexer.Span{},
-		}, nil
+		// Compound statements should be handled by hierarchical processing
+		// in transformHTMLElementWithStatements, not here in expression mode.
+		// If we reach this point, it indicates a logic error in the transformation pipeline.
+		return nil, fmt.Errorf(
+			"unexpected compound statement %T in expression context at %s - "+
+				"this should have been handled by hierarchical processing",
+			item, item.GetSpan(),
+		)
 	}
 }
 

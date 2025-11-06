@@ -1,0 +1,7 @@
+view Counter(start: int, end: int):
+    <ul>
+        i = start
+        while i < end:
+            <li>{i}</li>
+            i += 1
+    </ul>

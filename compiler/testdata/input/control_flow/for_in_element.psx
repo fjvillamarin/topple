@@ -1,0 +1,5 @@
+view UserList(users: list):
+    <ul>
+        for user in users:
+            <li>{user}</li>
+    </ul>

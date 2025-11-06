@@ -1,0 +1,7 @@
+view Greeting(is_admin: bool, name: str):
+    <div>
+        if is_admin:
+            <h1>Admin: {name}</h1>
+        else:
+            <p>User: {name}</p>
+    </div>
