@@ -398,3 +398,62 @@ The golden file tests cover these categories:
    - Imports from `topple.psx` (e.g., `from topple.psx import BaseView, el`)
 2. **Go Version**: Requires Go 1.23+ for building
 3. **Python Version**: Generated code targets Python 3.12+
+
+## Custom Slash Commands
+
+This project includes custom Claude Code slash commands in `.claude/commands/`:
+
+### /review
+Run CodeRabbit CLI for comprehensive code analysis and improvement suggestions.
+
+**Usage:**
+```bash
+/review              # Runs with --plain (detailed feedback)
+/review --prompt-only  # Token-efficient minimal output
+```
+
+**What it does:**
+- Executes `coderabbit review` on the codebase
+- Analyzes findings by severity and impact
+- Provides actionable recommendations
+- Suggests prioritized implementation plan
+- Can apply improvements with your approval
+
+**When to use:**
+- Before committing major changes
+- After implementing new features
+- When refactoring code
+- To catch potential issues early
+- For code quality improvements
+
+**Critical Limitations to Be Aware Of:**
+1. **View composition doesn't work** - Cannot nest `<ChildView />` components (Issue #70)
+2. **Multiline text not supported** - Text must stay on single lines (Issue #71)
+3. **Code examples double-escaped** - Cannot display HTML/PSX syntax properly (Issue #72)
+4. **Special characters break parser** - Emojis and `!` cause errors (Issue #73)
+
+**Workarounds:**
+- Keep all content in single monolithic views (not scalable)
+- Write text on single lines only
+- Use Python variables for long text: `text = """..."""` then `<p>{text}</p>`
+- Avoid Python keywords (`for`, `with`, `in`) in text on new lines
+
+## Working Demo
+
+The `examples/homepage/` directory contains a fully functional PSX landing page that demonstrates:
+- What currently works in PSX
+- Current limitations in practice
+- Proper FastAPI integration
+- TailwindCSS via CDN
+- Server-side rendering
+
+**Run the demo:**
+```bash
+# Compile PSX to Python
+./bin/topple compile examples/homepage/views.psx examples/homepage/views.py
+
+# Start FastAPI server
+mise run web
+
+# View at http://127.0.0.1:8000
+```

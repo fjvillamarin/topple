@@ -32,7 +32,8 @@
       "Bash(rm:*)",
       "Bash(tee:*)",
       "Bash(python3:*)",
-      "Bash(./bin/topple compile:*)"
+      "Bash(./bin/topple compile:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
