@@ -8,14 +8,21 @@ import (
 
 // Resolver implements variable resolution for Python-like scoping
 type Resolver struct {
-	// Scope management
-	Scopes        []*Environment       // Stack of active scopes
-	Current       *Environment         // Current scope
+	// Scope management (new scope chain system)
+	ScopeChain  *Scope         // Current scope in the chain
+	AllScopes   map[int]*Scope // All scopes by ID
+	NextScopeID int            // Scope ID generator
+
+	// Module-level variables
 	ModuleGlobals map[string]*Variable // Module-level variables
 
-	// Resolution results
-	Variables   map[*ast.Name]*Variable // Name node → Variable mapping
-	ScopeDepths map[*ast.Name]int       // Name node → scope distance
+	// Resolution results (legacy pointer-based)
+	Variables   map[*ast.Name]*Variable // Name node → Variable mapping (for backward compat)
+	ScopeDepths map[*ast.Name]int       // Name node → scope distance (for backward compat)
+
+	// Resolution results (new scope chain-based)
+	NameToBinding map[*ast.Name]*Binding // Name → specific binding
+	NodeScopes    map[ast.Node]*Scope    // AST node → declaring scope
 
 	// Closure analysis
 	CellVars map[string]bool // Variables needing cells
@@ -42,10 +49,13 @@ type Resolver struct {
 // NewResolver constructs and initializes a new Resolver for variable and view resolution within a module.
 func NewResolver() *Resolver {
 	resolver := &Resolver{
-		Scopes:        []*Environment{},
+		AllScopes:     make(map[int]*Scope),
+		NextScopeID:   0,
 		ModuleGlobals: make(map[string]*Variable),
 		Variables:     make(map[*ast.Name]*Variable),
 		ScopeDepths:   make(map[*ast.Name]int),
+		NameToBinding: make(map[*ast.Name]*Binding),
+		NodeScopes:    make(map[ast.Node]*Scope),
 		CellVars:      make(map[string]bool),
 		FreeVars:      make(map[string]bool),
 		Errors:        []error{},
@@ -68,6 +78,9 @@ func (r *Resolver) Resolve(module *ast.Module) (*ResolutionTable, error) {
 	table := &ResolutionTable{
 		Variables:      r.Variables,
 		ScopeDepths:    r.ScopeDepths,
+		NameToBinding:  r.NameToBinding,
+		Scopes:         r.AllScopes,
+		NodeScopes:     r.NodeScopes,
 		ViewParameters: make(map[string]*Variable),
 		CellVars:       r.CellVars,
 		FreeVars:       r.FreeVars,
@@ -98,16 +111,10 @@ func (r *Resolver) Resolve(module *ast.Module) (*ResolutionTable, error) {
 
 // BeginScope creates a new scope
 func (r *Resolver) BeginScope(scopeType ScopeType) {
-	env := &Environment{
-		Enclosing:    r.Current,
-		Values:       make(map[string]*Variable),
-		ScopeType:    scopeType,
-		Globals:      make(map[string]*Variable),
-		Nonlocals:    make(map[string]*Variable),
-		IsClassScope: scopeType == ClassScopeType,
-	}
-	r.Scopes = append(r.Scopes, env)
-	r.Current = env
+	newScope := NewScope(r.NextScopeID, scopeType, r.ScopeChain)
+	r.NextScopeID++
+	r.AllScopes[newScope.ID] = newScope
+	r.ScopeChain = newScope
 
 	// Update context counters
 	switch scopeType {
@@ -122,9 +129,9 @@ func (r *Resolver) BeginScope(scopeType ScopeType) {
 
 // EndScope removes the current scope
 func (r *Resolver) EndScope() {
-	if len(r.Scopes) > 0 {
+	if r.ScopeChain != nil {
 		// Update context counters based on scope being removed
-		switch r.Current.ScopeType {
+		switch r.ScopeChain.ScopeType {
 		case ClassScopeType:
 			r.ClassScopeDepth--
 		case FunctionScopeType:
@@ -133,12 +140,8 @@ func (r *Resolver) EndScope() {
 			r.ViewScopeDepth--
 		}
 
-		r.Scopes = r.Scopes[:len(r.Scopes)-1]
-		if len(r.Scopes) > 0 {
-			r.Current = r.Scopes[len(r.Scopes)-1]
-		} else {
-			r.Current = nil
-		}
+		// Pop scope chain
+		r.ScopeChain = r.ScopeChain.Parent
 	}
 }
 
@@ -149,17 +152,40 @@ func (r *Resolver) InFunctionScope() bool {
 
 // DefineVariable creates a new variable in the current scope
 func (r *Resolver) DefineVariable(name string, span lexer.Span) *Variable {
+	// Calculate depth by walking up the scope chain
+	depth := 0
+	for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+		depth++
+	}
+	depth-- // Adjust for current scope
+
 	variable := &Variable{
 		Name:            name,
-		DefinitionDepth: len(r.Scopes) - 1,
+		DefinitionDepth: depth,
 		State:           VariableDeclared,
 		FirstDefSpan:    span,
 	}
 
-	if r.Current != nil {
-		r.Current.Values[name] = variable
+	if r.ScopeChain != nil {
+		// Create binding in current scope
+		binding := &Binding{
+			Name:     name,
+			Variable: variable,
+			Scope:    r.ScopeChain,
+		}
+
+		// Check for shadowing - look in parent scopes for same name
+		if r.ScopeChain.Parent != nil {
+			if parentBinding := r.ScopeChain.Parent.ResolveBinding(name); parentBinding != nil {
+				parentBinding.ShadowedBy = binding
+			}
+		}
+
+		// Add binding to current scope
+		r.ScopeChain.Bindings[name] = binding
+
 		// Also store module-level variables in ModuleGlobals for LEGB resolution
-		if r.Current.ScopeType == ModuleScopeType {
+		if r.ScopeChain.ScopeType == ModuleScopeType {
 			r.ModuleGlobals[name] = variable
 		}
 	} else {
@@ -174,31 +200,36 @@ func (r *Resolver) DefineVariable(name string, span lexer.Span) *Variable {
 func (r *Resolver) ResolveName(name *ast.Name) error {
 	varName := name.Token.Lexeme
 
+	// Helper function to calculate absolute scope depth (from module scope)
+	calculateDepth := func(targetScope *Scope) int {
+		depth := 0
+		for scope := targetScope; scope != nil && scope.Parent != nil; scope = scope.Parent {
+			depth++
+		}
+		return depth
+	}
+
 	// Check for global/nonlocal declarations in current scope
-	if r.Current != nil {
-		if globalVar := r.Current.Globals[varName]; globalVar != nil {
-			r.Variables[name] = globalVar
-			globalVar.IsUsed = true
+	if r.ScopeChain != nil {
+		if globalBinding := r.ScopeChain.Globals[varName]; globalBinding != nil {
+			r.Variables[name] = globalBinding.Variable
+			r.NameToBinding[name] = globalBinding
+			r.NodeScopes[name] = globalBinding.Scope
+			globalBinding.Variable.IsUsed = true
 			r.ScopeDepths[name] = 0 // Global is always depth 0
 			return nil
 		}
 
-		if nonlocalVar := r.Current.Nonlocals[varName]; nonlocalVar != nil {
-			r.Variables[name] = nonlocalVar
-			nonlocalVar.IsUsed = true
-			nonlocalVar.IsCaptured = true
-			nonlocalVar.IsCell = true
+		if nonlocalBinding := r.ScopeChain.Nonlocals[varName]; nonlocalBinding != nil {
+			r.Variables[name] = nonlocalBinding.Variable
+			r.NameToBinding[name] = nonlocalBinding
+			r.NodeScopes[name] = nonlocalBinding.Scope
+			nonlocalBinding.Variable.IsUsed = true
+			nonlocalBinding.Variable.IsCaptured = true
+			nonlocalBinding.Variable.IsCell = true
 
-			// Find the actual depth of the nonlocal variable
-			distance := 0
-			for i := len(r.Scopes) - 2; i >= 0; i-- {
-				distance++
-				scope := r.Scopes[i]
-				if variable, exists := scope.Values[varName]; exists && variable == nonlocalVar {
-					r.ScopeDepths[name] = distance
-					break
-				}
-			}
+			// Calculate depth
+			r.ScopeDepths[name] = calculateDepth(nonlocalBinding.Scope)
 
 			// This is a free variable in the current scope
 			r.FreeVars[varName] = true
@@ -208,58 +239,45 @@ func (r *Resolver) ResolveName(name *ast.Name) error {
 	}
 
 	// LEGB Resolution: Local → Enclosing → Global → Builtin
-
-	// 1. Local scope
-	if r.Current != nil {
-		if variable, exists := r.Current.Values[varName]; exists {
-			r.Variables[name] = variable
-			variable.IsUsed = true
-			// Local variables have depth based on current scope distance from module
-			r.ScopeDepths[name] = len(r.Scopes) - 1
-			return nil
-		}
-	}
-
-	// 2. Enclosing scopes (skip class scopes for function lookups)
-	distance := 1
-	for i := len(r.Scopes) - 2; i >= 1; i-- {
-		scope := r.Scopes[i]
-
+	// Walk the scope chain looking for the name
+	for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
 		// Class scopes don't participate in LEGB for nested functions
 		if scope.IsClassScope && r.InFunctionScope() {
-			distance++
 			continue
 		}
 
-		if variable, exists := scope.Values[varName]; exists {
-			r.Variables[name] = variable
-			variable.IsUsed = true
+		if binding, exists := scope.Bindings[varName]; exists {
+			r.Variables[name] = binding.Variable
+			r.NameToBinding[name] = binding
+			r.NodeScopes[name] = scope
+			binding.Variable.IsUsed = true
+
+			// Calculate depth
+			depth := calculateDepth(scope)
+			r.ScopeDepths[name] = depth
 
 			// Mark as captured if we're accessing from a nested scope
-			if r.InFunctionScope() || r.ViewScopeDepth > 0 {
-				variable.IsCaptured = true
-				variable.IsCell = true
+			if scope != r.ScopeChain && (r.InFunctionScope() || r.ViewScopeDepth > 0) {
+				binding.Variable.IsCaptured = true
+				binding.Variable.IsCell = true
 				r.CellVars[varName] = true
-				// This is a free variable in the current scope
 				r.FreeVars[varName] = true
 			}
 
-			// Set the scope depth (the scope index where variable was found)
-			r.ScopeDepths[name] = i
 			return nil
 		}
-		distance++
 	}
 
-	// 3. Global scope (module level)
+	// Check global scope (module level)
 	if variable, exists := r.ModuleGlobals[varName]; exists {
 		r.Variables[name] = variable
 		variable.IsUsed = true
 		r.ScopeDepths[name] = 0 // Module scope is depth 0
+		// No binding to track for module globals defined before scope chain
 		return nil
 	}
 
-	// 4. Built-ins (handled at runtime, don't error here)
+	// Built-ins (handled at runtime, don't error here)
 	// For now, create a placeholder global variable for unknown names
 	variable := &Variable{
 		Name:            varName,

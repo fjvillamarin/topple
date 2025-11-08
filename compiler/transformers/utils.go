@@ -11,7 +11,17 @@ func (vm *ViewTransformer) isViewParameter(name *ast.Name) bool {
 		return false
 	}
 
-	// Look up the variable in the resolution table
+	// PRIMARY: Try binding-based lookup (works for both original and new nodes)
+	// This is the KEY FIX - lookup by name string instead of pointer identity
+	varName := name.Token.Lexeme
+
+	// Check the ViewParameters map first (most direct approach)
+	if variable, exists := vm.resolutionTable.ViewParameters[varName]; exists {
+		// Verify it's actually a view parameter
+		return variable.IsViewParameter
+	}
+
+	// FALLBACK: Try pointer-based lookup for original nodes (backward compatibility)
 	if variable, exists := vm.resolutionTable.Variables[name]; exists {
 		return variable.IsViewParameter
 	}

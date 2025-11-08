@@ -1,15 +1,12 @@
 from topple.psx import BaseView, Element, el, escape, fragment
 from functools import wraps
 def cache_result(func):
-    _chain_tmp_1 = {}
-    cache = _chain_tmp_1
+    cache = {}
     @wraps(func)
     def wrapper(*args, **kwargs):
-        _chain_tmp_2 = str(args) + str(kwargs)
-        key = _chain_tmp_2
+        key = str(args) + str(kwargs)
         if key not in cache:
-            _chain_tmp_3 = func(*args, **kwargs)
-            cache[key] = _chain_tmp_3
+            cache[key] = func(*args, **kwargs)
         return cache[key]
 
     return wrapper
@@ -19,8 +16,7 @@ def expensive_operation(n: int) -> int:
     return n ** 2 + n * 10
 
 def logged(cls):
-    _chain_tmp_4 = cls.__init__
-    original_init = _chain_tmp_4
+    original_init = cls.__init__
     def new_init(self, *args, **kwargs):
         print(f"Creating {cls.__name__}")
         original_init(self, *args, **kwargs)
@@ -43,10 +39,15 @@ class DecoratorDemo(BaseView):
 
     def _render(self) -> Element:
         _root_children_1000 = []
-        _chain_tmp_5 = DataProcessor("MyProcessor")
-        processor = _chain_tmp_5
-        _chain_tmp_6 = processor.process(self.values)
-        results = _chain_tmp_6
-        _root_children_1000.append(el("div", [el("h1", "Decorator Demo"), el("p", f"Processor:{escape(processor.name)}"), el("p", f"Input values:{escape(self.values)}"), el("p", f"Results:{escape(results)}"), ""]))
+        processor = DataProcessor("MyProcessor")
+        results = processor.process(self.values)
+        _div_children_2000 = []
+        _div_children_2000.append(el("h1", "Decorator Demo"))
+        _div_children_2000.append(el("p", f"Processor:{escape(processor.name)}"))
+        _div_children_2000.append(el("p", f"Input values:{escape(self.values)}"))
+        _div_children_2000.append(el("p", f"Results:{escape(results)}"))
+        for (i, result) in enumerate(results):
+            _div_children_2000.append(el("div", f"f"Result{escape(i)}:{escape(result)}""))
+        _root_children_1000.append(el("div", _div_children_2000))
         return fragment(_root_children_1000)
 

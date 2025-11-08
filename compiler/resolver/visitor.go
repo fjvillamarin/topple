@@ -117,7 +117,7 @@ func (r *Resolver) VisitAssignStmt(a *ast.AssignStmt) ast.Visitor {
 }
 
 func (r *Resolver) VisitGlobalStmt(g *ast.GlobalStmt) ast.Visitor {
-	if r.Current.ScopeType == ModuleScopeType {
+	if r.ScopeChain.ScopeType == ModuleScopeType {
 		r.ReportError(fmt.Errorf("'global' declaration at module level"))
 		return r
 	}
@@ -127,30 +127,52 @@ func (r *Resolver) VisitGlobalStmt(g *ast.GlobalStmt) ast.Visitor {
 
 		// Create or reference module-level variable
 		if variable, exists := r.ModuleGlobals[varName]; exists {
+			// Find or create binding in module scope
+			moduleScope := r.ScopeChain
+			for moduleScope.Parent != nil {
+				moduleScope = moduleScope.Parent
+			}
+			binding := &Binding{
+				Name:     varName,
+				Variable: variable,
+				Scope:    moduleScope,
+			}
+
 			// Mark existing variable as global for summary counting
 			variable.IsGlobal = true
-			r.Current.Globals[varName] = variable
+			r.ScopeChain.Globals[varName] = binding
 		} else {
+			// Find module scope
+			moduleScope := r.ScopeChain
+			for moduleScope.Parent != nil {
+				moduleScope = moduleScope.Parent
+			}
+
 			variable := &Variable{
 				Name:            varName,
 				IsGlobal:        true,
 				DefinitionDepth: 0,
 				FirstDefSpan:    name.Span,
 			}
+			binding := &Binding{
+				Name:     varName,
+				Variable: variable,
+				Scope:    moduleScope,
+			}
 			r.ModuleGlobals[varName] = variable
-			r.Current.Globals[varName] = variable
+			r.ScopeChain.Globals[varName] = binding
 		}
 	}
 	return r
 }
 
 func (r *Resolver) VisitNonlocalStmt(n *ast.NonlocalStmt) ast.Visitor {
-	if r.Current == nil {
+	if r.ScopeChain == nil {
 		r.ReportError(fmt.Errorf("'nonlocal' declaration outside any scope"))
 		return r
 	}
 
-	if r.Current.ScopeType != FunctionScopeType && r.Current.ScopeType != ViewScopeType {
+	if r.ScopeChain.ScopeType != FunctionScopeType && r.ScopeChain.ScopeType != ViewScopeType {
 		r.ReportError(fmt.Errorf("'nonlocal' declaration not in function scope"))
 		return r
 	}
@@ -160,14 +182,13 @@ func (r *Resolver) VisitNonlocalStmt(n *ast.NonlocalStmt) ast.Visitor {
 
 		// Find in enclosing scopes (not global, not current)
 		found := false
-		for i := len(r.Scopes) - 2; i >= 1; i-- {
-			scope := r.Scopes[i]
-			if variable, exists := scope.Values[varName]; exists {
-				r.Current.Nonlocals[varName] = variable
+		for scope := r.ScopeChain.Parent; scope != nil && scope.ScopeType != ModuleScopeType; scope = scope.Parent {
+			if binding, exists := scope.Bindings[varName]; exists {
+				r.ScopeChain.Nonlocals[varName] = binding
 				// Mark the variable as captured since it's being accessed from nested scope
-				variable.IsCaptured = true
+				binding.Variable.IsCaptured = true
 				// Mark the variable as nonlocal for proper summary counting
-				variable.IsNonlocal = true
+				binding.Variable.IsNonlocal = true
 				found = true
 				break
 			}
@@ -188,7 +209,19 @@ func (r *Resolver) VisitFunction(f *ast.Function) ast.Visitor {
 		variable := r.DefineVariable(f.Name.Token.Lexeme, f.Name.Span)
 		variable.State = VariableDefined // Mark function as defined, not just declared
 		r.Variables[f.Name] = variable
-		r.ScopeDepths[f.Name] = len(r.Scopes) - 1 // Current scope depth
+
+		// Track binding for the function name
+		if binding, exists := r.ScopeChain.Bindings[f.Name.Token.Lexeme]; exists {
+			r.NameToBinding[f.Name] = binding
+			r.NodeScopes[f.Name] = r.ScopeChain
+		}
+
+		// Calculate scope depth
+		depth := 0
+		for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+			depth++
+		}
+		r.ScopeDepths[f.Name] = depth - 1
 	}
 
 	// Function body has its own scope
@@ -210,7 +243,19 @@ func (r *Resolver) VisitFunction(f *ast.Function) ast.Visitor {
 				variable.State = VariableDefined
 				// IMPORTANT: Add parameter name to Variables map
 				r.Variables[param.Name] = variable
-				r.ScopeDepths[param.Name] = len(r.Scopes) - 1 // Current scope depth
+
+				// Track binding for the parameter
+				if binding, exists := r.ScopeChain.Bindings[param.Name.Token.Lexeme]; exists {
+					r.NameToBinding[param.Name] = binding
+					r.NodeScopes[param.Name] = r.ScopeChain
+				}
+
+				// Calculate scope depth
+				depth := 0
+				for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+					depth++
+				}
+				r.ScopeDepths[param.Name] = depth - 1
 			}
 
 			// Visit default values in enclosing scope
@@ -234,10 +279,22 @@ func (r *Resolver) VisitViewStmt(v *ast.ViewStmt) ast.Visitor {
 		variable := r.DefineVariable(v.Name.Token.Lexeme, v.Name.Span)
 		variable.State = VariableDefined // Mark view as defined, not just declared
 		r.Variables[v.Name] = variable
-		r.ScopeDepths[v.Name] = len(r.Scopes) - 1 // Current scope depth
+
+		// Track binding for the view name
+		if binding, exists := r.ScopeChain.Bindings[v.Name.Token.Lexeme]; exists {
+			r.NameToBinding[v.Name] = binding
+			r.NodeScopes[v.Name] = r.ScopeChain
+		}
+
+		// Calculate scope depth
+		depth := 0
+		for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+			depth++
+		}
+		r.ScopeDepths[v.Name] = depth - 1
 
 		// Track view definition for composition (only at module level)
-		if r.Current != nil && r.Current.ScopeType == ModuleScopeType {
+		if r.ScopeChain != nil && r.ScopeChain.ScopeType == ModuleScopeType {
 			r.Views[v.Name.Token.Lexeme] = v
 		}
 	}
@@ -258,11 +315,23 @@ func (r *Resolver) VisitViewStmt(v *ast.ViewStmt) ast.Visitor {
 			if param.Name != nil {
 				variable := r.DefineVariable(param.Name.Token.Lexeme, param.Name.Span)
 				variable.IsParameter = true
-				variable.IsViewParameter = true
+				variable.IsViewParameter = true // CRITICAL: Mark as view parameter
 				variable.State = VariableDefined
 				// IMPORTANT: Add parameter name to Variables map
 				r.Variables[param.Name] = variable
-				r.ScopeDepths[param.Name] = len(r.Scopes) - 1 // Current scope depth
+
+				// Track binding for the view parameter - THIS IS THE KEY FIX
+				if binding, exists := r.ScopeChain.Bindings[param.Name.Token.Lexeme]; exists {
+					r.NameToBinding[param.Name] = binding
+					r.NodeScopes[param.Name] = r.ScopeChain
+				}
+
+				// Calculate scope depth
+				depth := 0
+				for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+					depth++
+				}
+				r.ScopeDepths[param.Name] = depth - 1
 			}
 		}
 	}
@@ -301,43 +370,63 @@ func (r *Resolver) AnalyzeAssignmentTarget(target ast.Expr) {
 		varName := t.Token.Lexeme
 
 		// Check if this variable has a global declaration in current scope
-		if r.Current != nil && r.Current.Globals[varName] != nil {
+		if r.ScopeChain != nil && r.ScopeChain.Globals[varName] != nil {
 			// This is a global variable - assign to the global
-			globalVar := r.Current.Globals[varName]
-			globalVar.State = VariableDefined
-			r.Variables[t] = globalVar
+			globalBinding := r.ScopeChain.Globals[varName]
+			globalBinding.Variable.State = VariableDefined
+			r.Variables[t] = globalBinding.Variable
+			r.NameToBinding[t] = globalBinding
+			r.NodeScopes[t] = globalBinding.Scope
 			r.ScopeDepths[t] = 0 // Global scope
 			return
 		}
 
 		// Check if this variable has a nonlocal declaration in current scope
-		if r.Current != nil && r.Current.Nonlocals[varName] != nil {
+		if r.ScopeChain != nil && r.ScopeChain.Nonlocals[varName] != nil {
 			// This is a nonlocal variable - assign to the nonlocal
-			nonlocalVar := r.Current.Nonlocals[varName]
-			nonlocalVar.State = VariableDefined
-			r.Variables[t] = nonlocalVar
-			// Find the scope depth where this nonlocal variable was originally defined
-			for i := len(r.Scopes) - 1; i >= 0; i-- {
-				if r.Scopes[i].Values[varName] == nonlocalVar {
-					r.ScopeDepths[t] = i
-					break
-				}
+			nonlocalBinding := r.ScopeChain.Nonlocals[varName]
+			nonlocalBinding.Variable.State = VariableDefined
+			r.Variables[t] = nonlocalBinding.Variable
+			r.NameToBinding[t] = nonlocalBinding
+			r.NodeScopes[t] = nonlocalBinding.Scope
+			// Calculate scope depth
+			depth := 0
+			for scope := r.ScopeChain; scope != nil && scope != nonlocalBinding.Scope; scope = scope.Parent {
+				depth++
 			}
+			r.ScopeDepths[t] = depth
 			return
 		}
 
 		// Simple assignment - define or update variable in current scope
-		if variable, exists := r.Current.Values[varName]; exists {
+		if binding, exists := r.ScopeChain.Bindings[varName]; exists {
 			// Variable already exists in current scope, update its state
-			variable.State = VariableDefined
-			r.Variables[t] = variable
-			r.ScopeDepths[t] = len(r.Scopes) - 1 // Current scope depth
+			binding.Variable.State = VariableDefined
+			r.Variables[t] = binding.Variable
+			r.NameToBinding[t] = binding
+			r.NodeScopes[t] = r.ScopeChain
+			// Calculate scope depth
+			depth := 0
+			for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+				depth++
+			}
+			r.ScopeDepths[t] = depth - 1
 		} else {
 			// Variable doesn't exist in current scope, create new one
 			variable := r.DefineVariable(varName, t.Span)
 			variable.State = VariableDefined
 			r.Variables[t] = variable
-			r.ScopeDepths[t] = len(r.Scopes) - 1 // Current scope depth
+			// Track the new binding
+			if binding, exists := r.ScopeChain.Bindings[varName]; exists {
+				r.NameToBinding[t] = binding
+				r.NodeScopes[t] = r.ScopeChain
+			}
+			// Calculate scope depth
+			depth := 0
+			for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+				depth++
+			}
+			r.ScopeDepths[t] = depth - 1
 		}
 
 	case *ast.TupleExpr:

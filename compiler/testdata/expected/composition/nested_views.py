@@ -14,7 +14,13 @@ class Button(BaseView):
         self.icon = icon
 
     def _render(self) -> Element:
-        return el("button", ["", el("span", escape(self.text))])
+        _root_children_2000 = []
+        _button_children_3000 = []
+        if self.icon:
+            _button_children_3000.append(Icon(name=self.icon))
+        _button_children_3000.append(el("span", escape(self.text)))
+        _root_children_2000.append(el("button", _button_children_3000))
+        return fragment(_root_children_2000)
 
 class Toolbar(BaseView):
     def __init__(self, title: str):

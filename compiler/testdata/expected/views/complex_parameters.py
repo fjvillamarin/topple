@@ -10,5 +10,14 @@ class ComplexView(BaseView):
         self.kwargs = kwargs
 
     def _render(self) -> Element:
-        return el("div", [el("h1", escape(self.title)), el("p", f"Items count:{escape(len(self.items))}"), "", el("p", f"Args:{escape(len(self.args))}"), el("p", f"Kwargs:{escape(len(self.kwargs))}")])
+        _root_children_2000 = []
+        _div_children_3000 = []
+        _div_children_3000.append(el("h1", escape(self.title)))
+        _div_children_3000.append(el("p", f"Items count:{escape(len(self.items))}"))
+        if self.metadata:
+            _div_children_3000.append(el("p", f"Has metadata:{escape(bool(self.metadata))}"))
+        _div_children_3000.append(el("p", f"Args:{escape(len(self.args))}"))
+        _div_children_3000.append(el("p", f"Kwargs:{escape(len(self.kwargs))}"))
+        _root_children_2000.append(el("div", _div_children_3000))
+        return fragment(_root_children_2000)
 
