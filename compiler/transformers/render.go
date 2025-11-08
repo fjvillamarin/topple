@@ -116,6 +116,19 @@ func (vm *ViewTransformer) transformViewBody(body []ast.Stmt) ([]ast.Stmt, error
 				}
 				transformedBody = append(transformedBody, stmts...)
 			}
+
+			// Convert the last ExprStmt to a ReturnStmt
+			// This handles cases where we have variable assignments followed by an HTML element
+			// Example: features = [...]; <html>...</html> should return the html element
+			if len(transformedBody) > 0 {
+				lastIdx := len(transformedBody) - 1
+				if exprStmt, ok := transformedBody[lastIdx].(*ast.ExprStmt); ok {
+					transformedBody[lastIdx] = &ast.ReturnStmt{
+						Value: exprStmt.Expr,
+						Span:  exprStmt.Span,
+					}
+				}
+			}
 		}
 	}
 

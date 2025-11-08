@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"topple/compiler/ast"
 	"topple/compiler/lexer"
 )
@@ -507,6 +508,14 @@ func (p *Parser) htmlAttributeValue() (ast.Expr, error) {
 	// Handle string literal values
 	if p.check(lexer.String) {
 		stringToken := p.advance()
+		stringValue := stringToken.Literal.(string)
+
+		// PSX syntax sugar: auto-convert strings with {var} to f-strings
+		// This only applies in HTML attribute context, not regular Python strings
+		if p.containsInterpolation(stringValue) {
+			return p.convertStringToFString(stringValue, stringToken)
+		}
+
 		return &ast.Literal{
 			Token: stringToken,
 			Value: stringToken.Literal,
@@ -550,9 +559,131 @@ func (p *Parser) htmlAttributeValue() (ast.Expr, error) {
 		}, nil
 	}
 
-	// TODO: Handle interpolated strings like class="btn {variant} active"
-	// This would require lexer support for STRING_PART tokens or
-	// a different parsing approach for mixed string/interpolation content
-
 	return nil, p.error(p.peek(), "expected string, number, boolean, or expression for attribute value")
+}
+
+// containsInterpolation checks if a string contains {var} interpolation patterns
+func (p *Parser) containsInterpolation(s string) bool {
+	inBraces := false
+	for i := 0; i < len(s); i++ {
+		if s[i] == '{' {
+			// Check if it's an escaped brace {{
+			if i+1 < len(s) && s[i+1] == '{' {
+				i++ // Skip the next brace
+				continue
+			}
+			inBraces = true
+		} else if s[i] == '}' && inBraces {
+			// Found a complete {var} pattern
+			return true
+		}
+	}
+	return false
+}
+
+// convertStringToFString converts a string with {var} patterns into an f-string AST node
+// Input: "btn btn-{variant} active"  -> Output: FString with parts ["btn btn-", variant, " active"]
+func (p *Parser) convertStringToFString(s string, token lexer.Token) (*ast.FString, error) {
+	var parts []ast.FStringPart
+	current := ""
+	i := 0
+
+	for i < len(s) {
+		if s[i] == '{' {
+			// Check for escaped braces {{
+			if i+1 < len(s) && s[i+1] == '{' {
+				current += "{"
+				i += 2
+				continue
+			}
+
+			// Save any accumulated literal text
+			if current != "" {
+				parts = append(parts, &ast.FStringMiddle{
+					Value: current,
+					Span:  token.Span,
+				})
+				current = ""
+			}
+
+			// Find the closing }
+			i++ // Skip opening {
+			exprStart := i
+			braceDepth := 1
+
+			for i < len(s) && braceDepth > 0 {
+				if s[i] == '{' {
+					braceDepth++
+				} else if s[i] == '}' {
+					braceDepth--
+				}
+				if braceDepth > 0 {
+					i++
+				}
+			}
+
+			if braceDepth != 0 {
+				return nil, p.error(token, "unmatched '{' in attribute value")
+			}
+
+			// Parse the expression inside the braces
+			exprStr := s[exprStart:i]
+			expr, err := p.parseExpressionFromString(exprStr, token)
+			if err != nil {
+				return nil, err
+			}
+
+			parts = append(parts, &ast.FStringReplacementField{
+				Expression: expr,
+				Span:       token.Span,
+			})
+
+			i++ // Skip closing }
+		} else if s[i] == '}' {
+			// Check for escaped braces }}
+			if i+1 < len(s) && s[i+1] == '}' {
+				current += "}"
+				i += 2
+				continue
+			}
+			return nil, p.error(token, "unmatched '}' in attribute value")
+		} else {
+			current += string(s[i])
+			i++
+		}
+	}
+
+	// Add any remaining literal text
+	if current != "" {
+		parts = append(parts, &ast.FStringMiddle{
+			Value: current,
+			Span:  token.Span,
+		})
+	}
+
+	return &ast.FString{
+		Parts: parts,
+		Span:  token.Span,
+	}, nil
+}
+
+// parseExpressionFromString parses an expression from a string (used for {var} in attributes)
+func (p *Parser) parseExpressionFromString(exprStr string, originalToken lexer.Token) (ast.Expr, error) {
+	// Create a mini-lexer to tokenize the expression
+	miniScanner := lexer.NewScanner([]byte(exprStr))
+	tokens := miniScanner.ScanTokens()
+
+	// Create a mini-parser with these tokens
+	miniParser := &Parser{
+		Tokens:  tokens,
+		Current: 0,
+	}
+
+	// Parse the expression
+	expr, err := miniParser.expression()
+	if err != nil {
+		return nil, p.error(originalToken, fmt.Sprintf("invalid expression in interpolation: %v", err))
+	}
+
+	return expr, nil
 }

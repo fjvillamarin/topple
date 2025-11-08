@@ -18,6 +18,8 @@ func (vm *ViewTransformer) validateViewElementContent(element *ast.HTMLElement) 
 func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.Stmt, error) {
 	var statements []ast.Stmt
 
+	tagName := element.TagName.Lexeme
+
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
@@ -49,6 +51,11 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 		}
 
 		return statements, nil
+	}
+
+	// Check for undefined PascalCase components (likely a typo or missing view definition)
+	if vm.isPascalCase(tagName) {
+		return nil, fmt.Errorf("undefined view component '%s' at %s. Views must be defined before use. If this is meant to be an HTML tag, use lowercase", tagName, element.Span)
 	}
 
 	// Regular HTML element processing...
@@ -106,6 +113,9 @@ func (vm *ViewTransformer) createAppendStatement(arrayName string, element ast.E
 
 // transformHTMLElement transforms an HTMLElement into an el() call
 func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.Expr, error) {
+	// Extract the tag name first
+	tagName := element.TagName.Lexeme
+
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
@@ -116,9 +126,12 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 		return vm.transformViewCall(viewStmt, element.Attributes), nil
 	}
 
+	// Check for undefined PascalCase components (likely a typo or missing view definition)
+	if vm.isPascalCase(tagName) {
+		return nil, fmt.Errorf("undefined view component '%s' at %s. Views must be defined before use. If this is meant to be an HTML tag, use lowercase", tagName, element.Span)
+	}
+
 	// Regular HTML element processing...
-	// Extract the actual tag name
-	tagName := element.TagName.Lexeme
 
 	// Transform attributes
 	var attrsExpr ast.Expr
@@ -502,4 +515,14 @@ func (vm *ViewTransformer) createElCall(tag string, content ast.Expr, attrs ast.
 		Arguments: args,
 		Span:      content.GetSpan(),
 	}
+}
+
+// isPascalCase checks if a string starts with an uppercase letter (PascalCase convention for components)
+func (vm *ViewTransformer) isPascalCase(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	// Check if first character is uppercase
+	firstChar := rune(s[0])
+	return firstChar >= 'A' && firstChar <= 'Z'
 }
