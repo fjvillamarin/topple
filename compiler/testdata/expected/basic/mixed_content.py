@@ -12,5 +12,5 @@ class Counter(BaseView):
 
     def _render(self) -> Element:
         current_time = datetime.now()
-        el("div", [el("h1", "Counter App"), el("p", f"Current count:{escape(increment())}"), el("p", f"Time:{escape(current_time)}")])
+        return el("div", [el("h1", "Counter App"), el("p", f"Current count:{escape(increment())}"), el("p", f"Time:{escape(current_time)}")])
 

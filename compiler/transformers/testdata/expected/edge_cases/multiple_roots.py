@@ -5,5 +5,5 @@ class MultipleRoots(BaseView):
     def _render(self) -> Element:
         el("h1", escape("First"))
         el("p", escape("Second"))
-        el("div", escape("Third"))
+        return el("div", escape("Third"))
 

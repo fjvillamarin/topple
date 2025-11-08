@@ -6,7 +6,7 @@ class Button(BaseView):
         self.variant = variant
 
     def _render(self) -> Element:
-        return el("button", "", {"class": "btn btn-{variant}"})
+        return el("button", "", {"class": escape(f"btn btn-{self.variant}")})
 
 class Card(BaseView):
     def __init__(self, title: str):

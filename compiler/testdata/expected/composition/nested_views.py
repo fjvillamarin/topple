@@ -5,7 +5,7 @@ class Icon(BaseView):
         self.name = name
 
     def _render(self) -> Element:
-        return el("i", "", {"class": "icon icon-{name}"})
+        return el("i", "", {"class": escape(f"icon icon-{self.name}")})
 
 class Button(BaseView):
     def __init__(self, text: str, icon: str=""):

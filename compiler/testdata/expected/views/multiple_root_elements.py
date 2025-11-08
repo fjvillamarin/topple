@@ -8,5 +8,5 @@ class MultiRoot(BaseView):
     def _render(self) -> Element:
         el("h1", escape(self.title))
         el("p", escape(self.content))
-        el("div", el("span", "Additional content"))
+        return el("div", el("span", "Additional content"))
 
