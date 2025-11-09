@@ -5,5 +5,5 @@ class Greeting(BaseView):
         self.title = title
 
     def _render(self) -> Element:
-        return el("h1", escape(f"Hello, {title} {name}"))
+        return el("h1", escape(f"Hello, {self.title} {self.name}"))
 

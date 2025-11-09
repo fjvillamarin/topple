@@ -23,8 +23,24 @@ type viewTestCase struct {
 func runViewTests(t *testing.T, tests []viewTestCase) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Transform to Class
-			transformer := NewViewTransformer(resolver.NewResolutionTable())
+			// Wrap ViewStmt in a Module for resolver
+			module := &ast.Module{
+				Body: []ast.Stmt{tt.view},
+				Span: lexer.Span{},
+			}
+
+			// Run resolver to populate ResolutionTable with view parameters
+			r := resolver.NewResolver()
+			resolutionTable, err := r.Resolve(module)
+			if err != nil {
+				t.Fatalf("Resolution failed: %v", err)
+			}
+			if len(resolutionTable.Errors) > 0 {
+				t.Fatalf("Resolution errors: %v", resolutionTable.Errors)
+			}
+
+			// Transform to Class with populated ResolutionTable
+			transformer := NewViewTransformer(resolutionTable)
 			classNode, err := transformer.TransformViewToClass(tt.view)
 			if err != nil {
 				t.Fatalf("Transformation failed: %v", err)

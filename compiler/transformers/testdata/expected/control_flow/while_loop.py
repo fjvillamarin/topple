@@ -6,9 +6,9 @@ class CounterView(BaseView):
     def _render(self) -> Element:
         _root_children_2000 = []
         _div_children_3000 = []
-        while count > 0:
+        while self.count > 0:
             _div_children_3000.append(el("span", ""))
-            count = count - 1
+            self.count = self.count - 1
         _root_children_2000.append(el("div", _div_children_3000))
         return fragment(_root_children_2000)
 
