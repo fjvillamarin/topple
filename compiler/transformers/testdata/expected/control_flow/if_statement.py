@@ -6,7 +6,7 @@ class ConditionalView(BaseView):
 
     def _render(self) -> Element:
         if self.show_message:
-            el("div", "")
+            el("div", escape(self.message))
         else:
             el("div", escape("No message"))
 

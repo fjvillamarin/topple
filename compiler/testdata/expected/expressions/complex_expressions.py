@@ -25,10 +25,10 @@ class ComplexExpressions(BaseView):
         _div_children_2000.append(el("p", f"Items: {escape(len(self.items))} ({escape(get_status(len(self.items)))})"))
         _div_children_2000.append(el("p", f"Total: {escape(format_currency(total_value))}"))
         _div_children_2000.append(el("p", f"Average: {escape(format_currency(total_value / len(self.items)) if self.items else "N/A")}"))
-        _div_children_2000.append(el("div", "", {"class": escape(f"status-{get_status(len(self.items))}")}))
+        _div_children_2000.append(el("div", escape({f"Status: {get_status(len(self.items)).upper()}"}), {"class": escape(f"status-{get_status(len(self.items))}")}))
         _ul_children_3000 = []
         for item in self.items[:3]:
-            _ul_children_3000.append(el("li", ""))
+            _ul_children_3000.append(el("li", escape({item.get("name", "Unknown")} - {format_currency(item.get("price", 0))})))
         _div_children_2000.append(el("ul", _ul_children_3000))
         if len(self.items) > 3:
             _div_children_2000.append(el("p", f"f\"... and {escape(len(self.items) - 3)} more items\""))

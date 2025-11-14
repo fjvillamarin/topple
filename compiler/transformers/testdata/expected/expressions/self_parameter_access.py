@@ -5,5 +5,5 @@ class UserProfile(BaseView):
         self.email = email
 
     def _render(self) -> Element:
-        return el("div", [el("h1", ""), el("p", "")])
+        return el("div", [el("h1", escape(self.username)), el("p", escape("Email: " + self.email))])
 

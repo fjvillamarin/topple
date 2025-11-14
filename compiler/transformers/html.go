@@ -339,28 +339,19 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 		return vm.transformHTMLContentParts(content.Parts)
 
 	case *ast.ExprStmt:
-		// Expression statement - only treat string-like expressions as content
-		if vm.isStringLikeExpression(content.Expr) {
-			transformedExpr := vm.transformExpression(content.Expr)
-			return &ast.Call{
-				Callee: &ast.Name{
-					Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
-					Span:  content.Span,
-				},
-				Arguments: []*ast.Argument{{
-					Value: transformedExpr,
-					Span:  content.Span,
-				}},
-				Span: content.Span,
-			}, nil
-		} else {
-			// Non-string expression - return empty string (ignore it)
-			return &ast.Literal{
-				Type:  ast.LiteralTypeString,
-				Value: "",
+		// Expression statement - escape all expressions used as HTML content
+		transformedExpr := vm.transformExpression(content.Expr)
+		return &ast.Call{
+			Callee: &ast.Name{
+				Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
 				Span:  content.Span,
-			}, nil
-		}
+			},
+			Arguments: []*ast.Argument{{
+				Value: transformedExpr,
+				Span:  content.Span,
+			}},
+			Span: content.Span,
+		}, nil
 
 	default:
 		// Compound statements should be handled by hierarchical processing

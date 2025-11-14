@@ -8,5 +8,5 @@ class DynamicAttributes(BaseView):
 
     def _render(self) -> Element:
         item_count = 42
-        return el("div", [el("input", "", {"type": "checkbox", "checked": escape(self.is_active)}), el("button", "", {"disabled": escape(not self.is_active)}), el("span", "Computed value", {"data-value": escape(self.user_id * 10)})], {"class": escape(self.css_class), "data-user-id": escape(self.user_id), "data-count": escape(item_count)})
+        return el("div", [el("input", "", {"type": "checkbox", "checked": escape(self.is_active)}), el("button", escape({"Active" if self.is_active else "Inactive"}), {"disabled": escape(not self.is_active)}), el("span", "Computed value", {"data-value": escape(self.user_id * 10)})], {"class": escape(self.css_class), "data-user-id": escape(self.user_id), "data-count": escape(item_count)})
 

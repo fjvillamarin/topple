@@ -5,5 +5,5 @@ class HTMXBasic(BaseView):
         self.user_id = user_id
 
     def _render(self) -> Element:
-        return el("div", [el("h1", "HTMX Demo"), el("button", ["", ""], {"hx-get": "/api/data", "hx-target": "#content", "hx-swap": "innerHTML"}), el("div", ["", ""], {"id": "content", "hx-get": "/api/initial", "hx-trigger": "load"}), el("form", [el("input", "", {"type": "hidden", "name": "user_id", "value": escape(f"{self.user_id}")}), el("input", "", {"type": "text", "name": "message", "placeholder": "Enter message..."}), el("button", "Send", {"type": "submit"})], {"hx-post": "/api/submit", "hx-target": "#result", "hx-swap": "outerHTML"}), el("div", "", {"id": "result"})])
+        return el("div", [el("h1", "HTMX Demo"), el("button", [escape(Load), escape(Data)], {"hx-get": "/api/data", "hx-target": "#content", "hx-swap": "innerHTML"}), el("div", [escape(Loading), escape(None)], {"id": "content", "hx-get": "/api/initial", "hx-trigger": "load"}), el("form", [el("input", "", {"type": "hidden", "name": "user_id", "value": escape(f"{self.user_id}")}), el("input", "", {"type": "text", "name": "message", "placeholder": "Enter message..."}), el("button", "Send", {"type": "submit"})], {"hx-post": "/api/submit", "hx-target": "#result", "hx-swap": "outerHTML"}), el("div", "", {"id": "result"})])
 
