@@ -632,7 +632,7 @@ func (s *Scanner) scanPythonToken() {
 				}
 			}
 		}
-		s.string(r)
+		s.string(r, false) // Regular string (not raw)
 	default:
 		switch {
 		case r == 'f' || r == 'F':
@@ -661,8 +661,9 @@ func (s *Scanner) scanPythonToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.advance() // consume quote
-				s.string(next)
+				s.start = s.cur      // Update start to point to the quote, not the 'r'
+				s.advance()          // consume quote
+				s.string(next, true) // Raw string
 				return
 			}
 			// If not a raw string, treat as identifier
@@ -990,7 +991,7 @@ func (s *Scanner) hexNumber() {
 
 // ── string literal (single / double; no prefixes yet) ───────────────
 
-func (s *Scanner) string(quote rune) {
+func (s *Scanner) string(quote rune, isRaw bool) {
 	isTriple := s.peek() == quote && s.peekN(1) == quote
 	if isTriple {
 		// consume the two additional quotes
@@ -1024,7 +1025,7 @@ func (s *Scanner) string(quote rune) {
 				s.errorf("string literal cannot span newline")
 				return
 			}
-			if r == '\\' { // escape
+			if r == '\\' && !isRaw { // escape (not processed in raw strings)
 				s.advance()
 				s.advance()
 				continue
@@ -1523,7 +1524,7 @@ func (s *Scanner) scanExpressionToken() {
 				}
 			}
 		}
-		s.string(r)
+		s.string(r, false) // Regular string (not raw)
 	default:
 		switch {
 		case r == 'f' || r == 'F':
@@ -1552,8 +1553,9 @@ func (s *Scanner) scanExpressionToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.advance() // consume quote
-				s.string(next)
+				s.start = s.cur      // Update start to point to the quote, not the 'r'
+				s.advance()          // consume quote
+				s.string(next, true) // Raw string
 				return
 			}
 			// If not a raw string, treat as identifier
@@ -1681,7 +1683,7 @@ func (s *Scanner) scanHTMLTag() {
 		case '=':
 			s.addToken(Equal)
 		case '"', '\'':
-			s.string(r) // Use regular string parsing
+			s.string(r, false) // Use regular string parsing (not raw)
 		case '{':
 			// Start of interpolation in attribute
 			s.ctx.modeStack = append(s.ctx.modeStack, s.ctx.mode) // Push current mode
