@@ -22,7 +22,7 @@ view UserList(users: List[User]):
     
     <div>
         <h1>User Management</h1>
-        <p>f"Total users: {len(users)}, Adults: {len(adults)}"</p>
+        <p>Total users: {len(users)}, Adults: {len(adults)}</p>
         
         <h2>All Users</h2>
         for user in users:

@@ -5,6 +5,6 @@ view StringInterpolation(user_name: str, balance: float):
         <h1>{user_name.upper()}</h1>
         <p>Welcome back, {user_name}!</p>
         <p>Your balance is ${balance:.2f}</p>
-        <p>f"Formatted: {user_name} has ${balance:,.2f}"</p>
-        <p>f"{len(user_name)} characters in your name"</p>
+        <p>Formatted: {user_name} has ${balance:,.2f}</p>
+        <p>{len(user_name)} characters in your name</p>
     </div>

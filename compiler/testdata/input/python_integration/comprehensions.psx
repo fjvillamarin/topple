@@ -19,5 +19,5 @@ view Comprehensions(numbers: list, items: list):
         </ul>
         
         <h3>Unique name lengths:</h3>
-        <p>f"Lengths: {sorted(unique_lengths)}"</p>
+        <p>Lengths: {sorted(unique_lengths)}</p>
     </div>

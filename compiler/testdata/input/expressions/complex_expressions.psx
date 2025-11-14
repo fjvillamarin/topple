@@ -30,5 +30,5 @@ view ComplexExpressions(items: list, user: dict):
         </ul>
         
         if len(items) > 3:
-            <p>f"... and {len(items) - 3} more items"</p>
+            <p>... and {len(items) - 3} more items</p>
     </div>
