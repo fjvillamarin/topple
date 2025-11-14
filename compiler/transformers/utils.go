@@ -11,18 +11,22 @@ func (vm *ViewTransformer) isViewParameter(name *ast.Name) bool {
 		return false
 	}
 
-	// PRIMARY: Try binding-based lookup (works for both original and new nodes)
-	// This is the KEY FIX - lookup by name string instead of pointer identity
-	varName := name.Token.Lexeme
+	// PRIMARY: Try binding-based lookup for scope-aware resolution
+	// This correctly handles parameters with the same name in different views
+	if binding, exists := vm.resolutionTable.NameToBinding[name]; exists {
+		// Check if this specific binding is a view parameter
+		return binding.Variable.IsViewParameter
+	}
 
-	// Check the ViewParameters map first (most direct approach)
-	if variable, exists := vm.resolutionTable.ViewParameters[varName]; exists {
-		// Verify it's actually a view parameter
+	// FALLBACK 1: Try pointer-based Variables map for original nodes
+	if variable, exists := vm.resolutionTable.Variables[name]; exists {
 		return variable.IsViewParameter
 	}
 
-	// FALLBACK: Try pointer-based lookup for original nodes (backward compatibility)
-	if variable, exists := vm.resolutionTable.Variables[name]; exists {
+	// FALLBACK 2: Try ViewParameters map by name (least reliable)
+	// Only use this as last resort for newly created nodes not in binding maps
+	varName := name.Token.Lexeme
+	if variable, exists := vm.resolutionTable.ViewParameters[varName]; exists {
 		return variable.IsViewParameter
 	}
 

@@ -48,7 +48,8 @@
       "Bash(TEST=basic/mixed_content UPDATE_GOLDEN=1 mise run:*)",
       "Bash(TEST=views/multiple_root_elements UPDATE_GOLDEN=1 mise run:*)",
       "Bash(git grep:*)",
-      "Bash(TEST=expressions/complex_expressions mise run:*)"
+      "Bash(TEST=expressions/complex_expressions mise run:*)",
+      "Bash(../bin/topple compile:*)"
     ],
     "deny": [],
     "ask": []
