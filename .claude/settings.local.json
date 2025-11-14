@@ -46,7 +46,9 @@
       "Bash(TEST=attributes/dynamic_attributes UPDATE_GOLDEN=1 mise run:*)",
       "Bash(TEST=composition/multi_root UPDATE_GOLDEN=1 mise run:*)",
       "Bash(TEST=basic/mixed_content UPDATE_GOLDEN=1 mise run:*)",
-      "Bash(TEST=views/multiple_root_elements UPDATE_GOLDEN=1 mise run:*)"
+      "Bash(TEST=views/multiple_root_elements UPDATE_GOLDEN=1 mise run:*)",
+      "Bash(git grep:*)",
+      "Bash(TEST=expressions/complex_expressions mise run:*)"
     ],
     "deny": [],
     "ask": []

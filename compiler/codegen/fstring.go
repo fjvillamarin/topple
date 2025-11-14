@@ -21,6 +21,8 @@ func (cg *CodeGenerator) VisitFStringMiddle(f *ast.FStringMiddle) ast.Visitor {
 	value := f.Value
 	// Escape backslashes first
 	value = strings.ReplaceAll(value, "\\", "\\\\")
+	// Escape quotes
+	value = strings.ReplaceAll(value, "\"", "\\\"")
 	// Escape curly braces
 	value = strings.ReplaceAll(value, "{", "{{")
 	value = strings.ReplaceAll(value, "}", "}}")
