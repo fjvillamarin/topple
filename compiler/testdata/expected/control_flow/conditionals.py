@@ -14,7 +14,7 @@ class ConditionalView(BaseView):
             if self.user_type == "user":
                 _div_children_3000.append(el("p", "Hello, registered user!"))
             else:
-                _div_children_3000.append(el("p", f"Welcome,{escape(self.user_type)}!"))
+                _div_children_3000.append(el("p", f"Welcome, {escape(self.user_type)}!"))
         if self.is_admin:
             _div_children_3000.append(el("div", [el("h3", "Admin Controls"), el("button", "Admin Actions")], {"class": "admin-panel"}))
         else:

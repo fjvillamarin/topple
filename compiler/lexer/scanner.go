@@ -1818,21 +1818,22 @@ func (s *Scanner) scanHTMLIdentifier() {
 func (s *Scanner) addHTMLText(textStart int) {
 	text := string(s.src[textStart:s.cur])
 	if len(text) > 0 {
-		// Trim whitespace for cleaner output
-		text = strings.TrimSpace(text)
-		if len(text) > 0 {
-			// Create a token with the text span
-			token := Token{
-				Type:    HTMLTextInline,
-				Lexeme:  text,
-				Literal: text,
-				Span: Span{
-					Start: Position{Line: s.lexLine, Column: s.lexCol},
-					End:   Position{Line: s.line, Column: s.col},
-				},
-			}
-			s.tokens = append(s.tokens, token)
+		// Skip tokens that are ENTIRELY whitespace (like newlines/indentation)
+		// But preserve PARTIAL whitespace (like "text: " or " text") as it's semantically significant
+		if len(strings.TrimSpace(text)) == 0 {
+			return // Skip entirely-whitespace tokens
 		}
+		// Preserve the text exactly as-is - whitespace is meaningful in HTML
+		token := Token{
+			Type:    HTMLTextInline,
+			Lexeme:  text,
+			Literal: text,
+			Span: Span{
+				Start: Position{Line: s.lexLine, Column: s.lexCol},
+				End:   Position{Line: s.line, Column: s.col},
+			},
+		}
+		s.tokens = append(s.tokens, token)
 	}
 }
 

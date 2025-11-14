@@ -10,7 +10,7 @@ class ValidationErrors(BaseView):
         _div_children_4000.append(el("h3", "Please correct the following errors:"))
         _ul_children_5000 = []
         for (field, error) in self.errors.items():
-            _ul_children_5000.append(el("li", f"{escape(field)}:{escape(error)}"))
+            _ul_children_5000.append(el("li", f"{escape(field)}: {escape(error)}"))
         _div_children_4000.append(el("ul", _ul_children_5000))
         _root_children_3000.append(el("div", _div_children_4000, {"class": "error-banner"}))
         return fragment(_root_children_3000)

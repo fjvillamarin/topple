@@ -14,11 +14,11 @@ class ErrorHandlingView(BaseView):
         _div_children_3000 = []
         try:
             result = risky_operation(self.input_value)
-            _div_children_3000.append(el("div", [el("h2", "Success!"), el("p", f"Result:{escape(result)}")], {"class": "success"}))
+            _div_children_3000.append(el("div", [el("h2", "Success!"), el("p", f"Result: {escape(result)}")], {"class": "success"}))
         except ValueError as e:
-            _div_children_3000.append(el("div", [el("h2", "Error"), el("p", f"ValueError:{escape(str(e))}")], {"class": "error"}))
+            _div_children_3000.append(el("div", [el("h2", "Error"), el("p", f"ValueError: {escape(str(e))}")], {"class": "error"}))
         except Exception as e:
-            _div_children_3000.append(el("div", [el("h2", "Unexpected Error"), el("p", f"Error:{escape(str(e))}")], {"class": "error"}))
+            _div_children_3000.append(el("div", [el("h2", "Unexpected Error"), el("p", f"Error: {escape(str(e))}")], {"class": "error"}))
         finally:
             _div_children_3000.append(el("p", "Operation completed", {"class": "footer"}))
         _root_children_2000.append(el("div", _div_children_3000))

@@ -6,5 +6,5 @@ class Greeting(BaseView):
         self.age = age
 
     def _render(self) -> Element:
-        return el("div", [el("h1", f"Hello,{escape(self.name)}!"), el("p", f"You are{escape(self.age)}years old.")])
+        return el("div", [el("h1", f"Hello, {escape(self.name)}!"), el("p", f"You are {escape(self.age)} years old.")])
 

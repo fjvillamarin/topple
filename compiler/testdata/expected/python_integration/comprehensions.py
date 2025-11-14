@@ -20,10 +20,10 @@ class Comprehensions(BaseView):
         _div_children_2000.append(el("h3", "Item mapping:"))
         _ul_children_4000 = []
         for (item_id, name) in item_names.items():
-            _ul_children_4000.append(el("li", f"{escape(item_id)}:{escape(name)}"))
+            _ul_children_4000.append(el("li", f"{escape(item_id)}: {escape(name)}"))
         _div_children_2000.append(el("ul", _ul_children_4000))
         _div_children_2000.append(el("h3", "Unique name lengths:"))
-        _div_children_2000.append(el("p", f"f"Lengths:{escape(sorted(unique_lengths))}""))
+        _div_children_2000.append(el("p", f"f"Lengths: {escape(sorted(unique_lengths))}""))
         _root_children_1000.append(el("div", _div_children_2000))
         return fragment(_root_children_1000)
 

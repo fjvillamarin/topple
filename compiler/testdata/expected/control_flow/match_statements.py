@@ -12,11 +12,11 @@ class MatchView(BaseView):
             case "loading":
                 _div_children_3000.append(el("div", "Loading...", {"class": "spinner"}))
             case "success":
-                _div_children_3000.append(el("div", [el("h2", "Success!"), el("p", f"Data loaded:{escape(len(self.data))}items")], {"class": "success"}))
+                _div_children_3000.append(el("div", [el("h2", "Success!"), el("p", f"Data loaded: {escape(len(self.data))} items")], {"class": "success"}))
             case "error":
                 _div_children_3000.append(el("div", [el("h2", "Error occurred"), el("p", "Failed to load data")], {"class": "error"}))
             case _:
-                _div_children_3000.append(el("div", el("p", f"Unknown status:{escape(self.status)}"), {"class": "unknown"}))
+                _div_children_3000.append(el("div", el("p", f"Unknown status: {escape(self.status)}"), {"class": "unknown"}))
         _root_children_2000.append(el("div", _div_children_3000))
         return fragment(_root_children_2000)
 
