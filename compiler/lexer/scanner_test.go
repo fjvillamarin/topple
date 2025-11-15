@@ -389,6 +389,53 @@ func TestUnicodeHandling(t *testing.T) {
 	}
 }
 
+// Test HTML text span positions (regression test for HTMLTextInline span bug)
+func TestHTMLTextSpan(t *testing.T) {
+	// Test that HTML text tokens have correct span positions
+	// The span should point to the actual text, not the enclosing tag
+	input := `view MyView():
+    <div>Hello World</div>`
+
+	scanner := NewScanner([]byte(input))
+	tokens := scanner.ScanTokens()
+
+	// Find the HTMLTextInline token "Hello World"
+	var textToken *Token
+	for i := range tokens {
+		if tokens[i].Type == HTMLTextInline && tokens[i].Lexeme == "Hello World" {
+			textToken = &tokens[i]
+			break
+		}
+	}
+
+	if textToken == nil {
+		t.Fatal("Expected to find HTMLTextInline token 'Hello World'")
+	}
+
+	// Verify the span points to the text, not the tag
+	// Line 2 (the <div> line), and the column should point to 'H' in "Hello"
+	// Input:    <div>Hello World</div>
+	// Columns:  123456789...
+	// The '<' is at column 5 (after 4 spaces of indentation)
+	// The 'H' in "Hello" is at column 10 (after "<div>")
+	expectedStartLine := 2
+	expectedStartCol := 10
+
+	if textToken.Start().Line != expectedStartLine {
+		t.Errorf("Expected text start line %d, got %d", expectedStartLine, textToken.Start().Line)
+	}
+	if textToken.Start().Column != expectedStartCol {
+		t.Errorf("Expected text start column %d, got %d", expectedStartCol, textToken.Start().Column)
+	}
+
+	// The end position should be after "World"
+	// "Hello World" is 11 characters, so end column should be 10 + 11 = 21
+	expectedEndCol := 21
+	if textToken.End().Column != expectedEndCol {
+		t.Errorf("Expected text end column %d, got %d", expectedEndCol, textToken.End().Column)
+	}
+}
+
 // Benchmark tokenization
 func BenchmarkScanner(b *testing.B) {
 	// Sample Python code for benchmarking

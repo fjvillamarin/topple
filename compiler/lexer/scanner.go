@@ -1704,6 +1704,8 @@ func (s *Scanner) scanHTMLTag() {
 // scanHTMLContent scans HTML content between tags
 func (s *Scanner) scanHTMLContent() {
 	textStart := s.cur
+	textStartLine := s.line
+	textStartCol := s.col
 
 	for !s.atEnd() {
 		r := s.peek()
@@ -1711,7 +1713,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '<':
 			// Emit any accumulated text
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Switch to tag mode to handle the '<'
@@ -1721,7 +1723,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '{':
 			// Emit any accumulated text
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Set start position for the interpolation token
@@ -1735,7 +1737,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '\n':
 			// Emit any accumulated text first
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Let the main scanner handle the newline properly
@@ -1751,7 +1753,7 @@ func (s *Scanner) scanHTMLContent() {
 
 	// Emit any remaining text
 	if s.cur > textStart {
-		s.addHTMLText(textStart)
+		s.addHTMLText(textStart, textStartLine, textStartCol)
 	}
 }
 
@@ -1817,7 +1819,7 @@ func (s *Scanner) scanHTMLIdentifier() {
 }
 
 // addHTMLText adds an HTML text token from the given start position
-func (s *Scanner) addHTMLText(textStart int) {
+func (s *Scanner) addHTMLText(textStart int, startLine int, startCol int) {
 	text := string(s.src[textStart:s.cur])
 	if len(text) > 0 {
 		// Skip tokens that are ENTIRELY whitespace (like newlines/indentation)
@@ -1831,7 +1833,7 @@ func (s *Scanner) addHTMLText(textStart int) {
 			Lexeme:  text,
 			Literal: text,
 			Span: Span{
-				Start: Position{Line: s.lexLine, Column: s.lexCol},
+				Start: Position{Line: startLine, Column: startCol},
 				End:   Position{Line: s.line, Column: s.col},
 			},
 		}
