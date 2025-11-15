@@ -4,15 +4,40 @@
 
 The Variable Resolver is a compiler pass that runs after parsing and before code generation. It implements Python's LEGB (Local, Enclosing, Global, Built-in) scoping rules and binds variable names to their definitions, enabling proper variable resolution and scope analysis.
 
+**Status**: ✅ Fully implemented and integrated into the compilation pipeline
+
+**Location**: `compiler/resolver/`
+- `types.go` - Core data structures (Scope, Binding, Variable, ResolutionTable)
+- `resolver.go` - Main resolver logic (scope management, LEGB resolution)
+- `visitor.go` - AST visitor implementations for all node types
+- `debug.go` - Debug printing utilities for resolution results
+
 ## Goals
 
-1. **Variable Binding**: Bind every `Name` node in the AST to its corresponding variable definition
-2. **Scope Analysis**: Track variable scopes and detect scope-related errors
-3. **Python Compatibility**: Handle Python's complex scoping rules (global/nonlocal declarations, class scopes, comprehensions)
-4. **Topple Extensions**: Support Topple-specific constructs like view parameters
-5. **Error Detection**: Identify undefined variables, invalid global/nonlocal declarations
+1. **Variable Binding**: Bind every `Name` node in the AST to its corresponding variable definition ✅
+2. **Scope Analysis**: Track variable scopes and detect scope-related errors ✅
+3. **Python Compatibility**: Handle Python's complex scoping rules (global/nonlocal declarations, class scopes, comprehensions) ✅
+4. **Topple Extensions**: Support Topple-specific constructs like view parameters ✅
+5. **Error Detection**: Identify undefined variables, invalid global/nonlocal declarations ✅
+6. **View Composition**: Track view definitions and HTML element references for view composition ✅
+7. **Closure Analysis**: Identify cell variables and free variables for proper closure handling ✅
 
-## Core Data Structures
+## Current Implementation Architecture
+
+The resolver uses a **scope chain system** with rich binding tracking. This differs from a simple environment stack by explicitly modeling:
+- Individual scopes as first-class objects with unique IDs
+- Bindings as the connection between a name and a variable in a specific scope
+- Shadowing relationships between bindings in nested scopes
+- Both legacy pointer-based and modern scope chain-based lookups
+
+### Key Components
+
+1. **Scope Chain**: Linked list of `Scope` objects from current scope to module scope
+2. **Binding System**: Maps variable names to `Variable` metadata within each scope
+3. **Resolution Table**: Output containing all resolution results, mappings, and metadata
+4. **Visitor Pattern**: Traverses AST and performs resolution using visitor methods
+
+## Core Data Structures (Current Implementation)
 
 ### Variable Metadata
 
@@ -565,10 +590,120 @@ The resolver detects various scoping errors:
 - Memory usage scales with number of variables and scopes
 - Resolution table provides fast lookup during code generation
 
+## Current Status and Features
+
+### Implemented Features
+
+1. **Full LEGB Resolution** ✅
+   - Local, Enclosing, Global, Builtin name resolution
+   - Proper handling of global/nonlocal declarations
+   - Class scope isolation (classes don't participate in LEGB for nested functions)
+
+2. **Scope Management** ✅
+   - Module, function, class, view, comprehension, except, and with scopes
+   - Scope chain with unique IDs for each scope
+   - Depth counters for nested scopes
+
+3. **Binding Tracking** ✅
+   - Name → Variable → Binding relationships
+   - Shadowing detection and tracking
+   - Scope-specific binding resolution
+
+4. **Variable Metadata** ✅
+   - State tracking (undefined, declared, defined, used)
+   - Classification (parameter, global, nonlocal, imported, view parameter, exception var)
+   - Usage tracking (first definition span, first use span)
+   - Closure analysis (captured, cell variable)
+
+5. **View Composition Support** ✅
+   - Tracks module-level view definitions
+   - Maps HTML elements to view references
+   - Enables view nesting and composition
+
+6. **Error Detection** ✅
+   - Global declarations at module level
+   - Nonlocal declarations without enclosing binding
+   - Invalid assignment targets
+
+7. **Debug Output** ✅
+   - `DebugPrintResolutionTable()` - Comprehensive resolution results
+   - `DebugPrintResolver()` - Current resolver state during resolution
+   - `DebugPrintCurrentScope()` - Specific scope information
+   - Formatted tables with variable states, types, depths, and flags
+
+### Integration Points
+
+```go
+// In compiler/compiler.go
+func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []error) {
+    ast, errors := Parse(file.Content)
+
+    // Variable resolution phase
+    r := resolver.NewResolver()
+    resolutionTable, err := r.Resolve(ast)
+
+    // Transformation phase uses resolution table
+    transformerVisitor := transformers.NewTransformerVisitor()
+    ast, err = transformerVisitor.TransformModule(ast, resolutionTable)
+
+    // Code generation
+    generator := codegen.NewCodeGenerator()
+    result := generator.Generate(ast)
+
+    return []byte(result), nil
+}
+```
+
+### Debug Capabilities
+
+The resolver has comprehensive debug output capabilities (in `debug.go`):
+
+1. **Resolution Table Debug Output**
+   - Errors with detailed messages
+   - Variables table (name, state, type, depth, flags)
+   - View parameters listing
+   - View composition information
+   - Closure analysis (cell vars, free vars)
+   - Summary statistics
+
+2. **Resolver State Debug Output**
+   - Current scope chain visualization
+   - Context information (function/class/view depth)
+   - Module globals listing
+   - Scope-specific variable listings
+
+3. **Formatted Output Features**
+   - Color-coded sections (using Unicode box-drawing characters)
+   - Sorted variable lists for consistency
+   - Duplicate detection (groups by Variable object)
+   - Reference counting for multiply-referenced variables
+
+## Implemented Features (Available Now)
+
+1. **JSON Output Format** ✅
+   - Serializes resolution table to `.res.json` for machine consumption
+   - Includes scopes, variables, views, closure analysis, and diagnostics
+   - Usage: `topple parse file.psx --format=json`
+   - Location: `compiler/resolver/json.go`
+
+2. **Human-Readable Output** ✅
+   - Generates `.res` text files with formatted resolution info
+   - Well-structured sections with visual separators
+   - Usage: `topple parse file.psx --format=text`
+   - Location: `compiler/resolver/text_output.go`
+
+3. **Parse Command Integration** ✅
+   - Resolution output fully integrated into `topple parse` command
+   - Supports single files and recursive directory processing
+   - Usage: `topple parse file.psx -w --format=all` (generates .ast, .res, .res.json)
+   - Location: `cmd/parse.go`
+
 ## Future Extensions
 
 1. **Type annotations**: Could be extended to track type information
 2. **Dataflow analysis**: Track variable assignments and usage patterns
 3. **Optimization hints**: Identify variables that can be optimized
 4. **Import analysis**: Better handling of imported names
-5. **Topple-specific constructs**: Slot parameters, special view behaviors 
+5. **Topple-specific constructs**: Slot parameters, special view behaviors
+6. **Enhanced LSP integration**: Real-time resolution feedback in editors
+7. **Web-based visualization**: Interactive exploration of resolution data
