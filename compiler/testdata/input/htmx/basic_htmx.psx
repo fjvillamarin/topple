@@ -7,7 +7,7 @@ view HTMXBasic(user_id: int):
             hx-target="#content"
             hx-swap="innerHTML"
         >
-            Load Data
+            "Load Data"
         </button>
         
         <div 
@@ -15,7 +15,7 @@ view HTMXBasic(user_id: int):
             hx-get="/api/initial"
             hx-trigger="load"
         >
-            Loading...
+            "Loading..."
         </div>
         
         <form 
