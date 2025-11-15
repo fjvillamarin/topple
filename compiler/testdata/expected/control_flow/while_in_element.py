@@ -6,12 +6,12 @@ class Counter(BaseView):
         self.end = end
 
     def _render(self) -> Element:
-        _root_children_2000 = []
-        _ul_children_3000 = []
+        _root_children_1000 = []
+        _ul_children_2000 = []
         i = self.start
         while i < self.end:
-            _ul_children_3000.append(el("li", escape(i)))
+            _ul_children_2000.append(el("li", escape(i)))
             i = i + 1
-        _root_children_2000.append(el("ul", _ul_children_3000))
-        return fragment(_root_children_2000)
+        _root_children_1000.append(el("ul", _ul_children_2000))
+        return fragment(_root_children_1000)
 

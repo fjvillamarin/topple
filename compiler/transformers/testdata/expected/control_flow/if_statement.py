@@ -5,8 +5,10 @@ class ConditionalView(BaseView):
         self.message = message
 
     def _render(self) -> Element:
+        _root_children_1000 = []
         if self.show_message:
-            el("div", escape(self.message))
+            _root_children_1000.append(el("div", escape(self.message)))
         else:
-            el("div", escape("No message"))
+            _root_children_1000.append(el("div", escape("No message")))
+        return fragment(_root_children_1000)
 

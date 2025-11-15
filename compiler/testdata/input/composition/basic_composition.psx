@@ -1,7 +1,5 @@
 view Button(text: str, variant: str = "primary"):
-    <button class="btn btn-{variant}">
-        {text}
-    </button>
+    <button class="btn btn-{variant}">{text}</button>
 
 view Card(title: str):
     <div class="card">

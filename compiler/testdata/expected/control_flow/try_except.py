@@ -10,17 +10,26 @@ class ErrorHandlingView(BaseView):
         self.input_value = input_value
 
     def _render(self) -> Element:
-        _root_children_2000 = []
-        _div_children_3000 = []
+        _root_children_1000 = []
+        _div_children_2000 = []
         try:
             result = risky_operation(self.input_value)
-            _div_children_3000.append(el("div", [el("h2", "Success!"), el("p", f"Result: {escape(result)}")], {"class": "success"}))
+            _div_children_3000 = []
+            _div_children_3000.append(el("h2", "Success!"))
+            _div_children_3000.append(el("p", f"Result: {escape(result)}"))
+            _div_children_2000.append(el("div", _div_children_3000, {"class": "success"}))
         except ValueError as e:
-            _div_children_3000.append(el("div", [el("h2", "Error"), el("p", f"ValueError: {escape(str(e))}")], {"class": "error"}))
+            _div_children_4000 = []
+            _div_children_4000.append(el("h2", "Error"))
+            _div_children_4000.append(el("p", f"ValueError: {escape(str(e))}"))
+            _div_children_2000.append(el("div", _div_children_4000, {"class": "error"}))
         except Exception as e:
-            _div_children_3000.append(el("div", [el("h2", "Unexpected Error"), el("p", f"Error: {escape(str(e))}")], {"class": "error"}))
+            _div_children_5000 = []
+            _div_children_5000.append(el("h2", "Unexpected Error"))
+            _div_children_5000.append(el("p", f"Error: {escape(str(e))}"))
+            _div_children_2000.append(el("div", _div_children_5000, {"class": "error"}))
         finally:
-            _div_children_3000.append(el("p", "Operation completed", {"class": "footer"}))
-        _root_children_2000.append(el("div", _div_children_3000))
-        return fragment(_root_children_2000)
+            _div_children_2000.append(el("p", "Operation completed", {"class": "footer"}))
+        _root_children_1000.append(el("div", _div_children_2000))
+        return fragment(_root_children_1000)
 

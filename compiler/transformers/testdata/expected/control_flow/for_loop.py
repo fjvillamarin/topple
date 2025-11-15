@@ -4,10 +4,10 @@ class ItemList(BaseView):
         self.items = items
 
     def _render(self) -> Element:
-        _root_children_2000 = []
-        _ul_children_3000 = []
+        _root_children_1000 = []
+        _ul_children_2000 = []
         for item in self.items:
-            _ul_children_3000.append(el("li", escape(item)))
-        _root_children_2000.append(el("ul", _ul_children_3000))
-        return fragment(_root_children_2000)
+            _ul_children_2000.append(el("li", escape(item)))
+        _root_children_1000.append(el("ul", _ul_children_2000))
+        return fragment(_root_children_1000)
 

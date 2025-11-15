@@ -6,7 +6,9 @@ class MultiRoot(BaseView):
         self.content = content
 
     def _render(self) -> Element:
-        el("h1", escape(self.title))
-        el("p", escape(self.content))
-        return el("div", el("span", "Additional content"))
+        _root_children_1000 = []
+        _root_children_1000.append(el("h1", escape(self.title)))
+        _root_children_1000.append(el("p", escape(self.content)))
+        _root_children_1000.append(el("div", el("span", "Additional content")))
+        return fragment(_root_children_1000)
 

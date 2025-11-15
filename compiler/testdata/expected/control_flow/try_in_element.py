@@ -5,12 +5,12 @@ class SafeDisplay(BaseView):
         self.value = value
 
     def _render(self) -> Element:
-        _root_children_2000 = []
-        _div_children_3000 = []
+        _root_children_1000 = []
+        _div_children_2000 = []
         try:
-            _div_children_3000.append(el("p", f"Value: {escape(int(self.value))}"))
+            _div_children_2000.append(el("p", f"Value: {escape(int(self.value))}"))
         except ValueError:
-            _div_children_3000.append(el("p", "Invalid value"))
-        _root_children_2000.append(el("div", _div_children_3000))
-        return fragment(_root_children_2000)
+            _div_children_2000.append(el("p", "Invalid value"))
+        _root_children_1000.append(el("div", _div_children_2000))
+        return fragment(_root_children_1000)
 

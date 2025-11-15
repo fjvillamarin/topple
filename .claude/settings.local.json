@@ -49,7 +49,8 @@
       "Bash(TEST=views/multiple_root_elements UPDATE_GOLDEN=1 mise run:*)",
       "Bash(git grep:*)",
       "Bash(TEST=expressions/complex_expressions mise run:*)",
-      "Bash(../bin/topple compile:*)"
+      "Bash(../bin/topple compile:*)",
+      "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)"
     ],
     "deny": [],
     "ask": []

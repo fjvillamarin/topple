@@ -14,14 +14,24 @@ class Profile(BaseView):
         self.title = title
 
     def _render(self) -> Element:
-        return el("div", [el("h2", escape(self.name)), el("p", escape(self.title))])
+        _root_children_1000 = []
+        _div_children_2000 = []
+        _div_children_2000.append(el("h2", escape(self.name)))
+        _div_children_2000.append(el("p", escape(self.title)))
+        _root_children_1000.append(el("div", _div_children_2000))
+        return fragment(_root_children_1000)
 
 class Dashboard(BaseView):
     def __init__(self):
         super().__init__()
 
     def _render(self) -> Element:
+        _root_children_3000 = []
         name = "Dashboard"
         title = "Admin Panel"
-        return el("div", [el("h3", escape(name)), el("span", escape(title))])
+        _div_children_4000 = []
+        _div_children_4000.append(el("h3", escape(name)))
+        _div_children_4000.append(el("span", escape(title)))
+        _root_children_3000.append(el("div", _div_children_4000))
+        return fragment(_root_children_3000)
 
