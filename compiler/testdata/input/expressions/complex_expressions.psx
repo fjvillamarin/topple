@@ -25,7 +25,7 @@ view ComplexExpressions(items: list, user: dict):
         <ul>
             for item in items[:3]:  # Show only first 3
                 <li>
-                    {item.get('name', 'Unknown')} - {format_currency(item.get('price', 0))}
+                    f"{item.get('name', 'Unknown')} - {format_currency(item.get('price', 0))}"
                 </li>
         </ul>
         
