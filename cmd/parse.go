@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"topple/compiler"
+	"topple/compiler/resolver"
 	"topple/internal/filesystem"
 )
 
@@ -17,10 +18,11 @@ import (
 type ParseCmd struct {
 	// Positional arguments – kept identical to CompileCmd for convenience
 	Input  string `arg:"" required:"" help:"Path to a Python/PSX file or directory"`
-	Output string `arg:"" optional:"" help:"Output directory for AST files (default: none)"`
+	Output string `arg:"" optional:"" help:"Output directory for output files (default: same as input)"`
 
 	// Whether to write output files
-	WriteAST bool `help:"Write AST to .ast files" short:"w" default:"false"`
+	WriteAST bool   `help:"Write AST to .ast files" short:"w" default:"false"`
+	Format   string `help:"Resolution output format: text, json, all, none" default:"none" enum:"text,json,all,none"`
 }
 
 // Run executes the parse command.
@@ -55,13 +57,13 @@ func (p *ParseCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 		log.InfoContext(*ctx, "Parsing files in directory", slog.Int("fileCount", len(sources)))
 		for _, file := range sources {
-			if err := parseFile(fs, file, p.Output, p.WriteAST, log, *ctx); err != nil {
+			if err := parseFile(fs, file, p.Output, p.WriteAST, p.Format, log, *ctx); err != nil {
 				return err
 			}
 		}
 	} else {
 		// Single file
-		if err := parseFile(fs, p.Input, p.Output, p.WriteAST, log, *ctx); err != nil {
+		if err := parseFile(fs, p.Input, p.Output, p.WriteAST, p.Format, log, *ctx); err != nil {
 			return err
 		}
 	}
@@ -71,8 +73,8 @@ func (p *ParseCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 }
 
 // parseFile runs the parser on a single file, prints AST to console,
-// and optionally writes AST to a .ast file
-func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, log *slog.Logger, ctx context.Context) error {
+// and optionally writes AST to a .ast file and resolution outputs
+func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, format string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Parsing file", slog.String("file", path))
 
 	content, err := fs.ReadFile(path)
@@ -81,6 +83,17 @@ func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, 
 	}
 
 	program, errors := compiler.Parse(content)
+
+	// Run resolver if format is specified
+	var resolutionTable *resolver.ResolutionTable
+	if format != "none" && program != nil {
+		res := resolver.NewResolver()
+		resolutionTable, err = res.Resolve(program)
+		// Don't fail on resolution errors - we'll include partial data
+		if err != nil {
+			log.WarnContext(ctx, "Resolution completed with errors", slog.String("error", err.Error()))
+		}
+	}
 
 	// Format AST into a string
 	filename := filepath.Base(path)
@@ -118,6 +131,13 @@ func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, 
 			slog.String("output", outputPath))
 	}
 
+	// Write resolution outputs if requested
+	if format != "none" && resolutionTable != nil {
+		if err := writeResolutionOutputs(fs, path, outputDir, format, resolutionTable, filename, log, ctx); err != nil {
+			return fmt.Errorf("error writing resolution outputs: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -143,4 +163,55 @@ func getASTOutputPath(fs filesystem.FileSystem, inputPath, outputDir string) str
 	}
 
 	return outputPath
+}
+
+// getResolutionOutputPath determines the output path for a resolution file (.res or .res.json)
+func getResolutionOutputPath(fs filesystem.FileSystem, inputPath, outputDir, ext string) string {
+	var outputPath string
+
+	if outputDir == "" {
+		// Use same directory as input
+		inputDir := filepath.Dir(inputPath)
+		baseName := filepath.Base(inputPath)
+		// Replace existing extension with resolution extension
+		resName := strings.TrimSuffix(baseName, filepath.Ext(baseName)) + ext
+		outputPath = filepath.Join(inputDir, resName)
+	} else {
+		// Ensure output directory exists
+		fs.MkdirAll(outputDir, 0755) // Ignore error, will fail on write if needed
+
+		// Create resolution file in output directory
+		baseName := filepath.Base(inputPath)
+		resName := strings.TrimSuffix(baseName, filepath.Ext(baseName)) + ext
+		outputPath = filepath.Join(outputDir, resName)
+	}
+
+	return outputPath
+}
+
+// writeResolutionOutputs writes resolution files based on the format flag
+func writeResolutionOutputs(fs filesystem.FileSystem, inputPath, outputDir, format string, table *resolver.ResolutionTable, filename string, log *slog.Logger, ctx context.Context) error {
+	// Write text format
+	if format == "text" || format == "all" {
+		resPath := getResolutionOutputPath(fs, inputPath, outputDir, ".res")
+		if err := resolver.WriteResolutionText(table, filename, resPath); err != nil {
+			return fmt.Errorf("error writing resolution text file: %w", err)
+		}
+		log.InfoContext(ctx, "Wrote resolution text file",
+			slog.String("input", inputPath),
+			slog.String("output", resPath))
+	}
+
+	// Write JSON format
+	if format == "json" || format == "all" {
+		jsonPath := getResolutionOutputPath(fs, inputPath, outputDir, ".res.json")
+		if err := resolver.WriteResolutionJSON(table, filename, jsonPath); err != nil {
+			return fmt.Errorf("error writing resolution JSON file: %w", err)
+		}
+		log.InfoContext(ctx, "Wrote resolution JSON file",
+			slog.String("input", inputPath),
+			slog.String("output", jsonPath))
+	}
+
+	return nil
 }
