@@ -19,7 +19,7 @@ view ComplexExpressions(items: list, user: dict):
         <p>Average: {format_currency(total_value / len(items)) if items else "N/A"}</p>
         
         <div class={f"status-{get_status(len(items))}"}>
-            {f"Status: {get_status(len(items)).upper()}"}
+            f"Status: {get_status(len(items)).upper()}"
         </div>
         
         <ul>
