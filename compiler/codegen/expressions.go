@@ -18,8 +18,15 @@ func (cg *CodeGenerator) VisitLiteral(l *ast.Literal) ast.Visitor {
 	switch v := l.Value.(type) {
 	case string:
 		if l.Type == ast.LiteralTypeString {
-			// Correct string literal - use strconv.Quote to properly escape all special characters
-			cg.write(strconv.Quote(v))
+			// Check if this is a raw string by looking at the lexeme
+			lexeme := l.Token.Lexeme
+			if len(lexeme) > 0 && (lexeme[0] == 'r' || lexeme[0] == 'R') {
+				// Raw string - output the lexeme directly (includes 'r' prefix)
+				cg.write(lexeme)
+			} else {
+				// Normal string - use strconv.Quote to properly escape all special characters
+				cg.write(strconv.Quote(v))
+			}
 		} else {
 			// String value but wrong type - treat as string anyway
 			cg.write(strconv.Quote(v))

@@ -661,7 +661,7 @@ func (s *Scanner) scanPythonToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.start = s.cur      // Update start to point to the quote, not the 'r'
+				// Keep the 'r' in the lexeme (consistent with f-string handling)
 				s.advance()          // consume quote
 				s.string(next, true) // Raw string
 				return
@@ -1036,8 +1036,13 @@ func (s *Scanner) string(quote rune, isRaw bool) {
 			}
 			s.advance()
 		}
-		// For regular strings, skip 1 character at start and end
-		body := s.src[s.start+1 : s.cur-1]
+		// For regular strings, skip 1 character at start and end (the quotes)
+		// For raw strings, skip 2 characters at start (r and quote) and 1 at end (quote)
+		startOffset := 1
+		if isRaw {
+			startOffset = 2 // Skip 'r' and opening quote
+		}
+		body := s.src[s.start+startOffset : s.cur-1]
 		s.addTokenLit(String, string(body))
 	}
 }
@@ -1553,7 +1558,7 @@ func (s *Scanner) scanExpressionToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.start = s.cur      // Update start to point to the quote, not the 'r'
+				// Keep the 'r' in the lexeme (consistent with f-string handling)
 				s.advance()          // consume quote
 				s.string(next, true) // Raw string
 				return
