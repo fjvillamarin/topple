@@ -9,26 +9,26 @@ view PageHeader(title: str, subtitle: str, description: str, cta_text: str, cta_
     </div>
 
 view CodeComparison():
+    psx_example = """view Greeting(name: str):
+    <div class="card">
+        <h1>Hello, {name}!</h1>
+    </div>"""
+
+    python_example = """class Greeting(BaseView):
+    def __init__(self, name: str):
+        self.name = name
+    def _render(self):
+        return el("div", ...)"""
+
     <div class="bg-slate-800/50 backdrop-blur rounded-xl border border-purple-500/30 p-8 mb-20">
         <div class="grid md:grid-cols-2 gap-8">
             <div>
                 <h3 class="text-purple-400 font-mono text-sm mb-3">example.psx</h3>
-                <div class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300">
-                    <div>view Greeting(name: str):</div>
-                    <div class="ml-4">&lt;div class="card"&gt;</div>
-                    <div class="ml-8">&lt;h1&gt;Hello, name&lt;/h1&gt;</div>
-                    <div class="ml-4">&lt;/div&gt;</div>
-                </div>
+                <pre class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300"><code>{raw(psx_example)}</code></pre>
             </div>
             <div>
                 <h3 class="text-pink-400 font-mono text-sm mb-3">output.py</h3>
-                <div class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300">
-                    <div>class Greeting(BaseView):</div>
-                    <div class="ml-4">def __init__(self, name: str):</div>
-                    <div class="ml-8">self.name = name</div>
-                    <div class="ml-4">def _render(self):</div>
-                    <div class="ml-8">return el("div", ...)</div>
-                </div>
+                <pre class="bg-slate-900 rounded-lg p-4 font-mono text-sm text-slate-300"><code>{raw(python_example)}</code></pre>
             </div>
         </div>
     </div>

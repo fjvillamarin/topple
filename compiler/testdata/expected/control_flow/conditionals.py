@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class ConditionalView(BaseView):
     def __init__(self, user_type: str, is_admin: bool=False):
         super().__init__()

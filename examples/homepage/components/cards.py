@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class FeatureCard(BaseView):
     def __init__(self, icon: str, title: str, description: str):
         super().__init__()
@@ -25,7 +25,7 @@ class ExampleCard(BaseView):
         _root_children_3000 = []
         _div_children_4000 = []
         _div_children_4000.append(el("h4", escape(self.label), {"class": "text-purple-400 font-mono text-sm mb-3"}))
-        _div_children_4000.append(el("pre", escape(self.code), {"class": "text-slate-300 text-xs font-mono whitespace-pre"}))
+        _div_children_4000.append(el("pre", el("code", escape(raw(self.code))), {"class": "text-slate-300 text-xs font-mono whitespace-pre overflow-x-auto"}))
         _root_children_3000.append(el("div", _div_children_4000, {"class": "bg-slate-900 rounded-lg p-4"}))
         return fragment(_root_children_3000)
 

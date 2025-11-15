@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 def risky_operation(value):
     if value < 0:
         raise ValueError("Negative value not allowed")

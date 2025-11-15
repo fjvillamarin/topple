@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class LoopView(BaseView):
     def __init__(self, items: list, max_count: int=10):
         super().__init__()

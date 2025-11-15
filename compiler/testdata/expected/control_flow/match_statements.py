@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class MatchView(BaseView):
     def __init__(self, status: str, data: dict):
         super().__init__()

@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class HTMXBasic(BaseView):
     def __init__(self, user_id: int):
         super().__init__()

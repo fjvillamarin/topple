@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class FStringExpressions(BaseView):
     def __init__(self, name: str, items: list, total: float):
         super().__init__()

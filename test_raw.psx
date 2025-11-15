@@ -1,0 +1,22 @@
+# Test file for raw() function
+from topple.psx import raw
+
+view CodeExample():
+    psx_code = "<div class=\"card\">Hello, World!</div>"
+    html_code = "<strong>Bold text</strong>"
+
+    <div>
+        <h1>Testing raw() Function</h1>
+
+        <h2>Without raw() - should be escaped</h2>
+        <pre><code>{psx_code}</code></pre>
+
+        <h2>With raw() - should render literally</h2>
+        <pre><code>{raw(psx_code)}</code></pre>
+
+        <h2>Security test - normal content still escaped</h2>
+        <p>{"<script>alert('XSS')</script>"}</p>
+
+        <h2>Raw HTML renders</h2>
+        <div>{raw(html_code)}</div>
+    </div>
