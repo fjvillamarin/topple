@@ -43,8 +43,8 @@ class TodoList(BaseView):
             _div_children_4000.append(EmptyState())
         else:
             _ul_children_5000 = []
-            for self.todo in self.todos:
-                _ul_children_5000.append(TodoItem(todo=self.todo))
+            for todo in self.todos:
+                _ul_children_5000.append(TodoItem(todo=todo))
             _div_children_4000.append(el("ul", _ul_children_5000, {"class": "space-y-3"}))
         _root_children_3000.append(el("div", _div_children_4000))
         return fragment(_root_children_3000)
@@ -55,5 +55,5 @@ class TodoPage(BaseView):
         self.todos = todos
 
     def _render(self) -> Element:
-        return el("html", [el("head", [el("meta", "", {"charset": "UTF-8"}), el("meta", "", {"name": "viewport", "content": "width=device-width, initial-scale=1.0"}), el("title", "PSX + HTMX Todo List"), el("script", "", {"src": "https://unpkg.com/htmx.org@1.9.10"}), el("script", "", {"src": "https://cdn.tailwindcss.com"})]), el("body", el("div", [PageHeader(title="PSX + HTMX", subtitle="Todo List Demo", description="Server-side rendering with zero JavaScript"), el("div", [TodoForm(), el("div", TodoList(todos=self.todos), {"id": "todo-list"})], {"class": "bg-slate-800/50 backdrop-blur rounded-xl border border-purple-500/30 p-8"}), el("div", [el("p", "This example demonstrates PSX server-side rendering with HTMX interactivity"), el("p", "All logic runs on the server - no JavaScript framework needed!", {"class": "mt-1"})], {"class": "mt-8 text-center text-slate-500 text-sm"})], {"class": "container mx-auto px-4 max-w-2xl"}), {"class": "bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen py-16"})], {"lang": "en"})
+        return el("html", [el("head", [el("meta", "", {"charset": "UTF-8"}), el("meta", "", {"name": "viewport", "content": "width=device-width, initial-scale=1.0"}), el("title", "PSX + HTMX Todo List"), el("script", "", {"src": "https://unpkg.com/htmx.org@2.0.6"}), el("script", "", {"src": "https://cdn.tailwindcss.com@4.1.16"})]), el("body", el("div", [PageHeader(title="PSX + HTMX", subtitle="Todo List Demo", description="Server-side rendering with zero JavaScript"), el("div", [TodoForm(), el("div", TodoList(todos=self.todos), {"id": "todo-list"})], {"class": "bg-slate-800/50 backdrop-blur rounded-xl border border-purple-500/30 p-8"}), el("div", [el("p", "This example demonstrates PSX server-side rendering with HTMX interactivity"), el("p", "All logic runs on the server - no JavaScript framework needed!", {"class": "mt-1"})], {"class": "mt-8 text-center text-slate-500 text-sm"})], {"class": "container mx-auto px-4 max-w-2xl"}), {"class": "bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen py-16"})], {"lang": "en"})
 
