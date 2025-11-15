@@ -427,13 +427,11 @@ Run CodeRabbit CLI for comprehensive code analysis and improvement suggestions.
 - For code quality improvements
 
 **Critical Limitations to Be Aware Of:**
-1. **View composition doesn't work** - Cannot nest `<ChildView />` components (Issue #70)
-2. **Multiline text not supported** - Text must stay on single lines (Issue #71)
-3. **Code examples double-escaped** - Cannot display HTML/PSX syntax properly (Issue #72)
-4. **Special characters break parser** - Emojis and `!` cause errors (Issue #73)
+1. **Multiline text not supported** - Text must stay on single lines (Issue #71)
+2. **Code examples double-escaped** - Cannot display HTML/PSX syntax properly (Issue #72)
+3. **Special characters break parser** - Emojis and `!` cause errors (Issue #73)
 
 **Workarounds:**
-- Keep all content in single monolithic views (not scalable)
 - Write text on single lines only
 - Use Python variables for long text: `text = """..."""` then `<p>{text}</p>`
 - Avoid Python keywords (`for`, `with`, `in`) in text on new lines

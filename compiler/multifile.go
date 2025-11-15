@@ -317,8 +317,8 @@ func (c *MultiFileCompiler) collectSymbols(ctx context.Context, astMap map[strin
 			continue
 		}
 
-		// Collect symbols from module
-		collector := symbol.NewCollector(filePath)
+		// Collect symbols from module (with dependencies for re-export support)
+		collector := symbol.NewCollectorWithDeps(filePath, c.symbolRegistry, c.moduleResolver)
 		symbols := collector.CollectFromModule(module)
 
 		// Register symbols
@@ -363,7 +363,23 @@ func (c *MultiFileCompiler) compileFile(ctx context.Context, filePath string, mo
 
 	// Resolve
 	resolutionTable, err := res.Resolve(module)
-	if err != nil {
+	if err != nil || (resolutionTable != nil && len(resolutionTable.Errors) > 0) {
+		// Aggregate all resolution errors
+		if resolutionTable != nil && len(resolutionTable.Errors) > 0 {
+			var errMsg strings.Builder
+			for i, resErr := range resolutionTable.Errors {
+				if i > 0 {
+					errMsg.WriteString("; ")
+				}
+				errMsg.WriteString(resErr.Error())
+			}
+			return nil, &CompilationError{
+				File:    filePath,
+				Stage:   "resolve",
+				Message: fmt.Sprintf("resolution failed with %d errors", len(resolutionTable.Errors)),
+				Details: fmt.Errorf("%s", errMsg.String()),
+			}
+		}
 		return nil, &CompilationError{
 			File:    filePath,
 			Stage:   "resolve",

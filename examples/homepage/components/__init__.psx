@@ -1,0 +1,3 @@
+# Re-export all components from a single entry point
+from .cards import FeatureCard, ExampleCard
+from .layout import PageHeader, CodeComparison

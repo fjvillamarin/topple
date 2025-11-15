@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"topple/compiler/ast"
+	"topple/compiler/symbol"
 )
 
 // Visitor implementation - this is where the main resolution logic goes
@@ -630,6 +631,7 @@ func (r *Resolver) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
 
 		// 4. Create imported variable binding
 		variable := r.DefineImportedVariable(bindingName, importName.GetSpan())
+		variable.ImportSource = filePath
 
 		// 5. Track in Variables map for backward compatibility
 		if nameNode != nil {
@@ -701,7 +703,8 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 		}
 
 		for _, sym := range symbols {
-			r.DefineImportedVariable(sym.Name, i.Span)
+			variable := r.DefineImportedVariable(sym.Name, i.Span)
+			variable.ImportSource = filePath
 		}
 	} else {
 		// from module import x, y as z
@@ -728,6 +731,7 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 
 			// Create binding
 			variable := r.DefineImportedVariable(bindingName, importName.GetSpan())
+			variable.ImportSource = filePath
 
 			// Track in Variables map for backward compatibility
 			if nameNode != nil {
@@ -851,9 +855,47 @@ func (r *Resolver) VisitOrPattern(op *ast.OrPattern) ast.Visitor             { r
 func (r *Resolver) VisitHTMLElement(h *ast.HTMLElement) ast.Visitor {
 	// Check if this HTML element references a view (for composition)
 	tagName := h.TagName.Lexeme
+
+	// First check: same-file view
 	if viewStmt, exists := r.Views[tagName]; exists {
 		// This HTML element is actually a view reference - bind it
 		r.ViewElements[h] = viewStmt
+	} else if r.SymbolRegistry != nil {
+		// Second check: imported view
+		// Look up the name in module globals to see if it's imported
+		if variable, exists := r.ModuleGlobals[tagName]; exists && variable.IsImported {
+			var foundView *ast.ViewStmt
+
+			// Try ImportSource first (O(1) lookup) if available
+			if variable.ImportSource != "" {
+				if sym, err := r.SymbolRegistry.LookupSymbol(variable.ImportSource, tagName); err == nil {
+					if sym.Type == symbol.SymbolView {
+						if viewStmt, ok := sym.Node.(*ast.ViewStmt); ok {
+							foundView = viewStmt
+						}
+					}
+				}
+			}
+
+			// If not found via ImportSource (e.g., re-exported from __init__.psx),
+			// search all registered modules (O(n) fallback)
+			if foundView == nil {
+				for _, filePath := range r.SymbolRegistry.GetAllModules() {
+					if sym, err := r.SymbolRegistry.LookupSymbol(filePath, tagName); err == nil {
+						if sym.Type == symbol.SymbolView {
+							if viewStmt, ok := sym.Node.(*ast.ViewStmt); ok {
+								foundView = viewStmt
+								break
+							}
+						}
+					}
+				}
+			}
+
+			if foundView != nil {
+				r.ViewElements[h] = foundView
+			}
+		}
 	}
 
 	// Visit all attributes first - they contain expressions that need resolution

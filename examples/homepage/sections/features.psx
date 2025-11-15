@@ -1,0 +1,14 @@
+# Features section - demonstrates importing components and data
+
+from ..components.cards import FeatureCard
+from ..utils.data import FEATURES
+
+view FeaturesGrid():
+    <div class="grid md:grid-cols-3 gap-6 mb-20">
+        for feature in FEATURES:
+            <FeatureCard
+                icon={feature["icon"]}
+                title={feature["title"]}
+                description={feature["desc"]}
+            />
+    </div>

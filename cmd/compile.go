@@ -115,10 +115,15 @@ func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logge
 		// Log all compilation errors
 		if output != nil && len(output.Errors) > 0 {
 			for _, compErr := range output.Errors {
+				detailsMsg := ""
+				if compErr.Details != nil {
+					detailsMsg = compErr.Details.Error()
+				}
 				log.ErrorContext(ctx, "Compilation error",
 					slog.String("file", compErr.File),
 					slog.String("stage", compErr.Stage),
-					slog.String("message", compErr.Message))
+					slog.String("message", compErr.Message),
+					slog.String("details", detailsMsg))
 			}
 		}
 		return fmt.Errorf("multi-file compilation failed: %w", err)
