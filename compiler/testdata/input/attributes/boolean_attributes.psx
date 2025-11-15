@@ -15,6 +15,6 @@ view BooleanAttributes(is_editable: bool = False, is_required: bool = True):
             type="submit"
             disabled={not is_editable}
         >
-            Submit
+            "Submit"
         </button>
     </form>
