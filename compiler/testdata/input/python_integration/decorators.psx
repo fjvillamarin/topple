@@ -41,5 +41,5 @@ view DecoratorDemo(values: list):
         <p>Results: {results}</p>
         
         for i, result in enumerate(results):
-            <div>f"Result {i}: {result}"</div>
+            <div>Result {i}: {result}</div>
     </div>

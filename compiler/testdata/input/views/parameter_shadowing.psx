@@ -1,0 +1,16 @@
+view Greeting(name: str):
+    <h1>Hello, {name}!</h1>
+
+view Profile(name: str, title: str):
+    <div>
+        <h2>{name}</h2>
+        <p>{title}</p>
+    </div>
+
+view Dashboard():
+    name = "Dashboard"
+    title = "Admin Panel"
+    <div>
+        <h3>{name}</h3>
+        <span>{title}</span>
+    </div>

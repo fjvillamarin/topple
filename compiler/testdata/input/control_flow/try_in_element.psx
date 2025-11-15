@@ -1,0 +1,7 @@
+view SafeDisplay(value: str):
+    <div>
+        try:
+            <p>Value: {int(value)}</p>
+        except ValueError:
+            <p>Invalid value</p>
+    </div>

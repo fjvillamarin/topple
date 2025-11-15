@@ -19,16 +19,16 @@ view ComplexExpressions(items: list, user: dict):
         <p>Average: {format_currency(total_value / len(items)) if items else "N/A"}</p>
         
         <div class={f"status-{get_status(len(items))}"}>
-            {f"Status: {get_status(len(items)).upper()}"}
+            f"Status: {get_status(len(items)).upper()}"
         </div>
         
         <ul>
             for item in items[:3]:  # Show only first 3
                 <li>
-                    {item.get('name', 'Unknown')} - {format_currency(item.get('price', 0))}
+                    f"{item.get('name', 'Unknown')} - {format_currency(item.get('price', 0))}"
                 </li>
         </ul>
         
         if len(items) > 3:
-            <p>f"... and {len(items) - 3} more items"</p>
+            <p>... and {len(items) - 3} more items</p>
     </div>

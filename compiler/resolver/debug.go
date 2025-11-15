@@ -316,26 +316,33 @@ func DebugPrintResolver(r *Resolver) {
 	fmt.Println()
 
 	// Print current scope stack
-	fmt.Println("📚 SCOPE STACK:")
+	fmt.Println("📚 SCOPE CHAIN:")
 	fmt.Println("━━━━━━━━━━━━━━")
-	if len(r.Scopes) == 0 {
+	if r.ScopeChain == nil {
 		fmt.Println("  (No active scopes)")
 	} else {
-		for i := len(r.Scopes) - 1; i >= 0; i-- {
-			scope := r.Scopes[i]
-			depth := len(r.Scopes) - 1 - i
+		// Build list of scopes from current to module
+		var scopes []*Scope
+		for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+			scopes = append(scopes, scope)
+		}
+
+		// Print from module (bottom) to current (top)
+		for i := len(scopes) - 1; i >= 0; i-- {
+			scope := scopes[i]
+			depth := len(scopes) - 1 - i
 			scopeTypeStr := formatScopeType(scope.ScopeType)
 
-			if i == len(r.Scopes)-1 {
+			if i == 0 {
 				fmt.Printf("  %d. %s (current)\n", depth, scopeTypeStr)
 			} else {
 				fmt.Printf("  %d. %s\n", depth, scopeTypeStr)
 			}
 
 			// Show variables in this scope
-			if len(scope.Values) > 0 {
+			if len(scope.Bindings) > 0 {
 				var names []string
-				for name := range scope.Values {
+				for name := range scope.Bindings {
 					names = append(names, name)
 				}
 				sort.Strings(names)
@@ -401,15 +408,25 @@ func formatScopeType(scopeType ScopeType) string {
 // DebugPrintCurrentScope prints debug info about the current resolver state
 func DebugPrintCurrentScope(r *Resolver, context string) {
 	fmt.Printf("=== DEBUG: %s ===\n", context)
-	fmt.Printf("Current scope type: %s\n", formatScopeType(r.Current.ScopeType))
-	fmt.Printf("Scope depth: %d\n", len(r.Scopes))
+	if r.ScopeChain != nil {
+		fmt.Printf("Current scope type: %s\n", formatScopeType(r.ScopeChain.ScopeType))
+		// Calculate scope depth
+		depth := 0
+		for scope := r.ScopeChain; scope != nil; scope = scope.Parent {
+			depth++
+		}
+		fmt.Printf("Scope depth: %d\n", depth)
+	} else {
+		fmt.Println("Current scope: nil")
+		fmt.Println("Scope depth: 0")
+	}
 	fmt.Printf("View scope depth: %d\n", r.ViewScopeDepth)
 	fmt.Printf("Function scope depth: %d\n", r.FunctionScopeDepth)
 
-	if r.Current != nil && len(r.Current.Values) > 0 {
+	if r.ScopeChain != nil && len(r.ScopeChain.Bindings) > 0 {
 		fmt.Println("Variables in current scope:")
-		for name, variable := range r.Current.Values {
-			fmt.Printf("  %s: %s (%s)\n", name, formatVariableState(variable.State), formatVariableType(variable))
+		for name, binding := range r.ScopeChain.Bindings {
+			fmt.Printf("  %s: %s (%s)\n", name, formatVariableState(binding.Variable.State), formatVariableType(binding.Variable))
 		}
 	}
 

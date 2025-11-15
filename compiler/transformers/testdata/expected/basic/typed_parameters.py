@@ -5,5 +5,5 @@ class UserCard(BaseView):
         self.show_email = show_email
 
     def _render(self) -> Element:
-        return el("div", el("h2", ""), {"class": "user-card"})
+        return el("div", el("h2", escape(self.user.name)), {"class": "user-card"})
 

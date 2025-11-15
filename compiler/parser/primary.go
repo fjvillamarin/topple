@@ -130,6 +130,7 @@ func (p *Parser) atom() (ast.Expr, error) {
 
 	if p.match(lexer.Number, lexer.String) {
 		return &ast.Literal{
+			Token: p.previous(),
 			Value: p.previous().Literal,
 			Type:  ast.LiteralTypeString,
 

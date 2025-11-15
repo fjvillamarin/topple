@@ -57,11 +57,11 @@ view ContactForm():
                 <div class="validation-message"></div>
             </div>
             
-            <button 
+            <button
                 type="submit"
                 hx-indicator=".submit-spinner"
             >
-                Send Message
+                "Send Message"
             </button>
             <span class="submit-spinner" style="display:none;">Sending...</span>
         </form>

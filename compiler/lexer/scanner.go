@@ -632,7 +632,7 @@ func (s *Scanner) scanPythonToken() {
 				}
 			}
 		}
-		s.string(r)
+		s.string(r, false) // Regular string (not raw)
 	default:
 		switch {
 		case r == 'f' || r == 'F':
@@ -661,8 +661,9 @@ func (s *Scanner) scanPythonToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.advance() // consume quote
-				s.string(next)
+				// Keep the 'r' in the lexeme (consistent with f-string handling)
+				s.advance()          // consume quote
+				s.string(next, true) // Raw string
 				return
 			}
 			// If not a raw string, treat as identifier
@@ -990,7 +991,7 @@ func (s *Scanner) hexNumber() {
 
 // ── string literal (single / double; no prefixes yet) ───────────────
 
-func (s *Scanner) string(quote rune) {
+func (s *Scanner) string(quote rune, isRaw bool) {
 	isTriple := s.peek() == quote && s.peekN(1) == quote
 	if isTriple {
 		// consume the two additional quotes
@@ -1024,7 +1025,7 @@ func (s *Scanner) string(quote rune) {
 				s.errorf("string literal cannot span newline")
 				return
 			}
-			if r == '\\' { // escape
+			if r == '\\' && !isRaw { // escape (not processed in raw strings)
 				s.advance()
 				s.advance()
 				continue
@@ -1035,8 +1036,13 @@ func (s *Scanner) string(quote rune) {
 			}
 			s.advance()
 		}
-		// For regular strings, skip 1 character at start and end
-		body := s.src[s.start+1 : s.cur-1]
+		// For regular strings, skip 1 character at start and end (the quotes)
+		// For raw strings, skip 2 characters at start (r and quote) and 1 at end (quote)
+		startOffset := 1
+		if isRaw {
+			startOffset = 2 // Skip 'r' and opening quote
+		}
+		body := s.src[s.start+startOffset : s.cur-1]
 		s.addTokenLit(String, string(body))
 	}
 }
@@ -1523,7 +1529,7 @@ func (s *Scanner) scanExpressionToken() {
 				}
 			}
 		}
-		s.string(r)
+		s.string(r, false) // Regular string (not raw)
 	default:
 		switch {
 		case r == 'f' || r == 'F':
@@ -1552,8 +1558,9 @@ func (s *Scanner) scanExpressionToken() {
 			}
 			// Check if this is a raw string (r" or r')
 			if next == '"' || next == '\'' {
-				s.advance() // consume quote
-				s.string(next)
+				// Keep the 'r' in the lexeme (consistent with f-string handling)
+				s.advance()          // consume quote
+				s.string(next, true) // Raw string
 				return
 			}
 			// If not a raw string, treat as identifier
@@ -1681,7 +1688,7 @@ func (s *Scanner) scanHTMLTag() {
 		case '=':
 			s.addToken(Equal)
 		case '"', '\'':
-			s.string(r) // Use regular string parsing
+			s.string(r, false) // Use regular string parsing (not raw)
 		case '{':
 			// Start of interpolation in attribute
 			s.ctx.modeStack = append(s.ctx.modeStack, s.ctx.mode) // Push current mode
@@ -1702,6 +1709,8 @@ func (s *Scanner) scanHTMLTag() {
 // scanHTMLContent scans HTML content between tags
 func (s *Scanner) scanHTMLContent() {
 	textStart := s.cur
+	textStartLine := s.line
+	textStartCol := s.col
 
 	for !s.atEnd() {
 		r := s.peek()
@@ -1709,7 +1718,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '<':
 			// Emit any accumulated text
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Switch to tag mode to handle the '<'
@@ -1719,7 +1728,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '{':
 			// Emit any accumulated text
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Set start position for the interpolation token
@@ -1733,7 +1742,7 @@ func (s *Scanner) scanHTMLContent() {
 		case '\n':
 			// Emit any accumulated text first
 			if s.cur > textStart {
-				s.addHTMLText(textStart)
+				s.addHTMLText(textStart, textStartLine, textStartCol)
 			}
 
 			// Let the main scanner handle the newline properly
@@ -1749,7 +1758,7 @@ func (s *Scanner) scanHTMLContent() {
 
 	// Emit any remaining text
 	if s.cur > textStart {
-		s.addHTMLText(textStart)
+		s.addHTMLText(textStart, textStartLine, textStartCol)
 	}
 }
 
@@ -1815,24 +1824,25 @@ func (s *Scanner) scanHTMLIdentifier() {
 }
 
 // addHTMLText adds an HTML text token from the given start position
-func (s *Scanner) addHTMLText(textStart int) {
+func (s *Scanner) addHTMLText(textStart int, startLine int, startCol int) {
 	text := string(s.src[textStart:s.cur])
 	if len(text) > 0 {
-		// Trim whitespace for cleaner output
-		text = strings.TrimSpace(text)
-		if len(text) > 0 {
-			// Create a token with the text span
-			token := Token{
-				Type:    HTMLTextInline,
-				Lexeme:  text,
-				Literal: text,
-				Span: Span{
-					Start: Position{Line: s.lexLine, Column: s.lexCol},
-					End:   Position{Line: s.line, Column: s.col},
-				},
-			}
-			s.tokens = append(s.tokens, token)
+		// Skip tokens that are ENTIRELY whitespace (like newlines/indentation)
+		// But preserve PARTIAL whitespace (like "text: " or " text") as it's semantically significant
+		if len(strings.TrimSpace(text)) == 0 {
+			return // Skip entirely-whitespace tokens
 		}
+		// Preserve the text exactly as-is - whitespace is meaningful in HTML
+		token := Token{
+			Type:    HTMLTextInline,
+			Lexeme:  text,
+			Literal: text,
+			Span: Span{
+				Start: Position{Line: startLine, Column: startCol},
+				End:   Position{Line: s.line, Column: s.col},
+			},
+		}
+		s.tokens = append(s.tokens, token)
 	}
 }
 

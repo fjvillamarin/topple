@@ -18,6 +18,8 @@ func (vm *ViewTransformer) validateViewElementContent(element *ast.HTMLElement) 
 func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.Stmt, error) {
 	var statements []ast.Stmt
 
+	tagName := element.TagName.Lexeme
+
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
@@ -51,8 +53,21 @@ func (vm *ViewTransformer) processHTMLElement(element *ast.HTMLElement) ([]ast.S
 		return statements, nil
 	}
 
+	// Check for undefined PascalCase components (likely a typo or missing view definition)
+	if vm.isPascalCase(tagName) {
+		return nil, fmt.Errorf("undefined view component '%s' at %s. Views must be defined before use. If this is meant to be an HTML tag, use lowercase", tagName, element.Span)
+	}
+
 	// Regular HTML element processing...
-	// Transform the element into an el() call
+
+	// Check if the element's content requires hierarchical processing
+	// (contains compound statements like for/if/while/try/match/with)
+	if vm.needsHierarchicalProcessing(element.Content) {
+		// Use statement-based transformation for complex content
+		return vm.transformHTMLElementWithStatements(element)
+	}
+
+	// Simple content - use expression-based transformation
 	transformedElement, err := vm.transformHTMLElement(element)
 	if err != nil {
 		return nil, err
@@ -98,6 +113,9 @@ func (vm *ViewTransformer) createAppendStatement(arrayName string, element ast.E
 
 // transformHTMLElement transforms an HTMLElement into an el() call
 func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.Expr, error) {
+	// Extract the tag name first
+	tagName := element.TagName.Lexeme
+
 	// Check if this element is actually a view composition
 	if viewStmt, isView := vm.isViewElement(element); isView {
 		// Validate that view elements don't have nested content
@@ -108,9 +126,12 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 		return vm.transformViewCall(viewStmt, element.Attributes), nil
 	}
 
+	// Check for undefined PascalCase components (likely a typo or missing view definition)
+	if vm.isPascalCase(tagName) {
+		return nil, fmt.Errorf("undefined view component '%s' at %s. Views must be defined before use. If this is meant to be an HTML tag, use lowercase", tagName, element.Span)
+	}
+
 	// Regular HTML element processing...
-	// Extract the actual tag name
-	tagName := element.TagName.Lexeme
 
 	// Transform attributes
 	var attrsExpr ast.Expr
@@ -129,6 +150,83 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 	}
 
 	return vm.createElCall(tagName, contentExpr, attrsExpr), nil
+}
+
+// transformHTMLElementWithStatements transforms an HTML element whose content
+// requires hierarchical processing (contains compound statements like for/if/while).
+// This is used when the element's content cannot be represented as a simple expression.
+func (vm *ViewTransformer) transformHTMLElementWithStatements(
+	element *ast.HTMLElement,
+) ([]ast.Stmt, error) {
+	// Extract the tag name
+	tagName := element.TagName.Lexeme
+
+	// Transform attributes (same as expression mode)
+	var attrsExpr ast.Expr
+	if len(element.Attributes) > 0 {
+		transformedAttrs, err := vm.transformHTMLAttributes(element.Attributes)
+		if err != nil {
+			return nil, err
+		}
+		attrsExpr = transformedAttrs
+	}
+
+	// Push a new context for this element's children
+	// This creates a unique variable name like "_div_children_1000"
+	contextName := vm.pushContext(tagName)
+
+	// Create the children array initialization: _div_children_1000 = []
+	createArray := &ast.AssignStmt{
+		Targets: []ast.Expr{
+			&ast.Name{
+				Token: lexer.Token{Lexeme: contextName, Type: lexer.Identifier},
+				Span:  lexer.Span{},
+			},
+		},
+		Value: &ast.ListExpr{
+			Elements: []ast.Expr{},
+			Span:     lexer.Span{},
+		},
+		Span: lexer.Span{},
+	}
+
+	statements := []ast.Stmt{createArray}
+
+	// Process each content statement in this context.
+	// HTML elements will be appended to the children array.
+	// Compound statements (for/if/while/etc) will contain append statements in their bodies.
+	for _, stmt := range element.Content {
+		processedStmts, err := vm.processViewStatement(stmt)
+		if err != nil {
+			vm.popContext()
+			return nil, err
+		}
+		statements = append(statements, processedStmts...)
+	}
+
+	// Pop the context to restore the previous one
+	vm.popContext()
+
+	// Create the el() call with the children array as content
+	elCall := vm.createElCall(tagName, &ast.Name{
+		Token: lexer.Token{Lexeme: contextName, Type: lexer.Identifier},
+		Span:  lexer.Span{},
+	}, attrsExpr)
+
+	// If we're in a parent context, append this element to it
+	if vm.currentContext != "" {
+		appendStmt := vm.createAppendStatement(vm.currentContext, elCall)
+		statements = append(statements, appendStmt)
+		return statements, nil
+	}
+
+	// If no parent context (top level), return the element as an expression statement
+	statements = append(statements, &ast.ExprStmt{
+		Expr: elCall,
+		Span: element.Span,
+	})
+
+	return statements, nil
 }
 
 // transformHTMLAttributes transforms HTML attributes into a Python dictionary expression
@@ -241,37 +339,29 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 		return vm.transformHTMLContentParts(content.Parts)
 
 	case *ast.ExprStmt:
-		// Expression statement - only treat string-like expressions as content
-		if vm.isStringLikeExpression(content.Expr) {
-			transformedExpr := vm.transformExpression(content.Expr)
-			return &ast.Call{
-				Callee: &ast.Name{
-					Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
-					Span:  content.Span,
-				},
-				Arguments: []*ast.Argument{{
-					Value: transformedExpr,
-					Span:  content.Span,
-				}},
-				Span: content.Span,
-			}, nil
-		} else {
-			// Non-string expression - return empty string (ignore it)
-			return &ast.Literal{
-				Type:  ast.LiteralTypeString,
-				Value: "",
+		// Expression statement - escape all expressions used as HTML content
+		transformedExpr := vm.transformExpression(content.Expr)
+		return &ast.Call{
+			Callee: &ast.Name{
+				Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
 				Span:  content.Span,
-			}, nil
-		}
+			},
+			Arguments: []*ast.Argument{{
+				Value: transformedExpr,
+				Span:  content.Span,
+			}},
+			Span: content.Span,
+		}, nil
 
 	default:
-		// Other statements (if/for blocks, etc.) - for now, skip them
-		// TODO: Handle control flow statements properly
-		return &ast.Literal{
-			Type:  ast.LiteralTypeString,
-			Value: "", // placeholder
-			Span:  lexer.Span{},
-		}, nil
+		// Compound statements should be handled by hierarchical processing
+		// in transformHTMLElementWithStatements, not here in expression mode.
+		// If we reach this point, it indicates a logic error in the transformation pipeline.
+		return nil, fmt.Errorf(
+			"unexpected compound statement %T in expression context at %s - "+
+				"this should have been handled by hierarchical processing",
+			item, item.GetSpan(),
+		)
 	}
 }
 
@@ -416,4 +506,14 @@ func (vm *ViewTransformer) createElCall(tag string, content ast.Expr, attrs ast.
 		Arguments: args,
 		Span:      content.GetSpan(),
 	}
+}
+
+// isPascalCase checks if a string starts with an uppercase letter (PascalCase convention for components)
+func (vm *ViewTransformer) isPascalCase(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	// Check if first character is uppercase
+	firstChar := rune(s[0])
+	return firstChar >= 'A' && firstChar <= 'Z'
 }

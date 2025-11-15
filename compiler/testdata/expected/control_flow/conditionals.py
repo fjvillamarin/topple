@@ -6,5 +6,22 @@ class ConditionalView(BaseView):
         self.is_admin = is_admin
 
     def _render(self) -> Element:
-        return el("div", ["", ""])
+        _root_children_1000 = []
+        _div_children_2000 = []
+        if self.user_type == "guest":
+            _div_children_2000.append(el("p", "Welcome, guest!"))
+        else:
+            if self.user_type == "user":
+                _div_children_2000.append(el("p", "Hello, registered user!"))
+            else:
+                _div_children_2000.append(el("p", f"Welcome, {escape(self.user_type)}!"))
+        if self.is_admin:
+            _div_children_3000 = []
+            _div_children_3000.append(el("h3", "Admin Controls"))
+            _div_children_3000.append(el("button", "Admin Actions"))
+            _div_children_2000.append(el("div", _div_children_3000, {"class": "admin-panel"}))
+        else:
+            _div_children_2000.append(el("p", "Regular user view"))
+        _root_children_1000.append(el("div", _div_children_2000))
+        return fragment(_root_children_1000)
 

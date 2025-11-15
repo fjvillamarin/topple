@@ -4,5 +4,5 @@ class ElementWithAttributes(BaseView):
         self.css_class = css_class
 
     def _render(self) -> Element:
-        return el("div", escape("Content with attributes"), {"class": escape(css_class), "id": "main-div"})
+        return el("div", escape("Content with attributes"), {"class": escape(self.css_class), "id": "main-div"})
 

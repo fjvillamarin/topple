@@ -595,28 +595,46 @@ func TestNonlocalStatement(t *testing.T) {
 func TestScopeManagement(t *testing.T) {
 	resolver := NewResolver()
 
-	// Test initial state
-	if len(resolver.Scopes) != 1 {
-		t.Errorf("Expected 1 initial scope, got %d", len(resolver.Scopes))
+	// Test initial state - should have module scope
+	if resolver.ScopeChain == nil {
+		t.Error("Expected scope chain to be initialized")
 	}
 
-	if resolver.Current == nil {
-		t.Error("Expected current scope to be set")
+	if resolver.ScopeChain.ScopeType != ModuleScopeType {
+		t.Errorf("Expected module scope type, got %v", resolver.ScopeChain.ScopeType)
 	}
 
-	if resolver.Current.ScopeType != ModuleScopeType {
-		t.Errorf("Expected module scope type, got %v", resolver.Current.ScopeType)
+	// Count initial scopes in chain
+	scopeCount := 0
+	for scope := resolver.ScopeChain; scope != nil; scope = scope.Parent {
+		scopeCount++
+	}
+	if scopeCount != 1 {
+		t.Errorf("Expected 1 initial scope, got %d", scopeCount)
 	}
 
-	// Test scope creation/destruction
+	// Test scope creation
 	resolver.BeginScope(FunctionScopeType)
-	if len(resolver.Scopes) != 2 {
-		t.Errorf("Expected 2 scopes after BeginScope, got %d", len(resolver.Scopes))
+	scopeCount = 0
+	for scope := resolver.ScopeChain; scope != nil; scope = scope.Parent {
+		scopeCount++
+	}
+	if scopeCount != 2 {
+		t.Errorf("Expected 2 scopes after BeginScope, got %d", scopeCount)
 	}
 
+	if resolver.ScopeChain.ScopeType != FunctionScopeType {
+		t.Errorf("Expected function scope type, got %v", resolver.ScopeChain.ScopeType)
+	}
+
+	// Test scope destruction
 	resolver.EndScope()
-	if len(resolver.Scopes) != 1 {
-		t.Errorf("Expected 1 scope after EndScope, got %d", len(resolver.Scopes))
+	scopeCount = 0
+	for scope := resolver.ScopeChain; scope != nil; scope = scope.Parent {
+		scopeCount++
+	}
+	if scopeCount != 1 {
+		t.Errorf("Expected 1 scope after EndScope, got %d", scopeCount)
 	}
 }
 
@@ -638,9 +656,11 @@ func TestVariableDefinition(t *testing.T) {
 		t.Errorf("Expected variable state %v, got %v", VariableDeclared, variable.State)
 	}
 
-	// Test that variable is in current scope
-	if resolver.Current.Values["test_var"] != variable {
-		t.Error("Variable not found in current scope")
+	// Test that variable is in current scope via binding
+	if binding, exists := resolver.ScopeChain.Bindings["test_var"]; !exists {
+		t.Error("Variable binding not found in current scope")
+	} else if binding.Variable != variable {
+		t.Error("Binding does not point to the correct variable")
 	}
 }
 
