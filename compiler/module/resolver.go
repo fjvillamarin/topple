@@ -134,6 +134,28 @@ func (r *StandardResolver) ResolveRelative(ctx context.Context, dotCount int, mo
 		targetDir = parent
 	}
 
+	// Security check: Ensure targetDir is within project root
+	// This prevents path traversal attacks where imports escape the configured RootDir
+	absRootDir, err := r.config.FileSystem.AbsolutePath(r.config.RootDir)
+	if err != nil {
+		return "", err
+	}
+
+	absTargetDir, err := r.config.FileSystem.AbsolutePath(targetDir)
+	if err != nil {
+		return "", err
+	}
+
+	// Check if target directory escaped the project root
+	relPath, err := r.config.FileSystem.RelativePath(absRootDir, absTargetDir)
+	if err != nil || strings.HasPrefix(relPath, "..") {
+		// Target directory is outside the project root
+		return "", newTooManyDotsError(
+			strings.Repeat(".", dotCount)+modulePath,
+			sourceFile,
+		)
+	}
+
 	// If no modulePath, we're importing from a package itself
 	// e.g., "from . import x" means import from current package's __init__.psx
 	if modulePath == "" {
