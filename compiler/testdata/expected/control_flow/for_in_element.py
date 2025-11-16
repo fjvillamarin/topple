@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class UserList(BaseView):
     def __init__(self, users: list):
         super().__init__()

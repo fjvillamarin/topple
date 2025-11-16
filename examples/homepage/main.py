@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 # Import the compiled PSX views
-from examples.homepage.views import LandingPage
+from examples.homepage.pages import LandingPage
 
 app = FastAPI(
     title="Topple Landing Page",

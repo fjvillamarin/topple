@@ -61,7 +61,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 	log.InfoContext(*ctx, "Starting compilation")
 
 	if isDir {
-		// Process directory
+		// Process directory - use multi-file compilation for proper dependency resolution
 		log.DebugContext(*ctx, "Input is a directory", slog.String("path", c.Input))
 
 		// List all PSX files
@@ -72,10 +72,9 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 
 		log.InfoContext(*ctx, "Found PSX files", slog.Int("count", len(files)))
 
-		for _, file := range files {
-			if err := compileFile(fs, compiler, file, c.Output, log, *ctx); err != nil {
-				return err
-			}
+		// Use multi-file compiler for directory compilation
+		if err := compileMultiFile(files, c.Input, c.Output, log, *ctx); err != nil {
+			return err
 		}
 	} else {
 		// Process single file
@@ -94,6 +93,69 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 	elapsed := time.Since(startTime)
 	log.InfoContext(*ctx, "Compilation completed", slog.Duration("elapsed", elapsed))
 
+	return nil
+}
+
+// compileMultiFile compiles multiple PSX files with import resolution
+func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
+	log.DebugContext(ctx, "Using multi-file compilation", slog.Int("fileCount", len(files)))
+
+	// Create multi-file compiler
+	multiCompiler := compiler.NewMultiFileCompiler(log)
+
+	// Prepare options
+	opts := compiler.MultiFileOptions{
+		RootDir: rootDir,
+		Files:   files,
+	}
+
+	// Compile all files
+	output, err := multiCompiler.CompileProject(ctx, opts)
+	if err != nil {
+		// Log all compilation errors
+		if output != nil && len(output.Errors) > 0 {
+			for _, compErr := range output.Errors {
+				detailsMsg := ""
+				if compErr.Details != nil {
+					detailsMsg = compErr.Details.Error()
+				}
+				log.ErrorContext(ctx, "Compilation error",
+					slog.String("file", compErr.File),
+					slog.String("stage", compErr.Stage),
+					slog.String("message", compErr.Message),
+					slog.String("details", detailsMsg))
+			}
+		}
+		return fmt.Errorf("multi-file compilation failed: %w", err)
+	}
+
+	// Write all output files
+	fs := filesystem.NewFileSystem(log)
+	for inputPath, code := range output.CompiledFiles {
+		// Determine output path
+		outputPath, err := fs.GetOutputPath(inputPath, outputDir)
+		if err != nil {
+			return fmt.Errorf("error determining output path for %s: %w", inputPath, err)
+		}
+
+		// Ensure output directory exists
+		outputDirPath := filepath.Dir(outputPath)
+		if err := fs.MkdirAll(outputDirPath, 0755); err != nil {
+			return fmt.Errorf("error creating output directory %s: %w", outputDirPath, err)
+		}
+
+		// Write file
+		if err := fs.WriteFile(outputPath, code, 0644); err != nil {
+			return fmt.Errorf("error writing output file %s: %w", outputPath, err)
+		}
+
+		log.InfoContext(ctx, "Compiled file",
+			slog.String("input", inputPath),
+			slog.String("output", outputPath),
+			slog.Int("outputSize", len(code)))
+	}
+
+	log.InfoContext(ctx, "Multi-file compilation successful", slog.Int("filesCompiled", len(output.CompiledFiles)))
 	return nil
 }
 

@@ -1,0 +1,16 @@
+# Examples section - demonstrates importing components and data
+
+from ..components.cards import ExampleCard
+from ..utils.data import EXAMPLES
+
+view ExamplesSection():
+    <div class="bg-slate-800/50 backdrop-blur rounded-xl border border-purple-500/30 p-8">
+        <h2 class="text-3xl font-bold text-purple-300 mb-6 text-center">Works with Compound Statements</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+            for example in EXAMPLES:
+                <ExampleCard
+                    label={example["label"]}
+                    code={example["code"]}
+                />
+        </div>
+    </div>

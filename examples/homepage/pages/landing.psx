@@ -1,0 +1,28 @@
+# Main landing page - demonstrates package imports and view composition
+
+from ..components import PageHeader, CodeComparison
+from ..sections import FeaturesGrid, ExamplesSection
+
+view LandingPage():
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Topple - PSX (Multi-File Demo)</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen py-16">
+            <div class="container mx-auto px-4 max-w-6xl">
+                <PageHeader
+                    title="Topple"
+                    subtitle="PSX: HTML-like syntax in Python"
+                    description="Write components using familiar JSX syntax, render on the server using Python"
+                    cta_text="Get Started"
+                    cta_url="https://github.com/topple-lang/topple"
+                />
+                <CodeComparison />
+                <FeaturesGrid />
+                <ExamplesSection />
+            </div>
+        </body>
+    </html>

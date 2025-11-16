@@ -50,7 +50,9 @@
       "Bash(git grep:*)",
       "Bash(TEST=expressions/complex_expressions mise run:*)",
       "Bash(../bin/topple compile:*)",
-      "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)"
+      "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)",
+      "Bash(go tool cover:*)",
+      "Bash(gofmt:*)"
     ],
     "deny": [],
     "ask": []

@@ -5,24 +5,73 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
 # -----------------------------------------------------------------------------
-# 1) Safe escaping function for any value that might be interpolated into HTML
+# 1) SafeHTML class: wrapper for pre-escaped HTML content
 # -----------------------------------------------------------------------------
-def escape(raw: Any) -> str:
+class SafeHTML(str):
+    """
+    Wrapper for HTML content that should not be escaped.
+
+    WARNING: Only use this with trusted HTML content to prevent XSS vulnerabilities.
+    This class bypasses all HTML escaping, so malicious content could execute scripts.
+
+    Use cases:
+    - Embedding pre-rendered markdown HTML
+    - Including SVG content
+    - Displaying syntax-highlighted code blocks
+    - Inserting sanitized user HTML (after using html-sanitizer/bleach)
+
+    SafeHTML inherits from str for full string compatibility while maintaining
+    the "safe" marker that prevents double-escaping.
+    """
+
+    def __new__(cls, html: str):
+        """Create a new SafeHTML instance from a string."""
+        return str.__new__(cls, html)
+
+
+def raw(html: str) -> SafeHTML:
+    """
+    Mark HTML content as safe (pre-escaped) so it won't be escaped again.
+
+    WARNING: Only use with trusted content! This function bypasses HTML escaping
+    and can lead to XSS vulnerabilities if used with untrusted user input.
+
+    Args:
+        html: Pre-escaped HTML content to be included literally
+
+    Returns:
+        SafeHTML instance that will not be escaped during rendering
+
+    Example:
+        view CodeExample():
+            code = "<div>Hello</div>"
+            <pre><code>{raw(code)}</code></pre>  # Renders literally, not escaped
+    """
+    return SafeHTML(html)
+
+
+# -----------------------------------------------------------------------------
+# 2) Safe escaping function for any value that might be interpolated into HTML
+# -----------------------------------------------------------------------------
+def escape(raw: Any) -> Union[str, SafeHTML]:
     """
     Convert raw data into a safely-escaped string for HTML output.
+    - If raw is SafeHTML → return it as-is (preserves the SafeHTML wrapper).
     - If raw is None → return empty string.
     - If raw is a str → escape &, <, >, ", '.
     - Otherwise (int, float, bool, etc.) → convert to str.
     """
     if raw is None:
         return ""
+    if isinstance(raw, SafeHTML):
+        return raw  # Already safe, preserve SafeHTML wrapper
     if isinstance(raw, str):
         return html.escape(raw, quote=True)
     return str(raw)
 
 
 # -----------------------------------------------------------------------------
-# 2) Internal helper to format HTML attributes from a dict
+# 3) Internal helper to format HTML attributes from a dict
 # -----------------------------------------------------------------------------
 def _render_attrs(attrs: Dict[str, Any]) -> str:
     """
@@ -44,7 +93,7 @@ def _render_attrs(attrs: Dict[str, Any]) -> str:
 
 
 # -----------------------------------------------------------------------------
-# 3) Element class: represents an HTML element (with raw children or nested Elements)
+# 4) Element class: represents an HTML element (with raw children or nested Elements)
 # -----------------------------------------------------------------------------
 class Element:
     """
@@ -66,7 +115,7 @@ class Element:
         self,
         tag: str,
         children: Union[
-            str, "BaseView", "Element", List[Union[str, "BaseView", "Element"]]
+            str, SafeHTML, "BaseView", "Element", List[Union[str, SafeHTML, "BaseView", "Element"]]
         ] = "",
         attrs: Optional[Dict[str, Any]] = None,
         self_close: bool = False,
@@ -107,6 +156,9 @@ class Element:
             elif isinstance(child, BaseView):
                 # child.render() will return str and is now cached in BaseView
                 parts.append(child.render())
+            elif isinstance(child, SafeHTML):
+                # SafeHTML: already escaped, include literally
+                parts.append(str(child))
             else:
                 # Literal text or number: escape it
                 parts.append(escape(child))
@@ -117,7 +169,7 @@ class Element:
 
 
 # -----------------------------------------------------------------------------
-# 4) FragmentElement class: represents a fragment (no wrapper element)
+# 5) FragmentElement class: represents a fragment (no wrapper element)
 # -----------------------------------------------------------------------------
 class FragmentElement(Element):
     """
@@ -129,7 +181,7 @@ class FragmentElement(Element):
     def __init__(
         self,
         children: Union[
-            str, "BaseView", "Element", List[Union[str, "BaseView", "Element"]]
+            str, SafeHTML, "BaseView", "Element", List[Union[str, SafeHTML, "BaseView", "Element"]]
         ] = "",
     ):
         # Initialize with no tag, no attributes, no self-closing
@@ -153,6 +205,9 @@ class FragmentElement(Element):
             elif isinstance(child, BaseView):
                 # child.render() will return str and is now cached in BaseView
                 parts.append(child.render())
+            elif isinstance(child, SafeHTML):
+                # SafeHTML: already escaped, include literally
+                parts.append(str(child))
             else:
                 # Literal text or number: escape it
                 parts.append(escape(child))
@@ -165,7 +220,7 @@ class FragmentElement(Element):
 # 5) render_child: normalize nested content (BaseView, Element, or literal) to
 #    either an Element or a literal string (to be escaped later)
 # -----------------------------------------------------------------------------
-def render_child(child: Union["BaseView", Element, str, int, float, None]) -> Union[Element, str]:
+def render_child(child: Union["BaseView", Element, SafeHTML, str, int, float, None]) -> Union[Element, str, SafeHTML]:
     """
     If `child` is:
       - None        → return "" (empty string)
@@ -190,7 +245,7 @@ def render_child(child: Union["BaseView", Element, str, int, float, None]) -> Un
 def el(
     tag: str,
     content: Union[
-        str, "BaseView", Element, List[Union[str, "BaseView", Element]]
+        str, SafeHTML, "BaseView", Element, List[Union[str, SafeHTML, "BaseView", Element]]
     ] = "",
     attrs: Optional[Dict[str, Any]] = None,
     self_close: bool = False,
@@ -283,7 +338,7 @@ class BaseView(ABC):
 # -----------------------------------------------------------------------------
 # 8) fragment(): a function that renders multiple children without a wrapper element
 # -----------------------------------------------------------------------------
-def fragment(children: List[Union["BaseView", Element, str]]) -> FragmentElement:
+def fragment(children: List[Union["BaseView", Element, SafeHTML, str]]) -> FragmentElement:
     """
     Create a FragmentElement that renders multiple children without a wrapper element.
     This is similar to React fragments - it just concatenates the children

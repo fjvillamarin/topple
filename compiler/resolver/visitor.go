@@ -1,8 +1,11 @@
 package resolver
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"topple/compiler/ast"
+	"topple/compiler/symbol"
 )
 
 // Visitor implementation - this is where the main resolution logic goes
@@ -573,16 +576,183 @@ func (r *Resolver) VisitReturnStmt(ret *ast.ReturnStmt) ast.Visitor {
 	}
 	return r
 }
-func (r *Resolver) VisitRaiseStmt(rs *ast.RaiseStmt) ast.Visitor          { return r }
-func (r *Resolver) VisitPassStmt(p *ast.PassStmt) ast.Visitor             { return r }
-func (r *Resolver) VisitYieldStmt(y *ast.YieldStmt) ast.Visitor           { return r }
-func (r *Resolver) VisitAssertStmt(a *ast.AssertStmt) ast.Visitor         { return r }
-func (r *Resolver) VisitBreakStmt(b *ast.BreakStmt) ast.Visitor           { return r }
-func (r *Resolver) VisitContinueStmt(c *ast.ContinueStmt) ast.Visitor     { return r }
-func (r *Resolver) VisitImportStmt(i *ast.ImportStmt) ast.Visitor         { return r }
-func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor { return r }
-func (r *Resolver) VisitTypeAlias(t *ast.TypeAlias) ast.Visitor           { return r }
-func (r *Resolver) VisitDecorator(d *ast.Decorator) ast.Visitor           { return r }
+func (r *Resolver) VisitRaiseStmt(rs *ast.RaiseStmt) ast.Visitor      { return r }
+func (r *Resolver) VisitPassStmt(p *ast.PassStmt) ast.Visitor         { return r }
+func (r *Resolver) VisitYieldStmt(y *ast.YieldStmt) ast.Visitor       { return r }
+func (r *Resolver) VisitAssertStmt(a *ast.AssertStmt) ast.Visitor     { return r }
+func (r *Resolver) VisitBreakStmt(b *ast.BreakStmt) ast.Visitor       { return r }
+func (r *Resolver) VisitContinueStmt(c *ast.ContinueStmt) ast.Visitor { return r }
+
+// convertDottedNameToPath converts a dotted name AST node to a module path string.
+// For example, "os.path" becomes "os.path".
+func convertDottedNameToPath(dottedName *ast.DottedName) string {
+	if dottedName == nil {
+		return ""
+	}
+
+	parts := make([]string, len(dottedName.Names))
+	for i, name := range dottedName.Names {
+		parts[i] = name.Token.Lexeme
+	}
+	return strings.Join(parts, ".")
+}
+
+// VisitImportStmt resolves import statements: import x, import x.y, import x as y
+func (r *Resolver) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
+	// If no module resolver available, skip import resolution
+	if r.ModuleResolver == nil {
+		return r
+	}
+
+	// For each imported module: import os.path as p
+	for _, importName := range i.Names {
+		// 1. Convert DottedName to module path string
+		modulePath := convertDottedNameToPath(importName.DottedName)
+
+		// 2. Resolve to file path using ModuleResolver
+		filePath, err := r.ModuleResolver.ResolveAbsolute(context.Background(), modulePath)
+		if err != nil {
+			r.ReportError(fmt.Errorf("cannot import '%s': %w", modulePath, err))
+			continue
+		}
+
+		// 3. Determine binding name (alias or first component)
+		var bindingName string
+		var nameNode *ast.Name
+		if importName.AsName != nil {
+			// import x.y as z -> bind as "z"
+			bindingName = importName.AsName.Token.Lexeme
+			nameNode = importName.AsName
+		} else {
+			// import x.y -> bind as "x"
+			bindingName = importName.DottedName.Names[0].Token.Lexeme
+			nameNode = importName.DottedName.Names[0]
+		}
+
+		// 4. Create imported variable binding
+		variable := r.DefineImportedVariable(bindingName, importName.GetSpan())
+		variable.ImportSource = filePath
+
+		// 5. Track in Variables map for backward compatibility
+		if nameNode != nil {
+			r.Variables[nameNode] = variable
+			r.ScopeDepths[nameNode] = 0 // Imports are always at module level
+
+			// Track in new binding system
+			if binding, exists := r.ScopeChain.Bindings[bindingName]; exists {
+				r.NameToBinding[nameNode] = binding
+			}
+		}
+
+		// Store the resolved file path for future dependency graph analysis
+		// (Could be tracked in ResolutionTable.ImportedModules if we add that field)
+		_ = filePath
+	}
+
+	return r
+}
+
+// VisitImportFromStmt resolves from...import statements: from x import y, from . import y, from x import *
+func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
+	// If no module resolver or symbol registry available, skip import resolution
+	if r.ModuleResolver == nil || r.SymbolRegistry == nil {
+		return r
+	}
+
+	// 1. Resolve module path
+	var modulePath string
+	var filePath string
+	var err error
+
+	if i.DotCount > 0 {
+		// Relative import: from . import x, from .. import x, from .pkg import x
+		modulePath = ""
+		if i.DottedName != nil {
+			modulePath = convertDottedNameToPath(i.DottedName)
+		}
+		filePath, err = r.ModuleResolver.ResolveRelative(
+			context.Background(),
+			i.DotCount,
+			modulePath,
+			r.SourceFilePath,
+		)
+		if err != nil {
+			r.ReportError(fmt.Errorf("cannot resolve relative import: %w", err))
+			return r
+		}
+	} else {
+		// Absolute import: from x import y
+		modulePath = convertDottedNameToPath(i.DottedName)
+		filePath, err = r.ModuleResolver.ResolveAbsolute(
+			context.Background(),
+			modulePath,
+		)
+		if err != nil {
+			r.ReportError(fmt.Errorf("cannot import from '%s': %w", modulePath, err))
+			return r
+		}
+	}
+
+	// 2. Handle wildcard vs specific imports
+	if i.IsWildcard {
+		// from module import *
+		symbols, err := r.SymbolRegistry.GetPublicSymbols(filePath)
+		if err != nil {
+			r.ReportError(fmt.Errorf("cannot get symbols from '%s': %w", modulePath, err))
+			return r
+		}
+
+		for _, sym := range symbols {
+			variable := r.DefineImportedVariable(sym.Name, i.Span)
+			variable.ImportSource = filePath
+		}
+	} else {
+		// from module import x, y as z
+		for _, importName := range i.Names {
+			symbolName := importName.DottedName.Names[0].Token.Lexeme
+
+			// Lookup symbol in registry
+			sym, err := r.SymbolRegistry.LookupSymbol(filePath, symbolName)
+			if err != nil {
+				r.ReportError(fmt.Errorf("cannot import '%s' from '%s': %w",
+					symbolName, modulePath, err))
+				continue
+			}
+
+			// Determine local binding name
+			bindingName := symbolName
+			var nameNode *ast.Name
+			if importName.AsName != nil {
+				bindingName = importName.AsName.Token.Lexeme
+				nameNode = importName.AsName
+			} else {
+				nameNode = importName.DottedName.Names[0]
+			}
+
+			// Create binding
+			variable := r.DefineImportedVariable(bindingName, importName.GetSpan())
+			variable.ImportSource = filePath
+
+			// Track in Variables map for backward compatibility
+			if nameNode != nil {
+				r.Variables[nameNode] = variable
+				r.ScopeDepths[nameNode] = 0 // Imports are always at module level
+
+				// Track in new binding system
+				if binding, exists := r.ScopeChain.Bindings[bindingName]; exists {
+					r.NameToBinding[nameNode] = binding
+				}
+			}
+
+			// Store reference to original symbol (for documentation/debugging)
+			_ = sym
+		}
+	}
+
+	return r
+}
+func (r *Resolver) VisitTypeAlias(t *ast.TypeAlias) ast.Visitor { return r }
+func (r *Resolver) VisitDecorator(d *ast.Decorator) ast.Visitor { return r }
 func (r *Resolver) VisitMultiStmt(m *ast.MultiStmt) ast.Visitor {
 	// Visit all sub-statements
 	for _, stmt := range m.Stmts {
@@ -685,9 +855,47 @@ func (r *Resolver) VisitOrPattern(op *ast.OrPattern) ast.Visitor             { r
 func (r *Resolver) VisitHTMLElement(h *ast.HTMLElement) ast.Visitor {
 	// Check if this HTML element references a view (for composition)
 	tagName := h.TagName.Lexeme
+
+	// First check: same-file view
 	if viewStmt, exists := r.Views[tagName]; exists {
 		// This HTML element is actually a view reference - bind it
 		r.ViewElements[h] = viewStmt
+	} else if r.SymbolRegistry != nil {
+		// Second check: imported view
+		// Look up the name in module globals to see if it's imported
+		if variable, exists := r.ModuleGlobals[tagName]; exists && variable.IsImported {
+			var foundView *ast.ViewStmt
+
+			// Try ImportSource first (O(1) lookup) if available
+			if variable.ImportSource != "" {
+				if sym, err := r.SymbolRegistry.LookupSymbol(variable.ImportSource, tagName); err == nil {
+					if sym.Type == symbol.SymbolView {
+						if viewStmt, ok := sym.Node.(*ast.ViewStmt); ok {
+							foundView = viewStmt
+						}
+					}
+				}
+			}
+
+			// If not found via ImportSource (e.g., re-exported from __init__.psx),
+			// search all registered modules (O(n) fallback)
+			if foundView == nil {
+				for _, filePath := range r.SymbolRegistry.GetAllModules() {
+					if sym, err := r.SymbolRegistry.LookupSymbol(filePath, tagName); err == nil {
+						if sym.Type == symbol.SymbolView {
+							if viewStmt, ok := sym.Node.(*ast.ViewStmt); ok {
+								foundView = viewStmt
+								break
+							}
+						}
+					}
+				}
+			}
+
+			if foundView != nil {
+				r.ViewElements[h] = foundView
+			}
+		}
 	}
 
 	// Visit all attributes first - they contain expressions that need resolution

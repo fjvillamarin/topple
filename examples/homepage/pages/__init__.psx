@@ -1,0 +1,2 @@
+# Re-export all pages
+from .landing import LandingPage

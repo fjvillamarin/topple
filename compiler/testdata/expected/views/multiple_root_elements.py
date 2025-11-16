@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class MultiRoot(BaseView):
     def __init__(self, title: str, content: str):
         super().__init__()
