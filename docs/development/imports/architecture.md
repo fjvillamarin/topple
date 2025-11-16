@@ -15,15 +15,15 @@ This document provides detailed technical architecture for the import resolution
 #### Interface Design
 
 ```go
-package moduleresolver
+package module
 
 import (
     "context"
     "github.com/topple-psx/topple/internal/filesystem"
 )
 
-// ModuleResolver translates import paths to file paths
-type ModuleResolver interface {
+// Resolver translates import paths to file paths
+type Resolver interface {
     // Resolve an absolute import path to a file path
     // Example: "my_module" -> "/path/to/my_module.psx"
     ResolveAbsolute(ctx context.Context, modulePath string) (string, error)
@@ -147,14 +147,14 @@ func (e *ResolutionError) Error() string {
 #### Data Structures
 
 ```go
-package symbolregistry
+package symbol
 
 import (
     "github.com/topple-psx/topple/compiler/ast"
 )
 
-// SymbolRegistry tracks all exported symbols across modules
-type SymbolRegistry struct {
+// Registry tracks all exported symbols across modules
+type Registry struct {
     modules map[string]*ModuleSymbols  // Absolute file path -> symbols
     mu      sync.RWMutex                // Thread-safe access
 }
@@ -203,7 +203,7 @@ type Location struct {
 ```go
 type Registry interface {
     // Register symbols from a module
-    RegisterModule(filePath string, symbols *ModuleSymbols) error
+    RegisterModule(filePath string, symbols *ModuleSymbols)
 
     // Get all symbols from a module
     GetModuleSymbols(filePath string) (*ModuleSymbols, error)
@@ -225,13 +225,13 @@ type Registry interface {
 #### Symbol Collection
 
 ```go
-// SymbolCollector extracts exportable symbols from AST
-type SymbolCollector struct {
+// Collector extracts exportable symbols from AST
+type Collector struct {
     currentFile string
     symbols     map[string]*Symbol
 }
 
-func (sc *SymbolCollector) CollectFromAST(module *ast.Module, filePath string) *ModuleSymbols {
+func (sc *Collector) CollectFromAST(module *ast.Module, filePath string) *ModuleSymbols {
     sc.currentFile = filePath
     sc.symbols = make(map[string]*Symbol)
 
@@ -246,13 +246,13 @@ func (sc *SymbolCollector) CollectFromAST(module *ast.Module, filePath string) *
     }
 }
 
-func (sc *SymbolCollector) visitStatement(stmt ast.Stmt) {
+func (sc *Collector) visitStatement(stmt ast.Stmt) {
     switch s := stmt.(type) {
-    case *ast.ViewDef:
+    case *ast.ViewStmt:
         sc.addSymbol(s.Name, SymbolView, s)
-    case *ast.FunctionDef:
+    case *ast.Function:
         sc.addSymbol(s.Name, SymbolFunction, s)
-    case *ast.ClassDef:
+    case *ast.Class:
         sc.addSymbol(s.Name.Value, SymbolClass, s)
     case *ast.AssignStmt:
         // Track module-level variables
@@ -264,7 +264,7 @@ func (sc *SymbolCollector) visitStatement(stmt ast.Stmt) {
     }
 }
 
-func (sc *SymbolCollector) addSymbol(name string, typ SymbolType, node ast.Node) {
+func (sc *Collector) addSymbol(name string, typ SymbolType, node ast.Node) {
     visibility := Public
     if len(name) > 0 && name[0] == '_' {
         visibility = Private
@@ -327,26 +327,41 @@ type Location struct {
 
 #### Graph Operations
 
+The `DependencyGraph` struct exports the following methods:
+
 ```go
-type Graph interface {
-    // Add a file to the graph
-    AddFile(filePath string, ast *ast.Module) error
+// Add a file to the graph
+func (g *DependencyGraph) AddFile(filePath string, module *ast.Module) error
 
-    // Add a dependency edge
-    AddDependency(from, to string) error
+// Add a dependency edge (from depends on to)
+func (g *DependencyGraph) AddDependency(from, to string) error
 
-    // Get compilation order (topological sort)
-    GetCompilationOrder() ([]string, error)
+// Get compilation order (topological sort)
+func (g *DependencyGraph) GetCompilationOrder() ([]string, error)
 
-    // Detect circular dependencies
-    DetectCycles() ([][]string, error)
+// Detect circular dependencies
+func (g *DependencyGraph) DetectCycles() ([][]string, error)
 
-    // Get direct dependencies of a file
-    GetDependencies(filePath string) []string
+// Get direct dependencies of a file
+func (g *DependencyGraph) GetDependencies(filePath string) []string
 
-    // Get reverse dependencies (files that import this file)
-    GetDependents(filePath string) []string
-}
+// Get reverse dependencies (files that import this file)
+func (g *DependencyGraph) GetDependents(filePath string) []string
+
+// Check if a file is in the graph
+func (g *DependencyGraph) HasFile(filePath string) bool
+
+// Get the FileNode for a given path
+func (g *DependencyGraph) GetFileNode(filePath string) (*FileNode, bool)
+
+// Get all file paths in the graph
+func (g *DependencyGraph) GetAllFiles() []string
+
+// Get count of files in the graph
+func (g *DependencyGraph) FileCount() int
+
+// Clear all files and dependencies
+func (g *DependencyGraph) Clear()
 ```
 
 #### Topological Sort (Kahn's Algorithm)
@@ -391,8 +406,9 @@ func (g *DependencyGraph) GetCompilationOrder() ([]string, error) {
 
     // 4. Check for cycles
     if len(result) != len(g.nodes) {
-        cycles := g.detectCyclesInternal()
-        return nil, &CycleError{Cycles: cycles}
+        // Cycle detected - use cycle detection to get details
+        cycles, _ := g.DetectCycles()
+        return nil, NewCycleError(cycles)
     }
 
     return result, nil
@@ -415,7 +431,7 @@ func (g *DependencyGraph) DetectCycles() ([][]string, error) {
     }
 
     if len(cycles) > 0 {
-        return cycles, &CycleError{Cycles: cycles}
+        return cycles, NewCycleError(cycles)
     }
     return nil, nil
 }
@@ -462,10 +478,9 @@ func (e *CycleError) Error() string {
             sb.WriteString(fmt.Sprintf("    %s\n", file))
             if j < len(cycle)-1 {
                 sb.WriteString("     ↓ imports\n")
-            } else {
-                sb.WriteString("     ↓ imports (circular)\n")
             }
         }
+        sb.WriteString("\n")
     }
 
     return sb.String()
@@ -476,27 +491,30 @@ func (e *CycleError) Error() string {
 
 ### 4. Resolver Integration
 
-#### Updated Visitor Methods
+> **Note**: The code examples in this section are **simplified illustrations** of the import resolution concepts. The actual implementation in `compiler/resolver/` uses different method names and internal structures. Refer to the source code for the precise API.
+
+#### Import Statement Processing (Illustrative)
 
 ```go
-// In compiler/resolver/visitor.go
+// Simplified conceptual example - actual implementation differs
+// See compiler/resolver/ for the real API
 
-func (v *ResolverVisitor) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
+func (r *Resolver) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
     for _, alias := range i.Names {
-        // Resolve module path
-        modulePath, err := v.moduleResolver.ResolveAbsolute(
-            v.ctx,
+        // Resolve module path using ModuleResolver
+        modulePath, err := r.ModuleResolver.ResolveAbsolute(
+            r.ctx,
             alias.DottedName.String(),
         )
         if err != nil {
-            v.addError(i, err.Error())
+            r.addError(i, err.Error())
             continue
         }
 
-        // Get module symbols
-        moduleSymbols, err := v.symbolRegistry.GetModuleSymbols(modulePath)
+        // Get module symbols from SymbolRegistry
+        moduleSymbols, err := r.SymbolRegistry.GetModuleSymbols(modulePath)
         if err != nil {
-            v.addError(i, fmt.Sprintf("module '%s' not found", modulePath))
+            r.addError(i, fmt.Sprintf("module '%s' not found", modulePath))
             continue
         }
 
@@ -507,43 +525,44 @@ func (v *ResolverVisitor) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
             name = alias.DottedName.Names[0]
         }
 
-        v.defineImportedModule(name, modulePath, i)
+        // Define the imported name in current scope (simplified)
+        r.defineImported(name, modulePath, i)
     }
 
-    return v
+    return r
 }
 
-func (v *ResolverVisitor) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
+func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
     // Resolve module path
     var modulePath string
     var err error
 
     if i.DotCount > 0 {
         // Relative import
-        modulePath, err = v.moduleResolver.ResolveRelative(
-            v.ctx,
+        modulePath, err = r.ModuleResolver.ResolveRelative(
+            r.ctx,
             i.DotCount,
             i.DottedName.String(),
-            v.currentFile,
+            r.currentFile,
         )
     } else {
         // Absolute import
-        modulePath, err = v.moduleResolver.ResolveAbsolute(
-            v.ctx,
+        modulePath, err = r.ModuleResolver.ResolveAbsolute(
+            r.ctx,
             i.DottedName.String(),
         )
     }
 
     if err != nil {
-        v.addError(i, err.Error())
-        return v
+        r.addError(i, err.Error())
+        return r
     }
 
-    // Get module symbols
-    moduleSymbols, err := v.symbolRegistry.GetModuleSymbols(modulePath)
+    // Get module symbols from registry
+    moduleSymbols, err := r.SymbolRegistry.GetModuleSymbols(modulePath)
     if err != nil {
-        v.addError(i, fmt.Sprintf("module '%s' not found", modulePath))
-        return v
+        r.addError(i, fmt.Sprintf("module '%s' not found", modulePath))
+        return r
     }
 
     // Handle wildcard vs specific imports
@@ -551,14 +570,14 @@ func (v *ResolverVisitor) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor
         // Import all public symbols
         symbols := moduleSymbols.GetPublicSymbols()
         for _, symbol := range symbols {
-            v.defineImportedSymbol(symbol.Name, modulePath, symbol, i)
+            r.defineImported(symbol.Name, modulePath, i)
         }
     } else {
         // Import specific names
         for _, name := range i.Names {
-            symbol, err := moduleSymbols.LookupSymbol(name.Name)
-            if err != nil {
-                v.addError(i, fmt.Sprintf(
+            symbol, exists := moduleSymbols.LookupSymbol(name.Name)
+            if !exists {
+                r.addError(i, fmt.Sprintf(
                     "cannot import '%s' from '%s': symbol not found",
                     name.Name,
                     modulePath,
@@ -571,88 +590,64 @@ func (v *ResolverVisitor) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor
                 importName = name.Name
             }
 
-            v.defineImportedSymbol(importName, modulePath, symbol, i)
+            r.defineImported(importName, modulePath, i)
         }
     }
 
-    return v
+    return r
 }
 ```
 
-#### New Resolver Methods
+#### Import Variable Tracking (Conceptual)
 
 ```go
-// In compiler/resolver/resolver.go
+// Simplified illustration of how imports are tracked
+// Actual implementation in compiler/resolver/ differs
 
-func (r *Resolver) defineImportedModule(
+func (r *Resolver) defineImported(
     name string,
     modulePath string,
     node ast.Node,
 ) {
+    // Create a variable to track the imported name
     variable := &Variable{
         Name:           name,
-        DefinitionDepth: r.currentScope.GetDepth(),
+        DefinitionDepth: r.ScopeChain.GetDepth(),
         State:          Defined,
         IsImported:     true,
-        ImportedFrom:   modulePath,
+        ImportSource:   modulePath,  // Actual field name in codebase
     }
 
-    binding := &Binding{
-        Name:     name,
-        Variable: variable,
-        Scope:    r.currentScope,
-        Node:     node,
-    }
-
-    r.currentScope.Bindings[name] = binding
-}
-
-func (r *Resolver) defineImportedSymbol(
-    name string,
-    modulePath string,
-    symbol *Symbol,
-    node ast.Node,
-) {
-    variable := &Variable{
-        Name:           name,
-        DefinitionDepth: r.currentScope.GetDepth(),
-        State:          Defined,
-        IsImported:     true,
-        ImportedFrom:   modulePath,
-        ImportedSymbol: symbol,
-    }
-
-    binding := &Binding{
-        Name:     name,
-        Variable: variable,
-        Scope:    r.currentScope,
-        Node:     node,
-    }
-
-    r.currentScope.Bindings[name] = binding
+    // Store in the current scope
+    // (Actual implementation uses ScopeChain and different internal structures)
+    r.ScopeChain.Define(name, variable)
 }
 ```
 
-#### Updated Variable Struct
+#### Variable Struct with Import Tracking
 
 ```go
-// In compiler/resolver/types.go
+// From compiler/resolver/types.go (actual fields)
 
 type Variable struct {
-    Name           string
-    DefinitionDepth int
-    State          VariableState
+    Name            string        // Variable name
+    DefinitionDepth int           // Scope depth where defined
+    State           VariableState // Current state
 
-    // Import tracking
-    IsImported     bool
-    ImportedFrom   string   // Module file path
-    ImportedSymbol *Symbol  // Actual symbol from other module
+    // Scope behavior flags
+    IsParameter     bool   // Function/view parameter
+    IsGlobal        bool   // Declared with 'global'
+    IsNonlocal      bool   // Declared with 'nonlocal'
+    IsImported      bool   // Bound by import statement
+    ImportSource    string // File path of imported module (if IsImported)
+    IsViewParameter bool   // View parameter
+    IsExceptionVar  bool   // Exception handler variable
+    IsUsed          bool   // Has been referenced
 
-    // Existing fields...
-    IsParameter    bool
-    IsGlobal       bool
-    IsNonlocal     bool
-    // ...
+    // Usage tracking
+    FirstDefSpan  lexer.Span // Where first defined
+    FirstUseSpan  lexer.Span // Where first used
+    UsedBeforeDef bool       // Late binding detection
 }
 ```
 
@@ -660,133 +655,113 @@ type Variable struct {
 
 ### 5. Multi-File Compiler
 
-#### New Compiler Interface
+#### Multi-File Compiler Structure
 
 ```go
-// In compiler/compiler.go
+// From compiler/multifile.go (actual implementation)
 
-// MultiFileCompiler compiles multiple interdependent files
+// MultiFileCompiler compiles multiple interdependent PSX files
 type MultiFileCompiler struct {
-    config           CompilerConfig
-    fileSystem       filesystem.FileSystem
-    moduleResolver   *moduleresolver.StandardResolver
-    symbolRegistry   *symbolregistry.SymbolRegistry
-    dependencyGraph  *depgraph.DependencyGraph
+    logger         *slog.Logger
+    fs             filesystem.FileSystem
+    moduleResolver *module.StandardResolver   // Package: compiler/module
+    symbolRegistry *symbol.Registry           // Package: compiler/symbol
+    depGraph       *depgraph.DependencyGraph
 }
 
-type CompilerConfig struct {
-    RootDir     string
-    SearchPaths []string
-    Recursive   bool
+// MultiFileOptions configures multi-file compilation
+type MultiFileOptions struct {
+    RootDir     string   // Project root for module resolution
+    Files       []string // Explicit file list (absolute paths)
+    SearchPaths []string // Additional search paths for imports
 }
 
-func NewMultiFileCompiler(config CompilerConfig) *MultiFileCompiler {
-    fs := filesystem.NewOSFileSystem()
+// MultiFileOutput contains the results of multi-file compilation
+type MultiFileOutput struct {
+    CompiledFiles map[string][]byte         // filepath -> generated Python code
+    Registry      *symbol.Registry          // Symbol registry with all exports
+    Graph         *depgraph.DependencyGraph // Dependency graph
+    Errors        []*CompilationError       // All compilation errors
+}
 
+// CompilationError represents an error during multi-file compilation
+type CompilationError struct {
+    File    string // File where error occurred
+    Stage   string // Compilation stage: "parse", "resolve", "transform", "codegen"
+    Message string // Error message
+    Details error  // Underlying error
+}
+
+func NewMultiFileCompiler(logger *slog.Logger) *MultiFileCompiler {
     return &MultiFileCompiler{
-        config:     config,
-        fileSystem: fs,
-        moduleResolver: moduleresolver.NewResolver(moduleresolver.Config{
-            RootDir:    config.RootDir,
-            SearchPaths: config.SearchPaths,
-            FileSystem: fs,
-        }),
-        symbolRegistry:  symbolregistry.NewRegistry(),
-        dependencyGraph: depgraph.NewGraph(),
+        logger:         logger,
+        fs:             nil, // Initialized in CompileProject
+        moduleResolver: nil, // Initialized in CompileProject
+        symbolRegistry: symbol.NewRegistry(),
+        depGraph:       depgraph.NewGraph(),
     }
 }
 ```
 
-#### Compilation Pipeline
+#### Compilation Pipeline (Simplified Illustration)
+
+> **Note**: This is a **simplified conceptual overview**. The actual implementation in `compiler/multifile.go` has more stages and error handling. See source code for details.
 
 ```go
+// Actual signature from compiler/multifile.go
 func (c *MultiFileCompiler) CompileProject(
     ctx context.Context,
-    files []string,
-) (*ProjectOutput, []error) {
-    var allErrors []error
-
-    // Phase 1: Parse all files
-    astMap := make(map[string]*ast.Module)
-    for _, file := range files {
-        content, err := c.fileSystem.ReadFile(file)
-        if err != nil {
-            allErrors = append(allErrors, err)
-            continue
-        }
-
-        // Lex + Parse
-        tokens := lexer.Scan(content)
-        module, errors := parser.Parse(tokens)
-        if len(errors) > 0 {
-            allErrors = append(allErrors, errors...)
-            continue
-        }
-
-        astMap[file] = module
-        c.dependencyGraph.AddFile(file, module)
+    opts MultiFileOptions,
+) (*MultiFileOutput, error) {
+    output := &MultiFileOutput{
+        CompiledFiles: make(map[string][]byte),
+        Registry:      c.symbolRegistry,
+        Graph:         c.depGraph,
+        Errors:        []*CompilationError{},
     }
 
-    if len(allErrors) > 0 {
-        return nil, allErrors
+    // Stage 1: Initialize filesystem and module resolver
+    c.fs = filesystem.NewFileSystem(c.logger)
+    c.moduleResolver = module.NewResolver(module.Config{
+        RootDir:     opts.RootDir,
+        SearchPaths: opts.SearchPaths,
+        FileSystem:  c.fs,
+    })
+
+    // Stage 2: Parse all files to AST
+    astMap, parseErrs := c.parseAllFiles(ctx, opts.Files)
+    if len(parseErrs) > 0 {
+        output.Errors = append(output.Errors, parseErrs...)
+        return output, fmt.Errorf("parsing failed with %d errors", len(parseErrs))
     }
 
-    // Phase 2: Extract imports and build dependency graph
-    for file, module := range astMap {
-        imports := extractImports(module, file, c.moduleResolver)
-        for _, imp := range imports {
-            c.dependencyGraph.AddDependency(file, imp.ModulePath)
-        }
+    // Stage 3: Build dependency graph
+    graphErrs := c.buildDependencyGraph(ctx, astMap)
+    if len(graphErrs) > 0 {
+        output.Errors = append(output.Errors, graphErrs...)
+        return output, fmt.Errorf("dependency graph failed with %d errors", len(graphErrs))
     }
 
-    // Phase 3: Get compilation order
-    order, err := c.dependencyGraph.GetCompilationOrder()
+    // Stage 4: Get compilation order (topological sort)
+    compilationOrder, err := c.depGraph.GetCompilationOrder()
     if err != nil {
-        return nil, []error{err}
+        return output, fmt.Errorf("circular dependency detected: %w", err)
     }
 
-    // Phase 4: Collect symbols (first pass - no resolution yet)
-    for _, file := range order {
-        symbols := collectSymbols(astMap[file], file)
-        c.symbolRegistry.RegisterModule(file, symbols)
+    // Stage 5: Collect symbols from all files
+    c.collectSymbols(ctx, astMap, compilationOrder)
+
+    // Stage 6: Resolve and generate code for each file
+    compileErrs := c.resolveAndGenerate(ctx, astMap, compilationOrder, output.CompiledFiles)
+    if len(compileErrs) > 0 {
+        output.Errors = append(output.Errors, compileErrs...)
     }
 
-    // Phase 5: Compile each file with full context
-    outputs := make(map[string][]byte)
-    for _, file := range order {
-        module := astMap[file]
-
-        // Resolve with full symbol registry
-        resTable, errors := c.resolve(ctx, module, file)
-        if len(errors) > 0 {
-            allErrors = append(allErrors, errors...)
-            continue
-        }
-
-        // Transform
-        transformed := c.transform(module, resTable)
-
-        // Generate
-        code := c.generate(transformed)
-
-        outputs[file] = code
+    if len(output.Errors) > 0 {
+        return output, fmt.Errorf("compilation completed with %d errors", len(output.Errors))
     }
 
-    if len(allErrors) > 0 {
-        return nil, allErrors
-    }
-
-    return &ProjectOutput{
-        Files:    outputs,
-        Registry: c.symbolRegistry,
-        Graph:    c.dependencyGraph,
-    }, nil
-}
-
-type ProjectOutput struct {
-    Files    map[string][]byte
-    Registry *symbolregistry.SymbolRegistry
-    Graph    *depgraph.DependencyGraph
+    return output, nil
 }
 ```
 
@@ -796,60 +771,42 @@ type ProjectOutput struct {
 
 ### CLI Integration
 
+The command-line interface in `cmd/compile.go` handles:
+
+1. **Argument parsing**: Input file/directory and optional output directory
+2. **File discovery**: Recursively finding `.psx` files if needed
+3. **Compilation mode selection**:
+   - Single-file mode for individual `.psx` files
+   - Multi-file mode for directories (uses `MultiFileCompiler`)
+4. **Output writing**: Writing compiled Python files to appropriate locations
+5. **Error reporting**: Displaying compilation errors with context
+
+Key functions:
 ```go
-// In cmd/compile.go
+// From cmd/compile.go (simplified)
 
-func compileCommand() *cobra.Command {
-    var recursive bool
-    var multiFile bool
-
-    cmd := &cobra.Command{
-        Use: "compile [files...]",
-        RunE: func(cmd *cobra.Command, args []string) error {
-            if multiFile || len(args) > 1 {
-                return compileMultiFile(args, recursive)
-            }
-            return compileSingleFile(args[0])
-        },
-    }
-
-    cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "compile recursively")
-    cmd.Flags().BoolVar(&multiFile, "multi-file", false, "enable multi-file mode")
-
-    return cmd
+// CompileCmd defines the compile command structure
+type CompileCmd struct {
+    Input  string `arg:"" required:""`
+    Output string `arg:"" optional:""`
 }
 
-func compileMultiFile(paths []string, recursive bool) error {
-    compiler := compiler.NewMultiFileCompiler(compiler.CompilerConfig{
-        RootDir:   ".",
-        Recursive: recursive,
-    })
+// compileMultiFile handles directory compilation with imports
+func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
+    multiCompiler := compiler.NewMultiFileCompiler(log)
 
-    files, err := collectFiles(paths, recursive)
-    if err != nil {
-        return err
+    opts := compiler.MultiFileOptions{
+        RootDir:     rootDir,
+        Files:       files,
+        SearchPaths: []string{},
     }
 
-    output, errors := compiler.CompileProject(context.Background(), files)
-    if len(errors) > 0 {
-        for _, err := range errors {
-            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-        }
-        return fmt.Errorf("compilation failed with %d errors", len(errors))
-    }
-
-    // Write outputs
-    for file, code := range output.Files {
-        outputPath := getOutputPath(file)
-        if err := os.WriteFile(outputPath, code, 0644); err != nil {
-            return err
-        }
-        fmt.Printf("Compiled: %s -> %s\n", file, outputPath)
-    }
-
-    return nil
+    output, err := multiCompiler.CompileProject(ctx, opts)
+    // ... handle errors and write output files
 }
 ```
+
+See `cmd/compile.go` for the complete implementation.
 
 ---
 
@@ -941,7 +898,7 @@ compiler/testdata/input/imports/
 ### Caching Strategy
 
 ```go
-// ModuleResolver with caching
+// CachedResolver wraps StandardResolver with caching
 type CachedResolver struct {
     inner *StandardResolver
     cache sync.Map  // import path -> resolved path
