@@ -17,14 +17,13 @@ func NewRegistry() *Registry {
 	}
 }
 
-// RegisterModule registers symbols from a module
-func (r *Registry) RegisterModule(filePath string, symbols *ModuleSymbols) error {
+// RegisterModule registers symbols from a module (infallible)
+func (r *Registry) RegisterModule(filePath string, symbols *ModuleSymbols) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Store the module symbols
 	r.modules[filePath] = symbols
-	return nil
 }
 
 // GetModuleSymbols retrieves all symbols from a module

@@ -11,7 +11,6 @@ import (
 type Collector struct {
 	filePath       string                   // Current file being processed
 	symbols        map[string]*Symbol       // Collected symbols
-	errors         []error                  // Collection errors
 	registry       *Registry                // Symbol registry (for re-exports)
 	moduleResolver *module.StandardResolver // Module resolver (for import paths)
 }
@@ -21,7 +20,6 @@ func NewCollector(filePath string) *Collector {
 	return &Collector{
 		filePath:       filePath,
 		symbols:        make(map[string]*Symbol),
-		errors:         []error{},
 		registry:       nil,
 		moduleResolver: nil,
 	}
@@ -32,7 +30,6 @@ func NewCollectorWithDeps(filePath string, registry *Registry, resolver *module.
 	return &Collector{
 		filePath:       filePath,
 		symbols:        make(map[string]*Symbol),
-		errors:         []error{},
 		registry:       registry,
 		moduleResolver: resolver,
 	}
@@ -42,7 +39,6 @@ func NewCollectorWithDeps(filePath string, registry *Registry, resolver *module.
 func (c *Collector) CollectFromModule(module *ast.Module) *ModuleSymbols {
 	// Reset state
 	c.symbols = make(map[string]*Symbol)
-	c.errors = []error{}
 
 	// Visit all top-level statements
 	for _, stmt := range module.Body {
@@ -224,11 +220,6 @@ func (c *Collector) collectModuleImports(stmt *ast.ImportStmt) {
 	// Module imports (import foo, import bar as baz) are not typically re-exported
 	// They create module references in the namespace but don't export the module itself
 	// For now, we don't collect these as exportable symbols
-}
-
-// GetErrors returns any collection errors
-func (c *Collector) GetErrors() []error {
-	return c.errors
 }
 
 // convertDottedNameToPath converts a DottedName AST node to a dot-separated path string

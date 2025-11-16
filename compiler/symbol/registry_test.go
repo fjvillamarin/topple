@@ -26,10 +26,7 @@ func TestRegisterModule(t *testing.T) {
 		Visibility: Public,
 	})
 
-	err := registry.RegisterModule("/test/module.psx", moduleSymbols)
-	if err != nil {
-		t.Fatalf("RegisterModule() error = %v", err)
-	}
+	registry.RegisterModule("/test/module.psx", moduleSymbols)
 
 	if !registry.HasModule("/test/module.psx") {
 		t.Error("module not registered")

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 # -----------------------------------------------------------------------------
 # 1) SafeHTML class: wrapper for pre-escaped HTML content
 # -----------------------------------------------------------------------------
-class SafeHTML:
+class SafeHTML(str):
     """
     Wrapper for HTML content that should not be escaped.
 
@@ -19,13 +19,14 @@ class SafeHTML:
     - Including SVG content
     - Displaying syntax-highlighted code blocks
     - Inserting sanitized user HTML (after using html-sanitizer/bleach)
+
+    SafeHTML inherits from str for full string compatibility while maintaining
+    the "safe" marker that prevents double-escaping.
     """
 
-    def __init__(self, html: str):
-        self._html = html
-
-    def __str__(self) -> str:
-        return self._html
+    def __new__(cls, html: str):
+        """Create a new SafeHTML instance from a string."""
+        return str.__new__(cls, html)
 
 
 def raw(html: str) -> SafeHTML:
@@ -52,10 +53,10 @@ def raw(html: str) -> SafeHTML:
 # -----------------------------------------------------------------------------
 # 2) Safe escaping function for any value that might be interpolated into HTML
 # -----------------------------------------------------------------------------
-def escape(raw: Any) -> str:
+def escape(raw: Any) -> Union[str, SafeHTML]:
     """
     Convert raw data into a safely-escaped string for HTML output.
-    - If raw is SafeHTML → return the raw HTML without escaping.
+    - If raw is SafeHTML → return it as-is (preserves the SafeHTML wrapper).
     - If raw is None → return empty string.
     - If raw is a str → escape &, <, >, ", '.
     - Otherwise (int, float, bool, etc.) → convert to str.
@@ -63,7 +64,7 @@ def escape(raw: Any) -> str:
     if raw is None:
         return ""
     if isinstance(raw, SafeHTML):
-        return str(raw)  # Already safe, don't escape
+        return raw  # Already safe, preserve SafeHTML wrapper
     if isinstance(raw, str):
         return html.escape(raw, quote=True)
     return str(raw)

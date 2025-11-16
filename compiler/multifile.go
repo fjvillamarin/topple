@@ -116,7 +116,7 @@ func (c *MultiFileCompiler) CompileProject(ctx context.Context, opts MultiFileOp
 	graphErrs := c.buildDependencyGraph(ctx, astMap)
 	if len(graphErrs) > 0 {
 		output.Errors = append(output.Errors, graphErrs...)
-		// Continue - missing imports will be caught during resolution
+		return output, fmt.Errorf("dependency graph failed with %d errors", len(graphErrs))
 	}
 	c.logger.Info("Dependency graph built", "files", c.depGraph.FileCount())
 
@@ -131,11 +131,7 @@ func (c *MultiFileCompiler) CompileProject(ctx context.Context, opts MultiFileOp
 
 	// Stage 5: Collect symbols from all files (first pass)
 	c.logger.Info("Stage 5: Collecting symbols")
-	symbolErrs := c.collectSymbols(ctx, astMap, compilationOrder)
-	if len(symbolErrs) > 0 {
-		output.Errors = append(output.Errors, symbolErrs...)
-		// Continue - some symbols may still be available
-	}
+	c.collectSymbols(ctx, astMap, compilationOrder)
 	c.logger.Info("Symbols collected")
 
 	// Stage 6: Resolve and generate code for each file (second pass)
@@ -308,9 +304,8 @@ func (c *MultiFileCompiler) buildDependencyGraph(ctx context.Context, astMap map
 }
 
 // collectSymbols collects exported symbols from all files
-func (c *MultiFileCompiler) collectSymbols(ctx context.Context, astMap map[string]*ast.Module, compilationOrder []string) []*CompilationError {
-	errors := []*CompilationError{}
-
+// Symbol collection is infallible - AST is validated by parser, conflicts caught by resolver
+func (c *MultiFileCompiler) collectSymbols(ctx context.Context, astMap map[string]*ast.Module, compilationOrder []string) {
 	for _, filePath := range compilationOrder {
 		module, exists := astMap[filePath]
 		if !exists {
@@ -324,8 +319,6 @@ func (c *MultiFileCompiler) collectSymbols(ctx context.Context, astMap map[strin
 		// Register symbols
 		c.symbolRegistry.RegisterModule(filePath, symbols)
 	}
-
-	return errors
 }
 
 // resolveAndGenerate resolves and generates code for each file
