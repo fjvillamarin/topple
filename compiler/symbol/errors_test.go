@@ -122,6 +122,8 @@ func TestNewErrors(t *testing.T) {
 			if regErr.Type != SymbolNotFound {
 				t.Errorf("expected SymbolNotFound, got %v", regErr.Type)
 			}
+		} else {
+			t.Errorf("expected *RegistryError, got %T", err)
 		}
 	})
 

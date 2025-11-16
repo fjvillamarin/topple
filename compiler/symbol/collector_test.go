@@ -41,10 +41,10 @@ func TestCollectViewSymbol(t *testing.T) {
 	}
 
 	if symbol.Type != SymbolView {
-		t.Errorf("expected SymbolView, got %s", symbol.Type)
+		t.Errorf("expected SymbolView, got %v", symbol.Type)
 	}
 	if symbol.Visibility != Public {
-		t.Errorf("expected Public visibility, got %s", symbol.Visibility)
+		t.Errorf("expected Public visibility, got %v", symbol.Visibility)
 	}
 }
 
@@ -72,7 +72,7 @@ func TestCollectFunctionSymbol(t *testing.T) {
 	}
 
 	if symbol.Type != SymbolFunction {
-		t.Errorf("expected SymbolFunction, got %s", symbol.Type)
+		t.Errorf("expected SymbolFunction, got %v", symbol.Type)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestCollectClassSymbol(t *testing.T) {
 	}
 
 	if symbol.Type != SymbolClass {
-		t.Errorf("expected SymbolClass, got %s", symbol.Type)
+		t.Errorf("expected SymbolClass, got %v", symbol.Type)
 	}
 }
 
@@ -128,7 +128,7 @@ func TestCollectVariableSymbol(t *testing.T) {
 	}
 
 	if symbol.Type != SymbolVariable {
-		t.Errorf("expected SymbolVariable, got %s", symbol.Type)
+		t.Errorf("expected SymbolVariable, got %v", symbol.Type)
 	}
 }
 
@@ -183,7 +183,7 @@ func TestCollectMultipleSymbols(t *testing.T) {
 			continue
 		}
 		if symbol.Type != expectedType {
-			t.Errorf("symbol %s: expected type %s, got %s", name, expectedType, symbol.Type)
+			t.Errorf("symbol %s: expected type %v, got %v", name, expectedType, symbol.Type)
 		}
 	}
 }
@@ -210,7 +210,7 @@ func TestVisibilityPrivate(t *testing.T) {
 	}
 
 	if symbol.Visibility != Private {
-		t.Errorf("expected Private visibility, got %s", symbol.Visibility)
+		t.Errorf("expected Private visibility, got %v", symbol.Visibility)
 	}
 }
 
@@ -291,7 +291,7 @@ func TestTupleUnpacking(t *testing.T) {
 			continue
 		}
 		if symbol.Type != SymbolVariable {
-			t.Errorf("symbol %s: expected SymbolVariable, got %s", varName, symbol.Type)
+			t.Errorf("symbol %s: expected SymbolVariable, got %v", varName, symbol.Type)
 		}
 	}
 }
@@ -338,7 +338,7 @@ func TestListUnpacking(t *testing.T) {
 			continue
 		}
 		if symbol.Type != SymbolVariable {
-			t.Errorf("symbol %s: expected SymbolVariable, got %s", varName, symbol.Type)
+			t.Errorf("symbol %s: expected SymbolVariable, got %v", varName, symbol.Type)
 		}
 	}
 }
@@ -368,7 +368,7 @@ func TestAnnotationStmt(t *testing.T) {
 	}
 
 	if symbol.Type != SymbolVariable {
-		t.Errorf("expected SymbolVariable, got %s", symbol.Type)
+		t.Errorf("expected SymbolVariable, got %v", symbol.Type)
 	}
 }
 

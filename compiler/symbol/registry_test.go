@@ -97,7 +97,7 @@ func TestLookupSymbol(t *testing.T) {
 					t.Errorf("expected symbol name %s, got %s", tt.symbolName, symbol.Name)
 				}
 				if symbol.Type != tt.wantType {
-					t.Errorf("expected symbol type %s, got %s", tt.wantType, symbol.Type)
+					t.Errorf("expected symbol type %v, got %v", tt.wantType, symbol.Type)
 				}
 			}
 		})
@@ -137,7 +137,7 @@ func TestGetPublicSymbols(t *testing.T) {
 
 	for _, symbol := range publicSymbols {
 		if symbol.Visibility != Public {
-			t.Errorf("expected public symbol, got %s", symbol.Visibility)
+			t.Errorf("expected public symbol, got %v", symbol.Visibility)
 		}
 	}
 }

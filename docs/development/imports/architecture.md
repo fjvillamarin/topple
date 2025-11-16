@@ -8,7 +8,7 @@ This document provides detailed technical architecture for the import resolution
 
 ### 1. Module Resolver
 
-**Package**: `compiler/moduleresolver/`
+**Package**: `compiler/module/`
 
 **Purpose**: Translate import paths to filesystem paths
 
@@ -140,7 +140,7 @@ func (e *ResolutionError) Error() string {
 
 ### 2. Symbol Registry
 
-**Package**: `compiler/symbolregistry/`
+**Package**: `compiler/symbol/`
 
 **Purpose**: Track and lookup symbols exported from modules
 
@@ -858,7 +858,7 @@ func compileMultiFile(paths []string, recursive bool) error {
 ### Module Resolver Tests
 
 ```go
-// compiler/moduleresolver/resolver_test.go
+// compiler/module/resolver_test.go
 
 func TestResolveAbsolute(t *testing.T) {
     tests := []struct {
