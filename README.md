@@ -1,60 +1,27 @@
 # Topple Known Issues
 
-**Last Updated**: 2025-11-05
+**Last Updated**: 2026-02-06
 
-## Active Issues (2)
+## Active Issues (1)
 
-### 🔴 High Priority
+### High Priority
 
 1. **[Issue #67: Parser: Add async view statement support](https://github.com/fjvillamarin/topple/issues/67)**
-   - **File**: [parser-bug-05-async-view-support.md](parser-bug-05-async-view-support.md)
-   - **Status**: Active, needs fix
-   - **Impact**: Blocks async view functionality
-   - **Tests Failing**: 2
-   - **Recommendation**: **Fix this first**
+   - **Status**: Active, needs parser support for `async view`
+   - **Repro**: `topple parse` on a file that starts with `async view ...` returns `at 'async': unexpected token`
+   - **Impact**: Async view declarations are currently unsupported
 
-### 🟡 Medium Priority
+## Recently Resolved
 
-2. **[Issue #68: Parser: Fix complex target parsing edge cases](https://github.com/fjvillamarin/topple/issues/68)**
-   - **File**: [parser-bug-07-target-parsing.md](parser-bug-07-target-parsing.md)
-   - **Status**: Mostly fixed, 3 edge cases remaining
-   - **Impact**: Complex target parsing edge cases only
-   - **Tests Failing**: 10 (all edge cases)
-   - **Note**: Basic target parsing works fine
+- **[Issue #68: Parser: Fix complex target parsing edge cases](https://github.com/fjvillamarin/topple/issues/68)** now passes current parser tests.
+- Historical codegen/parser bugs previously tracked in this repo have been fixed or are no longer applicable to the current architecture.
 
----
+## Verification Snapshot
 
-## Archived Issues
-
-### Fixed (10 bugs) ✅
-See [archive/fixed/](archive/fixed/) for:
-- All codegen bugs (3) - empty set, default params, multistmt
-- Operator precedence
-- E2E compilation
-- Multiple starred expressions
-- Relative imports
-- Try clause ordering
-- Function parameters
-- Generator expressions
-
-### Deferred (1 bug) 🟢
-See [archive/deferred/](archive/deferred/) for:
-- Incomplete "not in" validation (low priority edge case)
-
----
-
-## Summary Statistics
-
-- **Total documented bugs**: 23
-- **Fixed**: 17 (74%)
-- **Active**: 2 (9%)
-- **Deferred**: 1 (4%)
-- **Test pass rate**: 94%
-
----
+- `go test ./...` passes as of 2026-02-06.
 
 ## See Also
 
-- [BUG_STATUS_REPORT.md](../BUG_STATUS_REPORT.md) - Full audit of all bugs
-- [docs/development/codegen_bugs.md](../docs/development/codegen_bugs.md) - Codegen bug documentation
-- [docs/development/parser_bugs.md](../docs/development/parser_bugs.md) - Parser bug documentation
+- [BUG_STATUS_REPORT.md](BUG_STATUS_REPORT.md) - Current bug status summary
+- [docs/development/codegen_bugs.md](docs/development/codegen_bugs.md) - Codegen status and remaining quality notes
+- [docs/development/parser_bugs.md](docs/development/parser_bugs.md) - Parser status and remaining open parser issue

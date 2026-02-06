@@ -149,12 +149,11 @@ topple parse file.psx -d
 
 5. **Import Organization**: Standard library → third-party → local imports
 
-6. **Consistent Newlines**: All files must end with exactly one newline
+6. **Trailing Newlines**: Keep generated output consistent with golden files; strict newline-at-EOF enforcement is not currently test-enforced.
 
-### Known Bugs (from codegen_bugs.md)
-1. **MultiStmt**: Generates `a\n; b\n; c` instead of `a; b; c` (High priority)
-2. **Empty Set**: Generates `{}` instead of `set()` (Medium priority)  
-3. **Default Parameters**: Adds spaces around `=` (Low priority - style issue)
+### Known Issues
+1. **Parser**: `async view ...` is currently unsupported and errors with `at 'async': unexpected token`.
+2. **Codegen quality**: newline-at-EOF consistency is not uniformly enforced across generated files.
 
 ## View Transformation Pattern
 
