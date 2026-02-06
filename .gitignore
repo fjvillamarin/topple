@@ -57,3 +57,4 @@ compiler/transformers/testdata/generated/
 bin/*
 
 tmp/
+.gocache/
