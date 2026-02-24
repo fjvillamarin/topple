@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class DynamicAttributes(BaseView):
     def __init__(self, is_active: bool, user_id: int, css_class: str):
         super().__init__()

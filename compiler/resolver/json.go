@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"sort"
 
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // JSON serialization types for resolution output

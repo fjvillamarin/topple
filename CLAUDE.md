@@ -149,12 +149,11 @@ topple parse file.psx -d
 
 5. **Import Organization**: Standard library → third-party → local imports
 
-6. **Consistent Newlines**: All files must end with exactly one newline
+6. **Trailing Newlines**: Keep generated output consistent with golden files; strict newline-at-EOF enforcement is not currently test-enforced.
 
-### Known Bugs (from codegen_bugs.md)
-1. **MultiStmt**: Generates `a\n; b\n; c` instead of `a; b; c` (High priority)
-2. **Empty Set**: Generates `{}` instead of `set()` (Medium priority)  
-3. **Default Parameters**: Adds spaces around `=` (Low priority - style issue)
+### Known Issues
+1. **Parser**: `async view ...` is currently unsupported and errors with `at 'async': unexpected token`.
+2. **Codegen quality**: newline-at-EOF consistency is not uniformly enforced across generated files.
 
 ## View Transformation Pattern
 
@@ -427,13 +426,11 @@ Run CodeRabbit CLI for comprehensive code analysis and improvement suggestions.
 - For code quality improvements
 
 **Critical Limitations to Be Aware Of:**
-1. **View composition doesn't work** - Cannot nest `<ChildView />` components (Issue #70)
-2. **Multiline text not supported** - Text must stay on single lines (Issue #71)
-3. **Code examples double-escaped** - Cannot display HTML/PSX syntax properly (Issue #72)
-4. **Special characters break parser** - Emojis and `!` cause errors (Issue #73)
+1. **Multiline text not supported** - Text must stay on single lines (Issue #71)
+2. **Code examples double-escaped** - Cannot display HTML/PSX syntax properly (Issue #72)
+3. **Special characters break parser** - Emojis and `!` cause errors (Issue #73)
 
 **Workarounds:**
-- Keep all content in single monolithic views (not scalable)
 - Write text on single lines only
 - Use Python variables for long text: `text = """..."""` then `<p>{text}</p>`
 - Avoid Python keywords (`for`, `with`, `in`) in text on new lines

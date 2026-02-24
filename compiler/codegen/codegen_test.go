@@ -1,12 +1,12 @@
 package codegen
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 // TestCodeGeneration tests code generation using golden files

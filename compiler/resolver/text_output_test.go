@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"topple/compiler/lexer"
-	"topple/compiler/parser"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/parser"
 )
 
 func TestToText_SimpleVariable(t *testing.T) {

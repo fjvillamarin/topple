@@ -1,8 +1,8 @@
 package codegen
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
 	"strings"
-	"topple/compiler/ast"
 )
 
 // F-string visitors

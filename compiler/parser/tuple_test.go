@@ -1,10 +1,10 @@
 package parser
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 // Helper function to parse a tuple expression

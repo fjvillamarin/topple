@@ -4,12 +4,12 @@ import (
 	"context"
 	"log/slog"
 
-	"topple/compiler/ast"
-	"topple/compiler/codegen"
-	"topple/compiler/lexer"
-	"topple/compiler/parser"
-	"topple/compiler/resolver"
-	"topple/compiler/transformers"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/codegen"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/parser"
+	"github.com/fjvillamarin/topple/compiler/resolver"
+	"github.com/fjvillamarin/topple/compiler/transformers"
 )
 
 // File represents a file in the Biscuit compiler

@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // Lambda represents a lambda expression: lambda x, y=10: x + y

@@ -1,0 +1,8 @@
+from .card import Card
+
+view Page():
+    <div>
+        <h1>My Page</h1>
+        <Card title="First Card" />
+        <Card title="Second Card" />
+    </div>

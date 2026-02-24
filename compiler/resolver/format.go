@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // formatVariableState returns a human-readable string for a VariableState.

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // ToText converts a ResolutionTable to a human-readable text format
@@ -173,7 +173,7 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		varMap[variable] = append(varMap[variable], nameNode)
 	}
 
-	// Sort variables by name
+	// Sort variables by name, then depth, then span for deterministic output
 	type varInfo struct {
 		variable *Variable
 		names    []*ast.Name
@@ -255,7 +255,7 @@ func writeViewCompositionSection(sb *strings.Builder, rt *ResolutionTable) {
 
 	sb.WriteString("\n")
 
-	// View references
+	// View references (sorted for deterministic output)
 	if hasRefs {
 		sb.WriteString("  View References:\n")
 		var refNames []string

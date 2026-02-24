@@ -2,8 +2,10 @@ package resolver
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/module"
+	"github.com/fjvillamarin/topple/compiler/symbol"
 )
 
 // Resolver implements variable resolution for Python-like scoping
@@ -32,6 +34,11 @@ type Resolver struct {
 	Views        map[string]*ast.ViewStmt           // View name → ViewStmt mapping
 	ViewElements map[*ast.HTMLElement]*ast.ViewStmt // HTMLElement → ViewStmt mapping
 
+	// Import resolution support
+	ModuleResolver *module.StandardResolver // Resolves import paths to file paths
+	SymbolRegistry *symbol.Registry         // Cross-file symbol registry
+	SourceFilePath string                   // Current source file being resolved
+
 	// Error tracking
 	Errors []error
 
@@ -48,19 +55,31 @@ type Resolver struct {
 
 // NewResolver constructs and initializes a new Resolver for variable and view resolution within a module.
 func NewResolver() *Resolver {
+	return NewResolverWithDeps(nil, nil, "")
+}
+
+// NewResolverWithDeps creates a resolver with import resolution support.
+// Parameters:
+//   - moduleResolver: resolves import paths to file paths (optional, can be nil)
+//   - symbolRegistry: cross-file symbol registry (optional, can be nil)
+//   - sourceFilePath: path to the current source file being resolved (optional, can be empty)
+func NewResolverWithDeps(moduleResolver *module.StandardResolver, symbolRegistry *symbol.Registry, sourceFilePath string) *Resolver {
 	resolver := &Resolver{
-		AllScopes:     make(map[int]*Scope),
-		NextScopeID:   0,
-		ModuleGlobals: make(map[string]*Variable),
-		Variables:     make(map[*ast.Name]*Variable),
-		ScopeDepths:   make(map[*ast.Name]int),
-		NameToBinding: make(map[*ast.Name]*Binding),
-		NodeScopes:    make(map[ast.Node]*Scope),
-		CellVars:      make(map[string]bool),
-		FreeVars:      make(map[string]bool),
-		Errors:        []error{},
-		Views:         make(map[string]*ast.ViewStmt),
-		ViewElements:  make(map[*ast.HTMLElement]*ast.ViewStmt),
+		AllScopes:      make(map[int]*Scope),
+		NextScopeID:    0,
+		ModuleGlobals:  make(map[string]*Variable),
+		Variables:      make(map[*ast.Name]*Variable),
+		ScopeDepths:    make(map[*ast.Name]int),
+		NameToBinding:  make(map[*ast.Name]*Binding),
+		NodeScopes:     make(map[ast.Node]*Scope),
+		CellVars:       make(map[string]bool),
+		FreeVars:       make(map[string]bool),
+		Errors:         []error{},
+		Views:          make(map[string]*ast.ViewStmt),
+		ViewElements:   make(map[*ast.HTMLElement]*ast.ViewStmt),
+		ModuleResolver: moduleResolver,
+		SymbolRegistry: symbolRegistry,
+		SourceFilePath: sourceFilePath,
 	}
 
 	// Begin with module scope
@@ -193,6 +212,15 @@ func (r *Resolver) DefineVariable(name string, span lexer.Span) *Variable {
 		r.ModuleGlobals[name] = variable
 	}
 
+	return variable
+}
+
+// DefineImportedVariable creates a binding for an imported symbol.
+// It marks the variable as imported and defined, since imports are always resolved at module scope.
+func (r *Resolver) DefineImportedVariable(name string, span lexer.Span) *Variable {
+	variable := r.DefineVariable(name, span)
+	variable.IsImported = true
+	variable.State = VariableDefined
 	return variable
 }
 

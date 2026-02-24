@@ -1,8 +1,8 @@
 package ast
 
 import (
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // Helper functions for constructing AST nodes in tests.

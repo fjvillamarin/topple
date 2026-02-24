@@ -1,7 +1,7 @@
 package transformers
 
 import (
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // transformExpression recursively transforms expressions, converting view parameters to self attributes

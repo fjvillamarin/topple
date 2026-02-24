@@ -1,4 +1,4 @@
-from topple.psx import BaseView, Element, el, escape, fragment
+from topple.psx import BaseView, Element, el, escape, fragment, raw
 class Table(BaseView):
     def __init__(self, rows: list):
         super().__init__()

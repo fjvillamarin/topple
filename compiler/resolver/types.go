@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // VariableState represents the current state of a variable
@@ -22,13 +22,14 @@ type Variable struct {
 	State           VariableState // Current state of the variable
 
 	// Scope behavior flags
-	IsParameter     bool // Function/view parameter
-	IsGlobal        bool // Declared with 'global'
-	IsNonlocal      bool // Declared with 'nonlocal'
-	IsImported      bool // Bound by import statement
-	IsViewParameter bool // Biscuit view parameter
-	IsExceptionVar  bool // Exception handler variable
-	IsUsed          bool // Has been referenced
+	IsParameter     bool   // Function/view parameter
+	IsGlobal        bool   // Declared with 'global'
+	IsNonlocal      bool   // Declared with 'nonlocal'
+	IsImported      bool   // Bound by import statement
+	ImportSource    string // File path of the imported module (if IsImported)
+	IsViewParameter bool   // Biscuit view parameter
+	IsExceptionVar  bool   // Exception handler variable
+	IsUsed          bool   // Has been referenced
 
 	// Usage tracking
 	FirstDefSpan  lexer.Span // Where first defined

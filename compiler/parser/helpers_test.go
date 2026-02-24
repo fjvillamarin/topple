@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
 	"testing"
-	"topple/compiler/lexer"
 )
 
 // Helper function to create a parser from input string

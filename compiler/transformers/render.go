@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // transformViewBody transforms the view body statements into _render method statements

@@ -50,7 +50,19 @@
       "Bash(git grep:*)",
       "Bash(TEST=expressions/complex_expressions mise run:*)",
       "Bash(../bin/topple compile:*)",
-      "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)"
+      "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)",
+      "Bash(go tool cover:*)",
+      "Bash(gofmt:*)",
+      "Bash(git -C /Users/ferri/projects/topple/main log --oneline -20)",
+      "Bash(git -C /Users/ferri/projects/topple/main remote -v)",
+      "WebFetch(domain:mise.jdx.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(/Users/ferri/.local/bin/poetry build:*)",
+      "Bash(/Users/ferri/.local/share/mise/installs/poetry/2.3.2/bin/poetry build)",
+      "Bash(unzip:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
