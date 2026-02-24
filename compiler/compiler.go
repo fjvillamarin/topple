@@ -57,8 +57,6 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []er
 		return nil, resolutionTable.Errors
 	}
 
-	resolver.DebugPrintResolutionTable(resolutionTable)
-
 	// Transformation phase with resolution information
 	transformerVisitor := transformers.NewTransformerVisitor()
 	ast, err = transformerVisitor.TransformModule(ast, resolutionTable)

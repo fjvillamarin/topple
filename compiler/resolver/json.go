@@ -214,7 +214,7 @@ func convertScopes(scopes map[int]*Scope, varIDMap map[*Variable]string, binding
 		scope := scopes[id]
 		jsonScope := JSONScope{
 			ID:        scope.ID,
-			Type:      scopeTypeToString(scope.ScopeType),
+			Type:      formatScopeType(scope.ScopeType),
 			Bindings:  convertBindings(scope.Bindings, varIDMap, bindingIDMap),
 			Globals:   extractNames(scope.Globals),
 			Nonlocals: extractNames(scope.Nonlocals),
@@ -299,7 +299,7 @@ func convertVariables(rt *ResolutionTable, varIDMap map[*Variable]string) []JSON
 			ID:              entry.id,
 			Name:            variable.Name,
 			DefinitionDepth: variable.DefinitionDepth,
-			State:           variableStateToString(variable.State),
+			State:           formatVariableState(variable.State),
 			Classification: JSONClassification{
 				IsParameter:     variable.IsParameter,
 				IsGlobal:        variable.IsGlobal,
@@ -500,44 +500,6 @@ func spanToJSONRange(span lexer.Span) JSONSpanRange {
 // isEmptySpan checks if a span is empty/uninitialized
 func isEmptySpan(span lexer.Span) bool {
 	return span.Start.Line == 0 && span.Start.Column == 0
-}
-
-// scopeTypeToString converts ScopeType to string
-func scopeTypeToString(st ScopeType) string {
-	switch st {
-	case ModuleScopeType:
-		return "module"
-	case FunctionScopeType:
-		return "function"
-	case ClassScopeType:
-		return "class"
-	case ViewScopeType:
-		return "view"
-	case ComprehensionScopeType:
-		return "comprehension"
-	case ExceptScopeType:
-		return "except"
-	case WithScopeType:
-		return "with"
-	default:
-		return "unknown"
-	}
-}
-
-// variableStateToString converts VariableState to string
-func variableStateToString(state VariableState) string {
-	switch state {
-	case VariableUndefined:
-		return "undefined"
-	case VariableDeclared:
-		return "declared"
-	case VariableDefined:
-		return "defined"
-	case VariableUsed:
-		return "used"
-	default:
-		return "unknown"
-	}
 }
 
 // getNodeType returns the type name of an AST node

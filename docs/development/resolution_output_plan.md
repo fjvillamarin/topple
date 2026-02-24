@@ -291,9 +291,9 @@ Free Variables:         0
 
 **Implementation Steps:**
 
-1. **Reuse Existing Debug Code**
-   - Refactor `debug.go` to use a writer interface
-   - Extract formatting functions for reuse
+1. **Shared Formatting Helpers** ✅ (completed)
+   - Consolidated into `format.go` (formatVariableState, formatVariableType, formatVariableFlags, formatScopeType, formatSpan)
+   - `debug.go` removed; formatting is shared between `text_output.go` and `json.go`
 
 2. **Create Text Output Function**
    ```go
@@ -562,6 +562,6 @@ Use resolution data for Language Server Protocol features:
 ## References
 
 - Current implementation: `compiler/resolver/`
-- Debug output: `compiler/resolver/debug.go`
+- Format helpers: `compiler/resolver/format.go`
 - Parser output: `cmd/parse.go`
 - AST printer: `compiler/printer.go`

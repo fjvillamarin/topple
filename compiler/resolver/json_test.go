@@ -552,7 +552,7 @@ func TestWriteResolutionJSON(t *testing.T) {
 
 // Test helper functions
 
-func TestScopeTypeToString(t *testing.T) {
+func TestFormatScopeType(t *testing.T) {
 	tests := []struct {
 		scopeType ScopeType
 		expected  string
@@ -567,15 +567,15 @@ func TestScopeTypeToString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := scopeTypeToString(tt.scopeType)
+		result := formatScopeType(tt.scopeType)
 		if result != tt.expected {
-			t.Errorf("scopeTypeToString(%v) = %s, expected %s",
+			t.Errorf("formatScopeType(%v) = %s, expected %s",
 				tt.scopeType, result, tt.expected)
 		}
 	}
 }
 
-func TestVariableStateToString(t *testing.T) {
+func TestFormatVariableState(t *testing.T) {
 	tests := []struct {
 		state    VariableState
 		expected string
@@ -587,9 +587,9 @@ func TestVariableStateToString(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := variableStateToString(tt.state)
+		result := formatVariableState(tt.state)
 		if result != tt.expected {
-			t.Errorf("variableStateToString(%v) = %s, expected %s",
+			t.Errorf("formatVariableState(%v) = %s, expected %s",
 				tt.state, result, tt.expected)
 		}
 	}

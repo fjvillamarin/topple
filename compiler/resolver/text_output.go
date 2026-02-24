@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 // ToText converts a ResolutionTable to a human-readable text format
@@ -96,7 +95,7 @@ func writeScopesSection(sb *strings.Builder, rt *ResolutionTable) {
 
 func writeScopeInfo(sb *strings.Builder, scope *Scope, rt *ResolutionTable) {
 	// Scope header
-	scopeType := scopeTypeToString(scope.ScopeType)
+	scopeType := formatScopeType(scope.ScopeType)
 	if scope.Parent != nil {
 		sb.WriteString(fmt.Sprintf("Scope #%d [%s] → parent: #%d\n",
 			scope.ID, scopeType, scope.Parent.ID))
@@ -121,7 +120,7 @@ func writeScopeInfo(sb *strings.Builder, scope *Scope, rt *ResolutionTable) {
 
 			// Format: name | type | state | location | flags
 			varType := formatVariableType(variable)
-			state := variableStateToString(variable.State)
+			state := formatVariableState(variable.State)
 			location := formatSpan(variable.FirstDefSpan)
 			flags := formatVariableFlags(variable)
 
@@ -212,7 +211,7 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 
 		// Format variable info
 		varType := formatVariableType(variable)
-		state := variableStateToString(variable.State)
+		state := formatVariableState(variable.State)
 		flags := formatVariableFlags(variable)
 		refs := fmt.Sprintf("%d", len(names))
 
@@ -365,13 +364,4 @@ func writeSummarySection(sb *strings.Builder, rt *ResolutionTable) {
 	sb.WriteString(fmt.Sprintf("  Resolution Errors:      %d\n", len(rt.Errors)))
 
 	sb.WriteString("\n")
-}
-
-// Helper functions
-
-func formatSpan(span lexer.Span) string {
-	if span.Start.Line == 0 && span.Start.Column == 0 {
-		return "?"
-	}
-	return fmt.Sprintf("%d:%d", span.Start.Line, span.Start.Column)
 }
