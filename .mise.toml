@@ -12,15 +12,15 @@ poetry = "latest"
 # Development Tasks
 [tasks.run]
 description = "Compile and run examples recursively"
-run = "go run ./cmd/... compile examples/ -r -d"
+run = "go run ./cmd/topple compile examples/ -r -d"
 
 [tasks.watch]
 description = "Watch files for changes and recompile"
-run = "go run ./cmd/... watch examples/ -r -d"
+run = "go run ./cmd/topple watch examples/ -r -d"
 
 [tasks.build]
 description = "Build the topple binary"
-run = 'go build -ldflags="-X main.Version=$VERSION" -o bin/topple ./cmd/...'
+run = 'go build -ldflags="-X main.Version=$VERSION" -o bin/topple ./cmd/topple'
 
 [tasks.fmt]
 description = "Format Go code"
@@ -219,15 +219,15 @@ echo "✅ Generated files cleaned!"
 # Compiler Operations
 [tasks.scan]
 description = "Scan source files and show tokens"
-run = "go run ./cmd/... scan examples/ -d -w -r"
+run = "go run ./cmd/topple scan examples/ -d -w -r"
 
 [tasks.parse]
 description = "Parse source files and show AST"
-run = "go run ./cmd/... parse examples/ -d -w -r"
+run = "go run ./cmd/topple parse examples/ -d -w -r"
 
 [tasks.compile]
 description = "Compile a single source file"
-run = "go run ./cmd/... compile examples/01_hello_world/01_hello_world.psx -d -r"
+run = "go run ./cmd/topple compile examples/01_hello_world/01_hello_world.psx -d -r"
 
 # Web Development
 [tasks.web]
