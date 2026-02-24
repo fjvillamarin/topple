@@ -52,7 +52,10 @@
       "Bash(../bin/topple compile:*)",
       "Bash(PYTHONPATH=/Users/ferri/projects/topple/psx:/Users/ferri/projects/topple/psx/compiler/testdata/expected/control_flow python3:*)",
       "Bash(go tool cover:*)",
-      "Bash(gofmt:*)"
+      "Bash(gofmt:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

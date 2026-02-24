@@ -1,6 +1,6 @@
 # Topple Runtime System
 
-The Topple runtime (`runtime.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
+The Topple runtime (`topple/psx.py`) provides the foundation for executing compiled PSX views. It includes classes and functions for HTML generation, automatic escaping, and view composition.
 
 ## Runtime Architecture
 
@@ -181,98 +181,6 @@ class Greeting(BaseView):
             el("h1", f"Hello, {escape(self.name)}!"),
             el("p", f"You are {escape(self.age)} years old.")
         ])
-```
-
-### Slot System
-
-**Input PSX:**
-```python
-view Layout():
-    <div class="layout">
-        <header>
-            <slot name="header">
-                <h1>Default Header</h1>
-            </slot>
-        </header>
-        <main>
-            <slot>
-                <p>Default content</p>
-            </slot>
-        </main>
-        <footer>
-            <slot name="footer">
-                <p>Default footer</p>
-            </slot>
-        </footer>
-    </div>
-```
-
-**Generated Python:**
-```python
-class Layout(BaseView):
-    def __init__(self, *, children=None, header=None, footer=None):
-        super().__init__()
-        self.children = children
-        self.header = header
-        self.footer = footer
-    
-    def _render(self) -> Element:
-        return el("div", [
-            el("header", 
-                render_child(self.header) if self.header is not None 
-                else el("h1", "Default Header")
-            ),
-            el("main", 
-                render_child(self.children) if self.children is not None 
-                else el("p", "Default content")
-            ),
-            el("footer", 
-                render_child(self.footer) if self.footer is not None 
-                else el("p", "Default footer")
-            )
-        ], {"class": "layout"})
-```
-
-### Using Slots
-
-**Input PSX:**
-```python
-view App():
-    <Layout>
-        <h1 slot="header">Custom Header</h1>
-        <div>
-            <p>This is the main content</p>
-            <p>Multiple paragraphs</p>
-        </div>
-        <div slot="footer">
-            <p>&copy; 2024 My App</p>
-        </div>
-    </Layout>
-```
-
-**Generated Python:**
-```python
-class App(BaseView):
-    def _render(self) -> Element:
-        _slot_children_1000 = []
-        _slot_children_1000.append(el("h1", "Custom Header"))
-        
-        _slot_children_2000 = []
-        _slot_children_2000.append(el("div", [
-            el("p", "This is the main content"),
-            el("p", "Multiple paragraphs")
-        ]))
-        
-        _slot_children_3000 = []
-        _slot_children_3000.append(el("div", 
-            el("p", "&copy; 2024 My App")
-        ))
-        
-        return Layout(
-            header=fragment(_slot_children_1000),
-            children=fragment(_slot_children_2000),
-            footer=fragment(_slot_children_3000)
-        )
 ```
 
 ## Security Features
@@ -517,6 +425,6 @@ AttributeError: 'NoneType' object has no attribute 'name'
 
 ## See Also
 
-- [Language Grammar](grammar_topple.md) - PSX syntax reference
+- [Language Grammar](grammar_psx.md) - PSX syntax reference
 - [Architecture Guide](architecture.md) - Compiler internals
 - [Examples](../examples/) - Example applications

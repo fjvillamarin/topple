@@ -136,21 +136,11 @@ The compiler generates standard Python code with:
 
 ## Error Handling
 
-The compiler provides detailed error messages including:
-- File path and location (line:column)
-- Error type and description
-- Source code context
-- Suggestions for common issues
+The compiler provides error messages including file path and location information.
 
 Example error output:
 ```
-Error in hello.psx:5:12
-SyntaxError: Unclosed HTML tag 'div'
-    3 | view HelloWorld():
-    4 |     <div>
-    5 |         <h1>Hello
-                    ^
-    6 |     </div>
+hello.psx: at '<h1': unclosed HTML tag
 ```
 
 ## Development Workflow
@@ -219,19 +209,6 @@ Add `--debug` to any command for detailed logging:
 ```bash
 topple compile hello.psx --debug
 ```
-
-## Environment Variables
-
-- `SYLFIE_DEBUG`: Set to "1" to enable debug output globally
-- `SYLFIE_RUNTIME`: Path to custom runtime module
-
-## Exit Codes
-
-- `0`: Success
-- `1`: General error (file not found, permissions, etc.)
-- `2`: Syntax error in source file
-- `3`: Compilation error
-- `4`: I/O error
 
 ## See Also
 
