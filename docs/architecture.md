@@ -1038,95 +1038,6 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
-### Slot System Example
-
-#### Input: Advanced Layout with Slots
-```javascript
-view PageLayout():
-    <html>
-        <head>
-            <slot name="head">
-                <title>Default Title</title>
-            </slot>
-        </head>
-        <body>
-            <header>
-                <slot name="header">
-                    <h1>Default Header</h1>
-                </slot>
-            </header>
-            <main>
-                <slot>
-                    <p>Default content</p>
-                </slot>
-            </main>
-        </body>
-    </html>
-
-view HomePage():
-    <PageLayout>
-        <title slot="head">Welcome to My Site</title>
-        <nav slot="header">
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-        </nav>
-        <div>
-            <h2>Welcome!</h2>
-            <p>This is the home page content.</p>
-        </div>
-    </PageLayout>
-```
-
-#### Generated: Slot Implementation
-```python
-class PageLayout(BaseView):
-    def __init__(self, *, children=None, head=None, header=None):
-        super().__init__()
-        self.children = children
-        self.head = head
-        self.header = header
-    
-    def _render(self) -> Element:
-        _view_children_1000 = []
-        _html_children_1234 = []
-        
-        # Head slot with fallback
-        head_content = (render_child(self.head) if self.head is not None 
-                       else el("title", "Default Title"))
-        _html_children_1234.append(el("head", head_content))
-        
-        # Body with header and main slots
-        _body_children_1567 = []
-        header_content = (render_child(self.header) if self.header is not None
-                         else el("h1", "Default Header"))
-        _body_children_1567.append(el("header", header_content))
-        
-        main_content = (render_child(self.children) if self.children is not None
-                       else el("p", "Default content"))
-        _body_children_1567.append(el("main", main_content))
-        
-        _html_children_1234.append(el("body", _body_children_1567))
-        _view_children_1000.append(el("html", _html_children_1234))
-        return fragment(_view_children_1000)
-
-class HomePage(BaseView):
-    def __init__(self):
-        super().__init__()
-    
-    def _render(self) -> Element:
-        return render_child(PageLayout(
-            head=el("title", "Welcome to My Site"),
-            header=el("nav", [
-                el("a", "Home", {"href": "/"}),
-                el("a", "About", {"href": "/about"})
-            ]),
-            children=el("div", [
-                el("h2", "Welcome!"),
-                el("p", "This is the home page content.")
-            ])
-        ))
-```
-
 ## Performance Characteristics
 
 ### Compilation Performance
@@ -1143,24 +1054,13 @@ class HomePage(BaseView):
 
 ### Development Experience
 - **Fast hot reloading** with file watching
-- **Comprehensive error reporting** with source locations
-- **IDE integration** through language server protocol
+- **Error reporting** with source locations
 - **Debug tooling** for tokenization and parsing analysis
 
-## Future Extensions
+## Known Limitations
 
-### Planned Features
-1. **Static type checking** with full Python compatibility
-2. **CSS-in-JS** integration for styled components  
-3. **Server-side streaming** for large applications
-4. **Component lifecycle hooks** for advanced use cases
-5. **Build-time optimizations** for production deployments
-
-### Architecture Extensions
-1. **Plugin system** for custom transformations
-2. **Language server** for IDE integration
-3. **Debug adapter** for step-through debugging
-4. **Test framework** integration for component testing
-5. **Documentation generator** from source comments
+1. **Async views**: `async view ...` syntax is not yet supported
+2. **Template slots on view elements**: Passing nested content to view elements (e.g., `<Card>...</Card>`) produces a compilation error
+3. **Multiline text**: Text content must stay on single lines within HTML elements
 
 This architecture provides a solid foundation for building modern web applications with Python, combining the expressiveness of JSX-like syntax with the robustness and type safety of Python's ecosystem.

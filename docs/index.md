@@ -18,27 +18,15 @@ Welcome to the Topple documentation! Topple is a modern templating language that
 ## Testing
 
 - [Testing Strategy](tests.md) - Comprehensive testing documentation
-- [Golden File Tests](GOLDEN_TESTS.md) - End-to-end testing guide
+- [Golden File Tests](golden_tests.md) - End-to-end testing guide
 
 ## Development Documentation
 
 The `development/` folder contains internal documentation for contributors:
 
 ### Design Documents
-- [Parser Design](development/parser_design.md) - Parser architecture and decisions
 - [Resolver Design](development/resolver_design.md) - Symbol resolution system design
-- [Filesystem Design](development/filesystem_design.md) - File system integration design
 - [AST Reference](development/ast_reference.md) - Complete AST node reference
-
-### Development Guides
-- [Parser Test Improvements](development/parser_test_improvements.md) - Testing strategy for parser
-- [Compilation Analysis](development/compilation_analysis.md) - Compilation process analysis
-- [Memory State](development/memory.md) - Development context and memory state
-
-### Test Plans
-- [Transformers Test Plan](development/transformers_test_plan.md) - Test planning for transformers
-- [Codegen Tests](development/codegen_tests.md) - Code generation test documentation
-- [View Transformer Tests](development/view_transformer_tests.md) - View transformation testing
 
 ### Bug Tracking
 - [Parser Bugs](development/parser_bugs.md) - Known parser issues
@@ -54,7 +42,3 @@ See the [examples/](../examples/) directory for working Topple applications demo
 2. Check the development documentation for the area you want to contribute to
 3. Follow the testing guidelines in [Testing Strategy](tests.md)
 4. Submit a pull request with tests
-
-## Legacy Documentation
-
-- [Legacy Grammar Reference](grammar_psx_legacy.md) - Original grammar documentation (historical reference)

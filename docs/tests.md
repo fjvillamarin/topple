@@ -47,23 +47,18 @@ graph TD
     B --> E[Lexer Tests]
     B --> F[Parser Tests]
     B --> G[Resolver Tests]
-    B --> H[Codegen Tests*]
-    
+    B --> H[Codegen Tests]
+
     C --> I[Cross-Component Tests]
     C --> J[Error Recovery Tests]
-    
+
     D --> K[Golden File System]
     D --> L[Complete Pipeline Tests]
-    
+
     K --> M[Input Files]
     K --> N[Expected Output]
     K --> O[Generated Output]
-    
-    style H fill:#ffcccc
-    style H stroke:#ff0000
 ```
-
-*Note: Codegen tests are currently missing (see [Gaps](#gaps-and-recommendations))
 
 ## Testing by Compiler Phase
 
@@ -207,18 +202,16 @@ def func(x):
 - **Complex Closures**: More nested function scenarios
 - **View Composition**: More complex view interaction tests
 
-### 4. Code Generation - LIMITED ❌
+### 4. Code Generation - GOOD ✅
 
-**Current State**: No dedicated unit tests for code generation phase.
+**Coverage**: Dedicated codegen unit tests and E2E golden file tests.
 
-**Testing**: Only covered through E2E golden file tests.
+#### Running Codegen Tests:
+```bash
+mise run test-codegen
+```
 
-**Critical Gap**: Missing focused tests for:
-- Python code generation logic
-- Runtime import management
-- HTML element transformation
-- Slot system implementation
-- View-to-class conversion
+Codegen tests cover Python code generation logic through golden file comparison of AST-to-Python output.
 
 ## Test Types and Methodologies
 
@@ -310,20 +303,23 @@ mise run test-golden-single TEST=basic/hello_world  # Single test
 ### Test File Organization
 
 ```
-topple/
-├── compiler/
-│   ├── lexer/
-│   │   ├── scanner_test.go
-│   │   └── scanner_advanced_test.go
-│   ├── parser/
-│   │   ├── view_test.go          # 597 lines
-│   │   ├── fstring_test.go       # 451 lines
-│   │   ├── function_test.go
-│   │   ├── class_test.go
-│   │   └── ... (35+ test files)
-│   ├── resolver/
-│   │   └── resolver_test.go
-│   └── e2e_test.go
+compiler/
+├── lexer/
+│   ├── scanner_test.go
+│   └── scanner_advanced_test.go
+├── parser/
+│   ├── view_test.go
+│   ├── fstring_test.go
+│   ├── function_test.go
+│   ├── class_test.go
+│   └── ... (35+ test files)
+├── resolver/
+│   └── resolver_test.go
+├── codegen/
+│   └── codegen_test.go
+├── transformers/
+│   └── view_test.go
+├── e2e_test.go
 └── testdata/
     ├── input/          # Test input files (.psx)
     ├── expected/       # Expected output files (.py)
@@ -346,8 +342,8 @@ topple/
 - **Category Support**: Organized test groupings
 - **Diff Integration**: Clear comparison output
 
-#### 3. Make Integration
-- **Rich Targets**: Comprehensive test commands
+#### 3. Mise Task Runner
+- **Rich Tasks**: Comprehensive test commands
 - **Flexible Execution**: Granular control options
 - **CI/CD Ready**: Suitable for automated pipelines
 
@@ -373,23 +369,11 @@ topple/
 1. **Semantic Analysis**: ~80% coverage of resolution features
 2. **Integration Points**: Key component interactions tested
 
-### Limited Coverage ❌
+### Limited Coverage
 
-1. **Code Generation**: ~20% coverage (E2E only)
-2. **Runtime Integration**: No testing of generated code execution
-3. **Performance**: Only lexer has benchmarks
-4. **Memory Usage**: No leak or usage testing
-
-### Coverage Gaps
-
-```mermaid
-pie title Test Coverage by Component
-    "Lexer" : 100
-    "Parser" : 95
-    "Resolver" : 80
-    "Codegen" : 20
-    "Runtime" : 5
-```
+1. **Runtime Integration**: No testing of generated code execution
+2. **Performance**: Only lexer has benchmarks
+3. **Memory Usage**: No leak or usage testing
 
 ## Error Testing Strategy
 
@@ -474,17 +458,19 @@ def function_with_complex_logic(param1, param2="default"):
 The golden file system provides excellent E2E testing infrastructure:
 
 ```
-testdata/
-├── e2e/
+compiler/testdata/
+├── input/
 │   ├── basic/
-│   │   ├── hello_world.psx      # Input
-│   │   └── hello_world.py       # Expected output
-│   ├── advanced/
-│   │   ├── complex_view.psx
-│   │   └── complex_view.py
+│   │   └── hello_world.psx      # Input
+│   ├── views/
+│   ├── control_flow/
+│   ├── composition/
 │   └── errors/
-│       ├── syntax_error.psx
-│       └── syntax_error.error   # Expected error output
+│       └── unclosed_tags.psx
+├── expected/
+│   ├── basic/
+│   │   └── hello_world.py       # Expected output
+│   └── ...
 └── generated/
     └── ... (auto-generated comparison files)
 ```
@@ -577,40 +563,9 @@ func validateErrorMessage(t *testing.T, err error,
 
 ## Gaps and Recommendations
 
-### Critical Gaps ❌
+### Gaps
 
-#### 1. Code Generation Testing
-**Problem**: No unit tests for Python code generation logic.
-
-**Impact**: High - core functionality not directly tested.
-
-**Recommendation**: Create `codegen_test.go` with comprehensive tests:
-```go
-func TestViewToClassTransformation(t *testing.T) {
-    tests := []struct {
-        name           string
-        viewAST        *ast.ViewStmt
-        expectedClass  string
-        description    string
-    }{
-        {
-            name: "simple_view_transformation",
-            viewAST: &ast.ViewStmt{...},
-            expectedClass: `
-class HelloWorld(BaseView):
-    def __init__(self):
-        super().__init__()
-    
-    def _render(self) -> Element:
-        return el("div", "Hello World")
-            `,
-            description: "Basic view to class conversion",
-        },
-    }
-}
-```
-
-#### 2. Runtime Integration Testing
+#### 1. Runtime Integration Testing
 **Problem**: No tests verify that generated Python code actually executes correctly.
 
 **Recommendation**: Add integration tests that:
@@ -624,11 +579,9 @@ class HelloWorld(BaseView):
 
 **Recommendation**: Integrate coverage reporting:
 ```bash
-# Add to Makefile
-test-coverage:
-    go test -coverprofile=coverage.out ./...
-    go tool cover -html=coverage.out -o coverage.html
-    go tool cover -func=coverage.out
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
+go tool cover -func=coverage.out
 ```
 
 ### Medium Priority Improvements
@@ -757,10 +710,10 @@ git commit -m "Update golden files for feature X"
 ```
 
 #### 2. Adding New Test Categories
-1. Create new directory in `testdata/e2e/new_category/`
-2. Add input files (`.psx`) and expected output (`.py`)
-3. Update E2E test configuration
-4. Run tests to verify
+1. Create new directory in `compiler/testdata/input/new_category/`
+2. Add input `.psx` files
+3. Run with `UPDATE_GOLDEN=1` to generate expected output
+4. Verify the generated output and commit
 
 ## Conclusion
 
@@ -781,7 +734,6 @@ The Topple compiler project demonstrates an **exemplary testing strategy** that 
 - Maintainable golden file system
 
 **Areas for Improvement**:
-- Add code generation unit tests (critical)
 - Implement coverage reporting (medium)
 - Expand performance testing (medium)
 - Add runtime integration tests (medium)

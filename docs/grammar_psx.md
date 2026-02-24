@@ -18,7 +18,7 @@ Key benefits of PSX:
 
 ```bash
 # Clone and build from source
-git clone https://github.com/yourusername/topple.git
+git clone https://github.com/fjvillamarin/topple.git
 cd topple
 mise run build
 # Copy binary to PATH or add bin/ to your PATH
@@ -205,6 +205,8 @@ view UserProfile(user: User):
 
 ## Slots
 
+> **Note**: Slots within HTML elements work as shown below. However, passing nested content to **view elements** (e.g., `<Card>...</Card>`) is not yet supported and will produce a compilation error.
+
 Slots allow flexible content injection:
 
 ```python
@@ -288,27 +290,6 @@ view StatusDisplay(status: Status):
                 <span class="completed">Completed</span>
             case _:
                 <span class="unknown">Unknown</span>
-    </div>
-```
-
-### Async Support
-
-Views can use async/await:
-
-```python
-view AsyncDataView(user_id: int):
-    user = await fetch_user(user_id)
-    posts = await fetch_user_posts(user_id)
-    
-    <div class="profile">
-        <h1>{user.name}</h1>
-        <div class="posts">
-            for post in posts:
-                <article>
-                    <h2>{post.title}</h2>
-                    <p>{post.content}</p>
-                </article>
-        </div>
     </div>
 ```
 
