@@ -10,7 +10,9 @@ The Variable Resolver is a compiler pass that runs after parsing and before code
 - `types.go` - Core data structures (Scope, Binding, Variable, ResolutionTable)
 - `resolver.go` - Main resolver logic (scope management, LEGB resolution)
 - `visitor.go` - AST visitor implementations for all node types
-- `debug.go` - Debug printing utilities for resolution results
+- `format.go` - Shared formatting helpers for resolution output
+- `text_output.go` - Human-readable text output (`.res` files)
+- `json.go` - Machine-readable JSON output (`.res.json` files)
 
 ## Goals
 
@@ -625,11 +627,10 @@ The resolver detects various scoping errors:
    - Nonlocal declarations without enclosing binding
    - Invalid assignment targets
 
-7. **Debug Output** ✅
-   - `DebugPrintResolutionTable()` - Comprehensive resolution results
-   - `DebugPrintResolver()` - Current resolver state during resolution
-   - `DebugPrintCurrentScope()` - Specific scope information
-   - Formatted tables with variable states, types, depths, and flags
+7. **Resolution Output** ✅
+   - `format.go` - Shared formatting helpers (formatVariableState, formatVariableType, formatVariableFlags, formatScopeType, formatSpan)
+   - `text_output.go` - Human-readable text output (`.res` files) via `topple parse --format text`
+   - `json.go` - Machine-readable JSON output (`.res.json` files) via `topple parse --format json`
 
 ### Integration Points
 
@@ -654,29 +655,28 @@ func (c *StandardCompiler) Compile(ctx context.Context, file File) ([]byte, []er
 }
 ```
 
-### Debug Capabilities
+### Output Capabilities
 
-The resolver has comprehensive debug output capabilities (in `debug.go`):
+Resolution data can be inspected via `topple parse --format <text|json|all>`:
 
-1. **Resolution Table Debug Output**
-   - Errors with detailed messages
-   - Variables table (name, state, type, depth, flags)
-   - View parameters listing
-   - View composition information
+1. **Text Output** (`.res` files via `text_output.go`)
+   - Scopes section with hierarchy and bindings
+   - Variables table (name, type, state, depth, flags, refs)
+   - View composition (defined views, references)
    - Closure analysis (cell vars, free vars)
+   - Diagnostics and summary statistics
+
+2. **JSON Output** (`.res.json` files via `json.go`)
+   - Full scope chain with parent references and binding IDs
+   - Variable classification, usage flags, and span information
+   - Reference tracking with context (definition, reference, assignment)
+   - View composition and closure analysis
    - Summary statistics
 
-2. **Resolver State Debug Output**
-   - Current scope chain visualization
-   - Context information (function/class/view depth)
-   - Module globals listing
-   - Scope-specific variable listings
-
-3. **Formatted Output Features**
-   - Color-coded sections (using Unicode box-drawing characters)
-   - Sorted variable lists for consistency
-   - Duplicate detection (groups by Variable object)
-   - Reference counting for multiply-referenced variables
+3. **Shared Formatting** (`format.go`)
+   - `formatVariableState` / `formatVariableType` / `formatVariableFlags`
+   - `formatScopeType` / `formatSpan`
+   - Used by both text and JSON output for consistent formatting
 
 ## Implemented Features (Available Now)
 

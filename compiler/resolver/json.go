@@ -159,22 +159,49 @@ func (rt *ResolutionTable) ToJSON(filename string) (*JSONResolution, error) {
 	}
 
 	// Build variable ID map (Variable pointer -> unique ID)
-	varIDMap := make(map[*Variable]string)
-	varIDCounter := 0
+	// Collect unique variables and sort by name + definition span for deterministic IDs
+	uniqueVars := make(map[*Variable]bool)
 	for _, v := range rt.Variables {
-		if _, exists := varIDMap[v]; !exists {
-			varIDCounter++
-			varIDMap[v] = fmt.Sprintf("var_%d", varIDCounter)
+		uniqueVars[v] = true
+	}
+	var sortedUniqueVars []*Variable
+	for v := range uniqueVars {
+		sortedUniqueVars = append(sortedUniqueVars, v)
+	}
+	sort.Slice(sortedUniqueVars, func(i, j int) bool {
+		vi, vj := sortedUniqueVars[i], sortedUniqueVars[j]
+		if vi.Name != vj.Name {
+			return vi.Name < vj.Name
 		}
+		if vi.FirstDefSpan.Start.Line != vj.FirstDefSpan.Start.Line {
+			return vi.FirstDefSpan.Start.Line < vj.FirstDefSpan.Start.Line
+		}
+		return vi.FirstDefSpan.Start.Column < vj.FirstDefSpan.Start.Column
+	})
+	varIDMap := make(map[*Variable]string)
+	for i, v := range sortedUniqueVars {
+		varIDMap[v] = fmt.Sprintf("var_%d", i+1)
 	}
 
 	// Build binding ID map for shadowing references
+	// Iterate scopes by ID, then bindings by name, for deterministic IDs
+	var scopeIDs []int
+	for id := range rt.Scopes {
+		scopeIDs = append(scopeIDs, id)
+	}
+	sort.Ints(scopeIDs)
 	bindingIDMap := make(map[*Binding]string)
 	bindingIDCounter := 0
-	for _, scope := range rt.Scopes {
-		for _, binding := range scope.Bindings {
+	for _, id := range scopeIDs {
+		scope := rt.Scopes[id]
+		var bindingNames []string
+		for name := range scope.Bindings {
+			bindingNames = append(bindingNames, name)
+		}
+		sort.Strings(bindingNames)
+		for _, name := range bindingNames {
 			bindingIDCounter++
-			bindingIDMap[binding] = fmt.Sprintf("binding_%d", bindingIDCounter)
+			bindingIDMap[scope.Bindings[name]] = fmt.Sprintf("binding_%d", bindingIDCounter)
 		}
 	}
 
@@ -185,7 +212,7 @@ func (rt *ResolutionTable) ToJSON(filename string) (*JSONResolution, error) {
 	result.Variables = convertVariables(rt, varIDMap)
 
 	// Convert views
-	result.Views = convertViews(rt, result.Scopes)
+	result.Views = convertViews(rt)
 
 	// Convert closure analysis
 	result.ClosureAnalysis = convertClosureAnalysis(rt)
@@ -214,7 +241,7 @@ func convertScopes(scopes map[int]*Scope, varIDMap map[*Variable]string, binding
 		scope := scopes[id]
 		jsonScope := JSONScope{
 			ID:        scope.ID,
-			Type:      scopeTypeToString(scope.ScopeType),
+			Type:      formatScopeType(scope.ScopeType),
 			Bindings:  convertBindings(scope.Bindings, varIDMap, bindingIDMap),
 			Globals:   extractNames(scope.Globals),
 			Nonlocals: extractNames(scope.Nonlocals),
@@ -280,17 +307,21 @@ func convertVariables(rt *ResolutionTable, varIDMap map[*Variable]string) []JSON
 		varToNames[variable] = append(varToNames[variable], nameNode)
 	}
 
-	// Sort variables by ID for consistent output
+	// Sort variables by stable key for consistent output
 	type varEntry struct {
 		variable *Variable
 		id       string
+		index    int // numeric suffix for proper ordering
 	}
 	var sortedVars []varEntry
 	for v, id := range varIDMap {
-		sortedVars = append(sortedVars, varEntry{v, id})
+		// Parse the numeric suffix from "var_N"
+		var idx int
+		fmt.Sscanf(id, "var_%d", &idx)
+		sortedVars = append(sortedVars, varEntry{v, id, idx})
 	}
 	sort.Slice(sortedVars, func(i, j int) bool {
-		return sortedVars[i].id < sortedVars[j].id
+		return sortedVars[i].index < sortedVars[j].index
 	})
 
 	for _, entry := range sortedVars {
@@ -299,7 +330,7 @@ func convertVariables(rt *ResolutionTable, varIDMap map[*Variable]string) []JSON
 			ID:              entry.id,
 			Name:            variable.Name,
 			DefinitionDepth: variable.DefinitionDepth,
-			State:           variableStateToString(variable.State),
+			State:           formatVariableState(variable.State),
 			Classification: JSONClassification{
 				IsParameter:     variable.IsParameter,
 				IsGlobal:        variable.IsGlobal,
@@ -368,31 +399,18 @@ func convertReferences(names []*ast.Name, rt *ResolutionTable) []JSONReference {
 }
 
 // convertViews converts view composition data to JSON format
-func convertViews(rt *ResolutionTable, scopes []JSONScope) JSONViews {
+func convertViews(rt *ResolutionTable) JSONViews {
 	views := JSONViews{
 		Defined:    []JSONView{},
 		References: []JSONViewReference{},
 	}
 
 	// Convert defined views
+	// Views are defined in the module scope (scope 0)
 	for name, viewStmt := range rt.Views {
-		// Find scope ID for this view
-		scopeID := 0 // default to module scope
-		for _, scope := range scopes {
-			if scope.NodeType == "ViewStmt" {
-				// Match by name from bindings
-				for _, binding := range scope.Bindings {
-					if binding.Name == name {
-						scopeID = scope.ID
-						break
-					}
-				}
-			}
-		}
-
 		views.Defined = append(views.Defined, JSONView{
 			Name:    name,
-			ScopeID: scopeID,
+			ScopeID: 0,
 			Span:    spanToJSONRange(viewStmt.Span),
 		})
 	}
@@ -410,6 +428,17 @@ func convertViews(rt *ResolutionTable, scopes []JSONScope) JSONViews {
 			NodeType: "HTMLElement",
 		})
 	}
+
+	// Sort references for deterministic output
+	sort.Slice(views.References, func(i, j int) bool {
+		if views.References[i].ViewName != views.References[j].ViewName {
+			return views.References[i].ViewName < views.References[j].ViewName
+		}
+		if views.References[i].Span.Start.Line != views.References[j].Span.Start.Line {
+			return views.References[i].Span.Start.Line < views.References[j].Span.Start.Line
+		}
+		return views.References[i].Span.Start.Column < views.References[j].Span.Start.Column
+	})
 
 	return views
 }
@@ -465,15 +494,13 @@ func calculateSummary(rt *ResolutionTable, result *JSONResolution) JSONSummary {
 		FreeVars:        len(rt.FreeVars),
 	}
 
-	// Count variable types
+	// Count variable types (mutually exclusive)
 	for _, v := range result.Variables {
 		if v.Classification.IsParameter {
 			summary.Parameters++
-		}
-		if v.Classification.IsGlobal {
+		} else if v.Classification.IsGlobal {
 			summary.Globals++
-		}
-		if v.Classification.IsNonlocal {
+		} else if v.Classification.IsNonlocal {
 			summary.Nonlocals++
 		}
 	}
@@ -500,44 +527,6 @@ func spanToJSONRange(span lexer.Span) JSONSpanRange {
 // isEmptySpan checks if a span is empty/uninitialized
 func isEmptySpan(span lexer.Span) bool {
 	return span.Start.Line == 0 && span.Start.Column == 0
-}
-
-// scopeTypeToString converts ScopeType to string
-func scopeTypeToString(st ScopeType) string {
-	switch st {
-	case ModuleScopeType:
-		return "module"
-	case FunctionScopeType:
-		return "function"
-	case ClassScopeType:
-		return "class"
-	case ViewScopeType:
-		return "view"
-	case ComprehensionScopeType:
-		return "comprehension"
-	case ExceptScopeType:
-		return "except"
-	case WithScopeType:
-		return "with"
-	default:
-		return "unknown"
-	}
-}
-
-// variableStateToString converts VariableState to string
-func variableStateToString(state VariableState) string {
-	switch state {
-	case VariableUndefined:
-		return "undefined"
-	case VariableDeclared:
-		return "declared"
-	case VariableDefined:
-		return "defined"
-	case VariableUsed:
-		return "used"
-	default:
-		return "unknown"
-	}
 }
 
 // getNodeType returns the type name of an AST node

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/fjvillamarin/topple/compiler/ast"
-	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // ToText converts a ResolutionTable to a human-readable text format
@@ -96,7 +95,7 @@ func writeScopesSection(sb *strings.Builder, rt *ResolutionTable) {
 
 func writeScopeInfo(sb *strings.Builder, scope *Scope, rt *ResolutionTable) {
 	// Scope header
-	scopeType := scopeTypeToString(scope.ScopeType)
+	scopeType := formatScopeType(scope.ScopeType)
 	if scope.Parent != nil {
 		sb.WriteString(fmt.Sprintf("Scope #%d [%s] → parent: #%d\n",
 			scope.ID, scopeType, scope.Parent.ID))
@@ -121,7 +120,7 @@ func writeScopeInfo(sb *strings.Builder, scope *Scope, rt *ResolutionTable) {
 
 			// Format: name | type | state | location | flags
 			varType := formatVariableType(variable)
-			state := variableStateToString(variable.State)
+			state := formatVariableState(variable.State)
 			location := formatSpan(variable.FirstDefSpan)
 			flags := formatVariableFlags(variable)
 
@@ -174,7 +173,7 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		varMap[variable] = append(varMap[variable], nameNode)
 	}
 
-	// Sort variables by name
+	// Sort variables by name, then depth, then span for deterministic output
 	type varInfo struct {
 		variable *Variable
 		names    []*ast.Name
@@ -184,7 +183,17 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		sortedVars = append(sortedVars, varInfo{variable, names})
 	}
 	sort.Slice(sortedVars, func(i, j int) bool {
-		return sortedVars[i].variable.Name < sortedVars[j].variable.Name
+		vi, vj := sortedVars[i].variable, sortedVars[j].variable
+		if vi.Name != vj.Name {
+			return vi.Name < vj.Name
+		}
+		if vi.DefinitionDepth != vj.DefinitionDepth {
+			return vi.DefinitionDepth < vj.DefinitionDepth
+		}
+		if vi.FirstDefSpan.Start.Line != vj.FirstDefSpan.Start.Line {
+			return vi.FirstDefSpan.Start.Line < vj.FirstDefSpan.Start.Line
+		}
+		return vi.FirstDefSpan.Start.Column < vj.FirstDefSpan.Start.Column
 	})
 
 	// Table header
@@ -198,21 +207,11 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		variable := info.variable
 		names := info.names
 
-		// Get scope depth for the first occurrence
-		depth := "?"
-		if len(names) > 0 {
-			if d, exists := rt.ScopeDepths[names[0]]; exists {
-				if d == 0 {
-					depth = "0"
-				} else {
-					depth = fmt.Sprintf("%d", d)
-				}
-			}
-		}
+		depth := fmt.Sprintf("%d", variable.DefinitionDepth)
 
 		// Format variable info
 		varType := formatVariableType(variable)
-		state := variableStateToString(variable.State)
+		state := formatVariableState(variable.State)
 		flags := formatVariableFlags(variable)
 		refs := fmt.Sprintf("%d", len(names))
 
@@ -256,11 +255,16 @@ func writeViewCompositionSection(sb *strings.Builder, rt *ResolutionTable) {
 
 	sb.WriteString("\n")
 
-	// View references
+	// View references (sorted for deterministic output)
 	if hasRefs {
 		sb.WriteString("  View References:\n")
+		var refNames []string
 		for _, viewStmt := range rt.ViewElements {
-			sb.WriteString(fmt.Sprintf("    • <HTML> → %s\n", viewStmt.Name.Token.Lexeme))
+			refNames = append(refNames, viewStmt.Name.Token.Lexeme)
+		}
+		sort.Strings(refNames)
+		for _, name := range refNames {
+			sb.WriteString(fmt.Sprintf("    • <HTML> → %s\n", name))
 		}
 	} else {
 		sb.WriteString("  View References: (none)\n")
@@ -365,13 +369,4 @@ func writeSummarySection(sb *strings.Builder, rt *ResolutionTable) {
 	sb.WriteString(fmt.Sprintf("  Resolution Errors:      %d\n", len(rt.Errors)))
 
 	sb.WriteString("\n")
-}
-
-// Helper functions
-
-func formatSpan(span lexer.Span) string {
-	if span.Start.Line == 0 && span.Start.Column == 0 {
-		return "?"
-	}
-	return fmt.Sprintf("%d:%d", span.Start.Line, span.Start.Column)
 }

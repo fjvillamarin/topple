@@ -159,7 +159,7 @@ func compileDirectory(fs filesystem.FileSystem, cmp compiler.Compiler, inputDir,
 	// Compile each file
 	for _, file := range files {
 		log.DebugContext(ctx, "Compiling file", slog.String("file", file))
-		if err := compileFile(fs, cmp, file, outputDir, log, ctx); err != nil {
+		if err := compileFile(fs, cmp, file, outputDir, emitSet{}, log, ctx); err != nil {
 			return fmt.Errorf("error compiling %s: %w", file, err)
 		}
 	}

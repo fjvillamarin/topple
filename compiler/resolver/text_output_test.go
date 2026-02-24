@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -196,10 +197,10 @@ def outer(x):
 }
 
 func TestToText_WithErrors(t *testing.T) {
+	// 'global' at module level triggers a resolver error
 	source := `
-def foo():
-    global y  # Declaring global in function
-    y = 1
+global x
+x = 1
 `
 
 	scanner := lexer.NewScanner([]byte(source))
@@ -210,19 +211,27 @@ def foo():
 	resolver := NewResolver()
 	table, _ := resolver.Resolve(module)
 
+	if len(table.Errors) == 0 {
+		t.Fatal("Expected resolver errors but got none")
+	}
+
 	text, err := table.ToText("test.psx")
 	if err != nil {
 		t.Fatalf("ToText() error: %v", err)
 	}
 
-	// Should have diagnostics section
+	// Should have diagnostics section with actual errors
 	if !strings.Contains(text, "DIAGNOSTICS:") {
 		t.Error("Expected DIAGNOSTICS section")
 	}
 
-	// Should show error count in summary
-	if !strings.Contains(text, "Resolution Errors:") {
-		t.Error("Expected Resolution Errors in summary")
+	if !strings.Contains(text, "Errors: ") {
+		t.Error("Expected error count in diagnostics section")
+	}
+
+	// Should show non-zero error count in summary
+	if strings.Contains(text, "Resolution Errors:      0") {
+		t.Error("Expected non-zero Resolution Errors count in summary")
 	}
 }
 
@@ -289,12 +298,12 @@ view Test(name: str):
 		t.Errorf("Expected at least 5 section separators, got %d", sectionCount)
 	}
 
-	// Check line length doesn't exceed 80 chars (with some tolerance for data)
+	// Informational: log lines exceeding 100 chars (not a hard failure, just advisory)
 	for i, line := range lines {
 		// Skip separator lines and data lines
 		if !strings.Contains(line, "━") && !strings.Contains(line, "─") {
 			if len(line) > 100 {
-				t.Logf("Line %d exceeds 100 chars: %s", i+1, line[:50])
+				t.Logf("Advisory: line %d exceeds 100 chars: %s", i+1, line[:50])
 			}
 		}
 	}
@@ -306,7 +315,7 @@ func TestWriteResolutionText(t *testing.T) {
 	_, table := parseAndResolve(t, source)
 
 	// Write to a temporary file
-	tmpFile := t.TempDir() + "/test.res"
+	tmpFile := filepath.Join(t.TempDir(), "test.res")
 
 	err := WriteResolutionText(table, "test.psx", tmpFile)
 	if err != nil {
