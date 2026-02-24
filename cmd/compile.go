@@ -37,6 +37,7 @@ func parseEmit(raw string) (emitSet, error) {
 	}
 
 	var es emitSet
+	hasAll := false
 	for _, part := range strings.Split(raw, ",") {
 		switch strings.TrimSpace(part) {
 		case "tokens":
@@ -48,10 +49,13 @@ func parseEmit(raw string) (emitSet, error) {
 		case "transformed-ast":
 			es.TransformedAST = true
 		case "all":
-			return emitSet{Tokens: true, AST: true, Resolution: true, TransformedAST: true}, nil
+			hasAll = true
 		default:
 			return emitSet{}, fmt.Errorf("unknown emit value %q (valid: tokens, ast, resolution, transformed-ast, all)", part)
 		}
+	}
+	if hasAll {
+		return emitSet{Tokens: true, AST: true, Resolution: true, TransformedAST: true}, nil
 	}
 	return es, nil
 }

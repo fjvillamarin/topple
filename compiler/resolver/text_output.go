@@ -183,7 +183,17 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		sortedVars = append(sortedVars, varInfo{variable, names})
 	}
 	sort.Slice(sortedVars, func(i, j int) bool {
-		return sortedVars[i].variable.Name < sortedVars[j].variable.Name
+		vi, vj := sortedVars[i].variable, sortedVars[j].variable
+		if vi.Name != vj.Name {
+			return vi.Name < vj.Name
+		}
+		if vi.DefinitionDepth != vj.DefinitionDepth {
+			return vi.DefinitionDepth < vj.DefinitionDepth
+		}
+		if vi.FirstDefSpan.Start.Line != vj.FirstDefSpan.Start.Line {
+			return vi.FirstDefSpan.Start.Line < vj.FirstDefSpan.Start.Line
+		}
+		return vi.FirstDefSpan.Start.Column < vj.FirstDefSpan.Start.Column
 	})
 
 	// Table header

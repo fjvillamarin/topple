@@ -307,17 +307,21 @@ func convertVariables(rt *ResolutionTable, varIDMap map[*Variable]string) []JSON
 		varToNames[variable] = append(varToNames[variable], nameNode)
 	}
 
-	// Sort variables by ID for consistent output
+	// Sort variables by stable key for consistent output
 	type varEntry struct {
 		variable *Variable
 		id       string
+		index    int // numeric suffix for proper ordering
 	}
 	var sortedVars []varEntry
 	for v, id := range varIDMap {
-		sortedVars = append(sortedVars, varEntry{v, id})
+		// Parse the numeric suffix from "var_N"
+		var idx int
+		fmt.Sscanf(id, "var_%d", &idx)
+		sortedVars = append(sortedVars, varEntry{v, id, idx})
 	}
 	sort.Slice(sortedVars, func(i, j int) bool {
-		return sortedVars[i].id < sortedVars[j].id
+		return sortedVars[i].index < sortedVars[j].index
 	})
 
 	for _, entry := range sortedVars {
@@ -430,7 +434,10 @@ func convertViews(rt *ResolutionTable) JSONViews {
 		if views.References[i].ViewName != views.References[j].ViewName {
 			return views.References[i].ViewName < views.References[j].ViewName
 		}
-		return views.References[i].Span.Start.Line < views.References[j].Span.Start.Line
+		if views.References[i].Span.Start.Line != views.References[j].Span.Start.Line {
+			return views.References[i].Span.Start.Line < views.References[j].Span.Start.Line
+		}
+		return views.References[i].Span.Start.Column < views.References[j].Span.Start.Column
 	})
 
 	return views
