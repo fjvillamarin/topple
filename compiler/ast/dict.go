@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // DictExpr represents a dictionary literal: {key1: value1, key2: value2, **dict_expr}

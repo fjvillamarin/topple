@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 // parseStmt is a test helper that scans and parses the given source string

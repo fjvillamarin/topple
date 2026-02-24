@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"topple/compiler/ast"
-	"topple/compiler/codegen"
-	"topple/compiler/depgraph"
-	"topple/compiler/lexer"
-	"topple/compiler/module"
-	"topple/compiler/parser"
-	"topple/compiler/resolver"
-	"topple/compiler/symbol"
-	"topple/compiler/transformers"
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/codegen"
+	"github.com/fjvillamarin/topple/compiler/depgraph"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/module"
+	"github.com/fjvillamarin/topple/compiler/parser"
+	"github.com/fjvillamarin/topple/compiler/resolver"
+	"github.com/fjvillamarin/topple/compiler/symbol"
+	"github.com/fjvillamarin/topple/compiler/transformers"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // MultiFileOptions configures multi-file compilation

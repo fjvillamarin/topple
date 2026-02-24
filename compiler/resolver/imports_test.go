@@ -2,15 +2,15 @@ package resolver
 
 import (
 	"context"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/module"
+	"github.com/fjvillamarin/topple/compiler/symbol"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
-	"topple/compiler/module"
-	"topple/compiler/symbol"
-	"topple/internal/filesystem"
 )
 
 // mockFileSystem implements filesystem.FileSystem for testing

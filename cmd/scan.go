@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"topple/compiler/lexer"
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // ScanCmd defines the "scan" command which runs just the scanner

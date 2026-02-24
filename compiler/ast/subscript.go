@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // Subscript represents a subscript access expression (obj[index] or obj[start:end:step])

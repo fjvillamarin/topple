@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"topple/compiler"
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/compiler"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // CompileCmd defines the "compile" command.

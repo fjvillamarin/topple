@@ -2,9 +2,9 @@ package depgraph
 
 import (
 	"context"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/module"
 	"strings"
-	"topple/compiler/ast"
-	"topple/compiler/module"
 )
 
 // ExtractImports extracts all imports from a module AST.

@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // PSX-specific visitors that should not be called after mutation

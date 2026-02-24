@@ -1,16 +1,31 @@
 [tool.poetry]
 name = "topple"
 version = "0.1.0"
-description = "Topple - A Python transpiler for PSX (Python Syntax eXtension)"
+description = "Runtime library for PSX (Python Syntax eXtension) - HTML-like syntax for Python"
 authors = ["fjvillamarin <ferriverodiaz@gmail.com>"]
 readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/fjvillamarin/topple"
+repository = "https://github.com/fjvillamarin/topple"
+keywords = ["psx", "html", "views", "components", "transpiler"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
+]
+packages = [{ include = "topple" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+
+[tool.poetry.group.dev.dependencies]
 fastapi = "^0.115.12"
 uvicorn = "^0.34.1"
 python-multipart = "^0.0.20"
-
 
 [build-system]
 requires = ["poetry-core"]

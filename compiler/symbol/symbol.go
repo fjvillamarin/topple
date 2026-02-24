@@ -1,7 +1,7 @@
 package symbol
 
 import (
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // SymbolType represents the type of symbol

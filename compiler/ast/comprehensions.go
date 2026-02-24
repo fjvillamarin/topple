@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // ListComp represents a list comprehension: [expression for_if_clauses]

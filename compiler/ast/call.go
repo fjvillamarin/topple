@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // Call represents a function call expression (func(args))

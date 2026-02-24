@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
-	"topple/compiler/parser"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/parser"
 )
 
 // Helper function to parse PSX source and resolve it

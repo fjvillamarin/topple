@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 func (p *Parser) consume(t lexer.TokenType, message string) (lexer.Token, error) {

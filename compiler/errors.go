@@ -2,7 +2,7 @@ package compiler
 
 import (
 	"fmt"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // RuntimeError is an error that occurs in the runtime.

@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // VariableState represents the current state of a variable

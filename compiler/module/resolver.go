@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // Resolver translates import paths to filesystem paths

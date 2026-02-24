@@ -2,15 +2,15 @@ package depgraph
 
 import (
 	"context"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/module"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
-	"topple/compiler/module"
-	"topple/internal/filesystem"
 )
 
 // mockResolver implements module.Resolver for testing

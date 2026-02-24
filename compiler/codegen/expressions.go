@@ -2,8 +2,8 @@ package codegen
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/ast"
 	"strconv"
-	"topple/compiler/ast"
 )
 
 // Expression visitors

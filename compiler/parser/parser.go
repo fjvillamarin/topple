@@ -2,8 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // The scaffold parses only *one-line expression statements* so that you can

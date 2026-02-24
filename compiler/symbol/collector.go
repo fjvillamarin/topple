@@ -3,8 +3,8 @@ package symbol
 import (
 	"strings"
 
-	"topple/compiler/ast"
-	"topple/compiler/module"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/module"
 )
 
 // Collector extracts exportable symbols from an AST

@@ -2,10 +2,10 @@ package resolver
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
-	"topple/compiler/module"
-	"topple/compiler/symbol"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/module"
+	"github.com/fjvillamarin/topple/compiler/symbol"
 )
 
 // Resolver implements variable resolution for Python-like scoping

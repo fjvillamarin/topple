@@ -2,8 +2,8 @@ package transformers
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/resolver"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/resolver"
 )
 
 // TransformerVisitor is a visitor that transforms PSX-specific AST nodes into Python AST nodes

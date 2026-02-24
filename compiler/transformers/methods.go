@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // createInitMethod creates the __init__ method for the view class

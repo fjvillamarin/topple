@@ -1,9 +1,9 @@
 package symbol
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 func createTestName(name string) *ast.Name {

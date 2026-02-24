@@ -2,8 +2,8 @@ package transformers
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // SourceOrderSlot represents slot content in the order it appears in source
