@@ -2,9 +2,9 @@ package resolver
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/ast"
 	"sort"
 	"strings"
-	"topple/compiler/ast"
 )
 
 // DebugPrintResolutionTable outputs a comprehensive, formatted debug report of the given resolution table, including errors, variable states, view parameters, view composition, closure variables, and summary statistics.

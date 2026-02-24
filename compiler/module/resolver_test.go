@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // mockFileSystem implements filesystem.FileSystem for testing

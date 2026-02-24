@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // FString represents an f-string literal: f"text {expr} more text"

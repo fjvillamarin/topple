@@ -1,8 +1,8 @@
 package ast
 
 import (
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // HTMLContent represents HTML content with mixed text and interpolations: Hello {name}!

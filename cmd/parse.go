@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"topple/compiler"
-	"topple/compiler/resolver"
-	"topple/internal/filesystem"
+	"github.com/fjvillamarin/topple/compiler"
+	"github.com/fjvillamarin/topple/compiler/resolver"
+	"github.com/fjvillamarin/topple/internal/filesystem"
 )
 
 // ParseCmd defines the "parse" command which runs the scanner and parser

@@ -1,4 +1,4 @@
-module topple
+module github.com/fjvillamarin/topple
 
 go 1.23.0
 

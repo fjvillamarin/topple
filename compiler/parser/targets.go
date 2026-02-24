@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // tPrimary parses a primary expression that must be followed by an accessor.

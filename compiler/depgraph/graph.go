@@ -2,7 +2,7 @@ package depgraph
 
 import (
 	"fmt"
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // DependencyGraph represents dependencies between files

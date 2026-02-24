@@ -1,9 +1,9 @@
 package resolver
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 func TestResolverBasic(t *testing.T) {

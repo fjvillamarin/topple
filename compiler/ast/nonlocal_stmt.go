@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"strings"
-	"topple/compiler/lexer"
 )
 
 // NonlocalStmt represents a 'nonlocal' statement.

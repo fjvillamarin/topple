@@ -2,8 +2,8 @@ package codegen
 
 import (
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/ast"
 	"strings"
-	"topple/compiler/ast"
 )
 
 type CodeGenerator struct {

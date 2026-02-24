@@ -3,9 +3,9 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/symbol"
 	"strings"
-	"topple/compiler/ast"
-	"topple/compiler/symbol"
 )
 
 // Visitor implementation - this is where the main resolution logic goes

@@ -1,4 +1,46 @@
-# Topple Known Issues
+# Topple
+
+A Python transpiler that compiles PSX (Python Syntax eXtension) files to standard Python. Write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
+
+## Installation
+
+### Compiler (Go binary)
+
+Install with `go install`:
+
+```bash
+go install github.com/fjvillamarin/topple/cmd/topple@latest
+```
+
+Or with [mise](https://mise.jdx.dev/):
+
+```bash
+mise use go:github.com/fjvillamarin/topple/cmd/topple
+```
+
+Or download a pre-built binary from [GitHub Releases](https://github.com/fjvillamarin/topple/releases).
+
+### Python Runtime
+
+The generated Python code requires the Topple runtime:
+
+```bash
+pip install topple
+```
+
+## Quick Start
+
+```python
+# hello.psx
+view HelloWorld(name: str = "World"):
+    <div>Hello, {name}!</div>
+```
+
+```bash
+topple compile hello.psx -o hello.py
+```
+
+## Known Issues
 
 **Last Updated**: 2026-02-06
 

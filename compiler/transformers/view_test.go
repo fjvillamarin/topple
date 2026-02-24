@@ -1,14 +1,14 @@
 package transformers
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/codegen"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/resolver"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/codegen"
-	"topple/compiler/lexer"
-	"topple/compiler/resolver"
 )
 
 // Test case structure

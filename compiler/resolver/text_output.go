@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // ToText converts a ResolutionTable to a human-readable text format

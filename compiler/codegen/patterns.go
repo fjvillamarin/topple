@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/ast"
 )
 
 // Pattern visitors for match statements

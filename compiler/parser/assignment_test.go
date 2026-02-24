@@ -1,9 +1,9 @@
 package parser
 
 import (
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 	"testing"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
 )
 
 // Helper to extract AssignStmt from statement (might be wrapped in MultiStmt or ExprStmt)

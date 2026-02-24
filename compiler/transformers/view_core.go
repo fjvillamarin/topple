@@ -2,9 +2,9 @@ package transformers
 
 import (
 	"fmt"
-	"topple/compiler/ast"
-	"topple/compiler/lexer"
-	"topple/compiler/resolver"
+	"github.com/fjvillamarin/topple/compiler/ast"
+	"github.com/fjvillamarin/topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/resolver"
 )
 
 // ViewTransformer transforms PSX view statements into Python classes

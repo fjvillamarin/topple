@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"topple/compiler/lexer"
+	"github.com/fjvillamarin/topple/compiler/lexer"
 )
 
 // PassStmt represents a 'pass' statement, which is a no-op.
