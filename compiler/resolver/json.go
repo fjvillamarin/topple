@@ -159,22 +159,49 @@ func (rt *ResolutionTable) ToJSON(filename string) (*JSONResolution, error) {
 	}
 
 	// Build variable ID map (Variable pointer -> unique ID)
-	varIDMap := make(map[*Variable]string)
-	varIDCounter := 0
+	// Collect unique variables and sort by name + definition span for deterministic IDs
+	uniqueVars := make(map[*Variable]bool)
 	for _, v := range rt.Variables {
-		if _, exists := varIDMap[v]; !exists {
-			varIDCounter++
-			varIDMap[v] = fmt.Sprintf("var_%d", varIDCounter)
+		uniqueVars[v] = true
+	}
+	var sortedUniqueVars []*Variable
+	for v := range uniqueVars {
+		sortedUniqueVars = append(sortedUniqueVars, v)
+	}
+	sort.Slice(sortedUniqueVars, func(i, j int) bool {
+		vi, vj := sortedUniqueVars[i], sortedUniqueVars[j]
+		if vi.Name != vj.Name {
+			return vi.Name < vj.Name
 		}
+		if vi.FirstDefSpan.Start.Line != vj.FirstDefSpan.Start.Line {
+			return vi.FirstDefSpan.Start.Line < vj.FirstDefSpan.Start.Line
+		}
+		return vi.FirstDefSpan.Start.Column < vj.FirstDefSpan.Start.Column
+	})
+	varIDMap := make(map[*Variable]string)
+	for i, v := range sortedUniqueVars {
+		varIDMap[v] = fmt.Sprintf("var_%d", i+1)
 	}
 
 	// Build binding ID map for shadowing references
+	// Iterate scopes by ID, then bindings by name, for deterministic IDs
+	var scopeIDs []int
+	for id := range rt.Scopes {
+		scopeIDs = append(scopeIDs, id)
+	}
+	sort.Ints(scopeIDs)
 	bindingIDMap := make(map[*Binding]string)
 	bindingIDCounter := 0
-	for _, scope := range rt.Scopes {
-		for _, binding := range scope.Bindings {
+	for _, id := range scopeIDs {
+		scope := rt.Scopes[id]
+		var bindingNames []string
+		for name := range scope.Bindings {
+			bindingNames = append(bindingNames, name)
+		}
+		sort.Strings(bindingNames)
+		for _, name := range bindingNames {
 			bindingIDCounter++
-			bindingIDMap[binding] = fmt.Sprintf("binding_%d", bindingIDCounter)
+			bindingIDMap[scope.Bindings[name]] = fmt.Sprintf("binding_%d", bindingIDCounter)
 		}
 	}
 
@@ -185,7 +212,7 @@ func (rt *ResolutionTable) ToJSON(filename string) (*JSONResolution, error) {
 	result.Variables = convertVariables(rt, varIDMap)
 
 	// Convert views
-	result.Views = convertViews(rt, result.Scopes)
+	result.Views = convertViews(rt)
 
 	// Convert closure analysis
 	result.ClosureAnalysis = convertClosureAnalysis(rt)
@@ -368,31 +395,18 @@ func convertReferences(names []*ast.Name, rt *ResolutionTable) []JSONReference {
 }
 
 // convertViews converts view composition data to JSON format
-func convertViews(rt *ResolutionTable, scopes []JSONScope) JSONViews {
+func convertViews(rt *ResolutionTable) JSONViews {
 	views := JSONViews{
 		Defined:    []JSONView{},
 		References: []JSONViewReference{},
 	}
 
 	// Convert defined views
+	// Views are defined in the module scope (scope 0)
 	for name, viewStmt := range rt.Views {
-		// Find scope ID for this view
-		scopeID := 0 // default to module scope
-		for _, scope := range scopes {
-			if scope.NodeType == "ViewStmt" {
-				// Match by name from bindings
-				for _, binding := range scope.Bindings {
-					if binding.Name == name {
-						scopeID = scope.ID
-						break
-					}
-				}
-			}
-		}
-
 		views.Defined = append(views.Defined, JSONView{
 			Name:    name,
-			ScopeID: scopeID,
+			ScopeID: 0,
 			Span:    spanToJSONRange(viewStmt.Span),
 		})
 	}
@@ -410,6 +424,14 @@ func convertViews(rt *ResolutionTable, scopes []JSONScope) JSONViews {
 			NodeType: "HTMLElement",
 		})
 	}
+
+	// Sort references for deterministic output
+	sort.Slice(views.References, func(i, j int) bool {
+		if views.References[i].ViewName != views.References[j].ViewName {
+			return views.References[i].ViewName < views.References[j].ViewName
+		}
+		return views.References[i].Span.Start.Line < views.References[j].Span.Start.Line
+	})
 
 	return views
 }
@@ -465,15 +487,13 @@ func calculateSummary(rt *ResolutionTable, result *JSONResolution) JSONSummary {
 		FreeVars:        len(rt.FreeVars),
 	}
 
-	// Count variable types
+	// Count variable types (mutually exclusive)
 	for _, v := range result.Variables {
 		if v.Classification.IsParameter {
 			summary.Parameters++
-		}
-		if v.Classification.IsGlobal {
+		} else if v.Classification.IsGlobal {
 			summary.Globals++
-		}
-		if v.Classification.IsNonlocal {
+		} else if v.Classification.IsNonlocal {
 			summary.Nonlocals++
 		}
 	}

@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -306,7 +307,7 @@ func TestWriteResolutionText(t *testing.T) {
 	_, table := parseAndResolve(t, source)
 
 	// Write to a temporary file
-	tmpFile := t.TempDir() + "/test.res"
+	tmpFile := filepath.Join(t.TempDir(), "test.res")
 
 	err := WriteResolutionText(table, "test.psx", tmpFile)
 	if err != nil {

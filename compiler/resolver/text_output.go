@@ -197,17 +197,7 @@ func writeVariablesSection(sb *strings.Builder, rt *ResolutionTable) {
 		variable := info.variable
 		names := info.names
 
-		// Get scope depth for the first occurrence
-		depth := "?"
-		if len(names) > 0 {
-			if d, exists := rt.ScopeDepths[names[0]]; exists {
-				if d == 0 {
-					depth = "0"
-				} else {
-					depth = fmt.Sprintf("%d", d)
-				}
-			}
-		}
+		depth := fmt.Sprintf("%d", variable.DefinitionDepth)
 
 		// Format variable info
 		varType := formatVariableType(variable)
@@ -258,8 +248,13 @@ func writeViewCompositionSection(sb *strings.Builder, rt *ResolutionTable) {
 	// View references
 	if hasRefs {
 		sb.WriteString("  View References:\n")
+		var refNames []string
 		for _, viewStmt := range rt.ViewElements {
-			sb.WriteString(fmt.Sprintf("    • <HTML> → %s\n", viewStmt.Name.Token.Lexeme))
+			refNames = append(refNames, viewStmt.Name.Token.Lexeme)
+		}
+		sort.Strings(refNames)
+		for _, name := range refNames {
+			sb.WriteString(fmt.Sprintf("    • <HTML> → %s\n", name))
 		}
 	} else {
 		sb.WriteString("  View References: (none)\n")

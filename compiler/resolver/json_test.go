@@ -373,7 +373,7 @@ def foo(a, b):
 		t.Errorf("Expected 2 scopes in summary, got %d", summary.TotalScopes)
 	}
 
-	// Should have 4 variables (x, foo, a, b, y)
+	// Should have 5 variables (x, foo, a, b, y)
 	if summary.TotalVariables != 5 {
 		t.Errorf("Expected 5 variables in summary, got %d", summary.TotalVariables)
 	}
