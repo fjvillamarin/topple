@@ -2,33 +2,48 @@
 
 A Python transpiler that compiles PSX (Python Syntax eXtension) files to standard Python. Write HTML-like syntax within Python code for creating dynamic web UIs, similar to JSX/TSX in the JavaScript ecosystem.
 
-## Installation
+## Project Setup
 
-### Compiler (Go binary)
+Add Topple to any Python project with [mise](https://mise.jdx.dev/) and [Poetry](https://python-poetry.org/):
 
-Install with `go install`:
+**`.mise.toml`** — add the compiler:
+
+```toml
+[tools]
+"go:github.com/fjvillamarin/topple/cmd/topple" = "latest"
+```
+
+**`pyproject.toml`** — add the runtime:
+
+```toml
+[tool.poetry.dependencies]
+topple = "^0.1.0"
+```
+
+Then install both:
 
 ```bash
+mise install        # installs the topple CLI
+poetry install      # installs the Python runtime
+```
+
+### Alternative Installation
+
+If you don't use mise/Poetry, you can install each component directly:
+
+```bash
+# Compiler (requires Go 1.23+)
 go install github.com/fjvillamarin/topple/cmd/topple@latest
-```
 
-Or with [mise](https://mise.jdx.dev/):
-
-```bash
-mise use go:github.com/fjvillamarin/topple/cmd/topple
-```
-
-Or download a pre-built binary from [GitHub Releases](https://github.com/fjvillamarin/topple/releases).
-
-### Python Runtime
-
-The generated Python code requires the Topple runtime:
-
-```bash
+# Runtime
 pip install topple
 ```
 
+Pre-built binaries are also available from [GitHub Releases](https://github.com/fjvillamarin/topple/releases).
+
 ## Quick Start
+
+Create a `.psx` file:
 
 ```python
 # hello.psx
@@ -36,8 +51,20 @@ view HelloWorld(name: str = "World"):
     <div>Hello, {name}!</div>
 ```
 
+Compile it:
+
 ```bash
 topple compile hello.psx -o hello.py
+```
+
+Use it in your Python app:
+
+```python
+from hello import HelloWorld
+
+view = HelloWorld(name="Topple")
+print(view.render())
+# <div>Hello, Topple!</div>
 ```
 
 ## Known Issues
