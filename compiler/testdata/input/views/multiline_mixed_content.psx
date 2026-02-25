@@ -1,0 +1,15 @@
+view MixedContent(items: list, show_header: bool):
+    <div>
+        <p>
+            Here is some text
+            with {len(items)} items below.
+        </p>
+        if show_header:
+            <h1>Items List</h1>
+        for item in items:
+            <li>{item}</li>
+        <footer>
+            End of list
+            with {len(items)} total items.
+        </footer>
+    </div>
