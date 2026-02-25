@@ -327,8 +327,26 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 			continue
 		}
 
-		// Handle nested HTML elements or Python statements only
-		// Multiline HTML does NOT support raw HTML text
+		// Check for HTML text or interpolation tokens (multiline text content)
+		if p.check(lexer.HTMLTextInline) || p.check(lexer.HTMLInterpolationStart) {
+			htmlParts, err := p.parseHTMLContentParts()
+			if err != nil {
+				return nil, ast.HTMLMultilineElement, err
+			}
+			if len(htmlParts) > 0 {
+				htmlContent := &ast.HTMLContent{
+					Parts: htmlParts,
+					Span:  lexer.Span{Start: htmlParts[0].GetSpan().Start, End: htmlParts[len(htmlParts)-1].GetSpan().End},
+				}
+				content = append(content, htmlContent)
+			}
+			for p.check(lexer.Newline) {
+				p.advance()
+			}
+			continue
+		}
+
+		// Handle nested HTML elements or Python statements
 		stmt, err := p.viewStatement_inner()
 		if err != nil {
 			return nil, ast.HTMLMultilineElement, err
@@ -349,6 +367,9 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 	if err != nil {
 		return nil, ast.HTMLMultilineElement, err
 	}
+
+	// Merge consecutive text content with space separators (HTML whitespace collapsing)
+	content = mergeAdjacentHTMLContent(content)
 
 	// Parse closing tag
 	err = p.consumeClosingTag(tagNameToken)
@@ -449,6 +470,55 @@ func (p *Parser) parseHTMLContentParts() ([]ast.HTMLContentPart, error) {
 	}
 
 	return parts, nil
+}
+
+// mergeAdjacentHTMLContent merges consecutive HTMLContent nodes in a content list,
+// joining them with a space separator (HTML whitespace collapsing).
+func mergeAdjacentHTMLContent(content []ast.Stmt) []ast.Stmt {
+	if len(content) <= 1 {
+		return content
+	}
+
+	var result []ast.Stmt
+	var pendingParts []ast.HTMLContentPart
+	var pendingStart lexer.Position
+
+	for _, stmt := range content {
+		if htmlContent, ok := stmt.(*ast.HTMLContent); ok {
+			if len(pendingParts) > 0 {
+				// Add a space separator between lines
+				pendingParts = append(pendingParts, &ast.HTMLText{
+					Value: " ",
+					Span:  htmlContent.Span,
+				})
+			} else {
+				pendingStart = htmlContent.Span.Start
+			}
+			pendingParts = append(pendingParts, htmlContent.Parts...)
+		} else {
+			// Non-text content — flush pending text first
+			if len(pendingParts) > 0 {
+				merged := &ast.HTMLContent{
+					Parts: pendingParts,
+					Span:  lexer.Span{Start: pendingStart, End: pendingParts[len(pendingParts)-1].GetSpan().End},
+				}
+				result = append(result, merged)
+				pendingParts = nil
+			}
+			result = append(result, stmt)
+		}
+	}
+
+	// Flush remaining pending text
+	if len(pendingParts) > 0 {
+		merged := &ast.HTMLContent{
+			Parts: pendingParts,
+			Span:  lexer.Span{Start: pendingStart, End: pendingParts[len(pendingParts)-1].GetSpan().End},
+		}
+		result = append(result, merged)
+	}
+
+	return result
 }
 
 // consumeClosingTag parses and validates a closing tag

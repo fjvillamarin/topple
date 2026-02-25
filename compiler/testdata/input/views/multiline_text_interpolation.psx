@@ -1,0 +1,11 @@
+view Greeting(name: str, title: str):
+    <div>
+        <p>
+            Hello {name},
+            welcome to {title}!
+        </p>
+        <span>
+            Your name is {name}
+            and your title is {title}.
+        </span>
+    </div>
