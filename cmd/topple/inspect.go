@@ -67,17 +67,16 @@ func (c *InspectCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 
 // inspectSummary shows a compact overview of all pipeline stages.
 func (c *InspectCmd) inspectSummary(content []byte, filename string) error {
-	// Scan
-	tokens, scanErrs := compiler.Scan(content)
-	tokenCount := 0
-	if tokens != nil {
-		tokenCount = len(tokens)
-	}
+	// Scan — use scanner directly to get token count even on errors
+	scanner := lexer.NewScanner(content)
+	tokens := scanner.ScanTokens()
+	tokenCount := len(tokens)
+	scanErrs := scanner.Errors
 
-	// Parse
+	// Parse — only if scan succeeded
 	var module *ast.Module
 	var parseErrs []error
-	if tokens != nil {
+	if len(scanErrs) == 0 {
 		module, parseErrs = compiler.ParseTokens(tokens)
 	}
 
@@ -106,11 +105,11 @@ func (c *InspectCmd) inspectSummary(content []byte, filename string) error {
 
 	// Gather stats
 	scopeCount := 0
-	var scopeTypes []string
+	scopeTypes := []string{}
 	varTotal := 0
 	paramCount := 0
 	localCount := 0
-	var viewNames []string
+	viewNames := []string{}
 
 	if table != nil {
 		scopeCount = len(table.Scopes)
@@ -206,7 +205,7 @@ func (c *InspectCmd) inspectTokens(content []byte, filename string) error {
 			Literal any    `json:"literal"`
 			Span    string `json:"span"`
 		}
-		var out []jsonToken
+		out := []jsonToken{}
 		for i, tok := range tokens {
 			out = append(out, jsonToken{
 				Index:   i,
@@ -217,7 +216,17 @@ func (c *InspectCmd) inspectTokens(content []byte, filename string) error {
 				Span:    tok.Span.String(),
 			})
 		}
-		return printJSON(out)
+		result := map[string]any{
+			"tokens": out,
+		}
+		if len(scanner.Errors) > 0 {
+			var errStrings []string
+			for _, e := range scanner.Errors {
+				errStrings = append(errStrings, e.Error())
+			}
+			result["errors"] = errStrings
+		}
+		return printJSON(result)
 	}
 
 	// Text output — same format as topple scan
@@ -276,6 +285,8 @@ func (c *InspectCmd) inspectAST(content []byte, filename string) error {
 }
 
 // inspectResolution shows the resolution table.
+// Resolution output is shown even when the resolver reports errors,
+// since the partial data is useful for debugging scope/binding issues.
 func (c *InspectCmd) inspectResolution(content []byte, filename string) error {
 	module, errors := compiler.Parse(content)
 	if module == nil {
@@ -284,7 +295,7 @@ func (c *InspectCmd) inspectResolution(content []byte, filename string) error {
 
 	res := resolver.NewResolver()
 	table, err := res.Resolve(module)
-	if err != nil {
+	if err != nil && table == nil {
 		return fmt.Errorf("resolution failed: %w", err)
 	}
 
@@ -305,6 +316,8 @@ func (c *InspectCmd) inspectResolution(content []byte, filename string) error {
 }
 
 // inspectAnnotated shows source code with inline resolution annotations.
+// Annotated output is shown even when the resolver reports errors,
+// since the partial data is useful for debugging scope/binding issues.
 func (c *InspectCmd) inspectAnnotated(content []byte, filename string) error {
 	module, errors := compiler.Parse(content)
 	if module == nil {
@@ -313,7 +326,7 @@ func (c *InspectCmd) inspectAnnotated(content []byte, filename string) error {
 
 	res := resolver.NewResolver()
 	table, err := res.Resolve(module)
-	if err != nil {
+	if err != nil && table == nil {
 		return fmt.Errorf("resolution failed: %w", err)
 	}
 
@@ -346,7 +359,7 @@ func (c *InspectCmd) inspectTransform(content []byte, filename string) error {
 		return fmt.Errorf("resolution failed: %w", err)
 	}
 	if len(table.Errors) > 0 {
-		return fmt.Errorf("resolution errors: %v", table.Errors[0])
+		return formatResolutionErrors(table.Errors)
 	}
 
 	tv := transformers.NewTransformerVisitor()
@@ -384,7 +397,7 @@ func (c *InspectCmd) inspectCodegen(content []byte, filename string) error {
 		return fmt.Errorf("resolution failed: %w", err)
 	}
 	if len(table.Errors) > 0 {
-		return fmt.Errorf("resolution errors: %v", table.Errors[0])
+		return formatResolutionErrors(table.Errors)
 	}
 
 	tv := transformers.NewTransformerVisitor()
@@ -438,6 +451,15 @@ func formatScopeType(scopeType resolver.ScopeType) string {
 	default:
 		return "unknown"
 	}
+}
+
+// formatResolutionErrors returns a combined error from resolution errors.
+func formatResolutionErrors(errors []error) error {
+	var msgs []string
+	for _, e := range errors {
+		msgs = append(msgs, e.Error())
+	}
+	return fmt.Errorf("resolution errors (%d):\n  %s", len(errors), strings.Join(msgs, "\n  "))
 }
 
 // formatParseErrors returns a combined error from parse errors.
