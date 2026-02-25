@@ -22,7 +22,7 @@ import (
 // entry point for inspecting any compilation stage.
 type InspectCmd struct {
 	Input string `arg:"" required:"" help:"Path to a PSX file"`
-	Stage string `help:"Pipeline stage to inspect: summary, tokens, ast, resolution, transform, codegen" default:"summary" enum:"summary,tokens,ast,resolution,transform,codegen"`
+	Stage string `help:"Pipeline stage to inspect: summary, tokens, ast, resolution, annotated, transform, codegen" default:"summary" enum:"summary,tokens,ast,resolution,annotated,transform,codegen"`
 	JSON  bool   `help:"Output in JSON format" default:"false"`
 }
 
@@ -54,6 +54,8 @@ func (c *InspectCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 		return c.inspectAST(content, filename)
 	case "resolution":
 		return c.inspectResolution(content, filename)
+	case "annotated":
+		return c.inspectAnnotated(content, filename)
 	case "transform":
 		return c.inspectTransform(content, filename)
 	case "codegen":
@@ -308,6 +310,37 @@ func (c *InspectCmd) inspectResolution(content []byte, filename string) error {
 	text, err := table.ToText(filename)
 	if err != nil {
 		return fmt.Errorf("text conversion failed: %w", err)
+	}
+	fmt.Print(text)
+	return nil
+}
+
+// inspectAnnotated shows source code with inline resolution annotations.
+// Annotated output is shown even when the resolver reports errors,
+// since the partial data is useful for debugging scope/binding issues.
+func (c *InspectCmd) inspectAnnotated(content []byte, filename string) error {
+	module, errors := compiler.Parse(content)
+	if module == nil {
+		return formatParseErrors(errors)
+	}
+
+	res := resolver.NewResolver()
+	table, err := res.Resolve(module)
+	if err != nil && table == nil {
+		return fmt.Errorf("resolution failed: %w", err)
+	}
+
+	if c.JSON {
+		jsonRes, err := table.ToAnnotatedJSON(filename, content)
+		if err != nil {
+			return fmt.Errorf("JSON conversion failed: %w", err)
+		}
+		return printJSON(jsonRes)
+	}
+
+	text, err := table.ToAnnotatedText(filename, content)
+	if err != nil {
+		return fmt.Errorf("annotated text conversion failed: %w", err)
 	}
 	fmt.Print(text)
 	return nil
