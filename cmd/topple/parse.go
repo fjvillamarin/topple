@@ -22,7 +22,7 @@ type ParseCmd struct {
 
 	// Whether to write output files
 	WriteAST bool   `help:"Write AST to .ast files" short:"w" default:"false"`
-	Format   string `help:"Resolution output format: text, json, all, none" default:"none" enum:"text,json,all,none"`
+	Format   string `help:"Resolution output format: text, json, all, annotated, none" default:"none" enum:"text,json,all,annotated,none"`
 }
 
 // Run executes the parse command.
@@ -133,7 +133,7 @@ func parseFile(fs filesystem.FileSystem, path, outputDir string, writeAST bool, 
 
 	// Write resolution outputs if requested
 	if format != "none" && resolutionTable != nil {
-		if err := writeResolutionOutputs(fs, path, outputDir, format, resolutionTable, filename, log, ctx); err != nil {
+		if err := writeResolutionOutputs(fs, path, outputDir, format, resolutionTable, filename, content, writeAST, log, ctx); err != nil {
 			return fmt.Errorf("error writing resolution outputs: %w", err)
 		}
 	}
@@ -190,7 +190,7 @@ func getResolutionOutputPath(fs filesystem.FileSystem, inputPath, outputDir, ext
 }
 
 // writeResolutionOutputs writes resolution files based on the format flag
-func writeResolutionOutputs(fs filesystem.FileSystem, inputPath, outputDir, format string, table *resolver.ResolutionTable, filename string, log *slog.Logger, ctx context.Context) error {
+func writeResolutionOutputs(fs filesystem.FileSystem, inputPath, outputDir, format string, table *resolver.ResolutionTable, filename string, source []byte, writeFiles bool, log *slog.Logger, ctx context.Context) error {
 	// Write text format
 	if format == "text" || format == "all" {
 		resPath := getResolutionOutputPath(fs, inputPath, outputDir, ".res")
@@ -211,6 +211,27 @@ func writeResolutionOutputs(fs filesystem.FileSystem, inputPath, outputDir, form
 		log.InfoContext(ctx, "Wrote resolution JSON file",
 			slog.String("input", inputPath),
 			slog.String("output", jsonPath))
+	}
+
+	// Write annotated format
+	if format == "annotated" {
+		text, err := table.ToAnnotatedText(filename, source)
+		if err != nil {
+			return fmt.Errorf("error generating annotated output: %w", err)
+		}
+
+		if !writeFiles {
+			fmt.Println()
+			fmt.Print(text)
+		} else {
+			annotatedPath := getResolutionOutputPath(fs, inputPath, outputDir, ".annotated")
+			if err := resolver.WriteAnnotatedText(table, filename, source, annotatedPath); err != nil {
+				return fmt.Errorf("error writing annotated file: %w", err)
+			}
+			log.InfoContext(ctx, "Wrote annotated file",
+				slog.String("input", inputPath),
+				slog.String("output", annotatedPath))
+		}
 	}
 
 	return nil
