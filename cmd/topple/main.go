@@ -38,6 +38,7 @@ type CLI struct {
 	Watch   WatchCmd   `cmd:"" help:"Watch for changes and compile on the fly"`
 	Scan    ScanCmd    `cmd:"" help:"Run the scanner and show/output tokens"`
 	Parse   ParseCmd   `cmd:"" help:"Parse source files and show/output AST"`
+	Inspect InspectCmd `cmd:"" help:"Inspect compilation stages for a PSX file"`
 }
 
 func main() {
