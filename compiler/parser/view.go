@@ -327,8 +327,28 @@ func (p *Parser) parseMultilineContent(tagNameToken lexer.Token) ([]ast.Stmt, as
 			continue
 		}
 
-		// Handle nested HTML elements or Python statements only
-		// Multiline HTML does NOT support raw HTML text
+		// Handle HTML text content (multiline text support)
+		if p.check(lexer.HTMLTextInline) || p.check(lexer.HTMLInterpolationStart) {
+			htmlParts, err := p.parseHTMLContentParts()
+			if err != nil {
+				return nil, ast.HTMLMultilineElement, err
+			}
+			if len(htmlParts) > 0 {
+				htmlContent := &ast.HTMLContent{
+					Parts: htmlParts,
+					Span:  lexer.Span{Start: htmlParts[0].GetSpan().Start, End: htmlParts[len(htmlParts)-1].GetSpan().End},
+				}
+				content = append(content, htmlContent)
+			}
+
+			// Consume newlines after text content
+			for p.check(lexer.Newline) {
+				p.advance()
+			}
+			continue
+		}
+
+		// Handle nested HTML elements or Python statements
 		stmt, err := p.viewStatement_inner()
 		if err != nil {
 			return nil, ast.HTMLMultilineElement, err

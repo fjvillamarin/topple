@@ -1,0 +1,35 @@
+view SimpleMultiline():
+    <p>
+        This is a longer paragraph
+        that spans multiple lines.
+    </p>
+
+view MultilineWithInterpolation(name: str):
+    <div>
+        <h1>Welcome</h1>
+        <p>
+            Hello, {name}! Welcome to
+            our website. We hope you enjoy
+            your stay.
+        </p>
+    </div>
+
+view MultilineWithKeywords():
+    <p>
+        This is not a drill and
+        or maybe it is.
+    </p>
+
+view MultilineMixed():
+    <div>
+        <p>
+            First paragraph with
+            multiple lines.
+        </p>
+        if True:
+            <span>Conditional content</span>
+        <p>
+            Second paragraph with
+            more text here.
+        </p>
+    </div>

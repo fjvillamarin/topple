@@ -377,3 +377,18 @@ func IsKeyword(s string) bool {
 	_, ok := Keywords[s]
 	return ok
 }
+
+// IsStatementKeyword reports whether s is a keyword that can start a
+// Python statement. Used to distinguish Python code from HTML text content
+// in multiline HTML elements (e.g., "if" starts a statement, but "and"
+// is just a word in prose).
+func IsStatementKeyword(s string) bool {
+	switch s {
+	case "assert", "async", "break", "case", "class", "continue", "def", "del",
+		"elif", "else", "except", "finally", "for", "from", "global",
+		"if", "import", "match", "nonlocal", "pass", "raise", "return",
+		"try", "while", "with", "yield", "view", "component":
+		return true
+	}
+	return false
+}

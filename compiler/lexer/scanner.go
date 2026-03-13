@@ -276,17 +276,35 @@ func (s *Scanner) handleLineStart() {
 		return
 	}
 
+	// Check if we have a pending HTML content mode from the stack
+	pendingHTMLContent := len(s.ctx.modeStack) > 0 && s.ctx.modeStack[len(s.ctx.modeStack)-1] == HTMLContentMode
+
 	// Skip whitespace to find first significant character
 	firstChar := s.peekFirstNonWhitespace()
 
 	switch {
 	case firstChar == '<':
-		// Line starts with < → HTML mode
+		// Line starts with < → HTML mode (could be closing tag or nested element)
 		s.ctx.mode = HTMLTagMode
 		// Skip to the '<' character
 		s.skipToFirstNonWhitespace()
+		// Pop pending HTML content mode since we're handling a tag
+		if pendingHTMLContent {
+			s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1]
+		}
+
+	case pendingHTMLContent && s.looksLikeHTMLText():
+		// Inside HTML element content and line looks like text (not Python code).
+		// Restore HTMLContentMode so the text is scanned as HTML content,
+		// enabling multiline text within HTML elements.
+		s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1]
+		s.ctx.mode = HTMLContentMode
 
 	case isIdentifierStart(firstChar):
+		// Pop pending HTML content mode — we're treating this as Python
+		if pendingHTMLContent {
+			s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1]
+		}
 		// Check if it's a keyword that indicates Python mode
 		if s.isKeywordAtPosition() {
 			s.ctx.mode = PythonMode
@@ -300,6 +318,10 @@ func (s *Scanner) handleLineStart() {
 		// (don't change mode)
 
 	default:
+		// Pop pending HTML content mode
+		if pendingHTMLContent {
+			s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1]
+		}
 		// Default to Python mode for other cases
 		s.ctx.mode = PythonMode
 	}
@@ -367,6 +389,122 @@ func (s *Scanner) isKeywordAtPosition() bool {
 	s.cur = savedCur
 
 	return isKeyword
+}
+
+// isStatementKeywordAtPosition checks if there's a Python statement keyword
+// at the current position. Unlike isKeywordAtPosition, this only matches
+// keywords that can start a statement (not expression keywords like "and", "or").
+func (s *Scanner) isStatementKeywordAtPosition() bool {
+	savedCur := s.cur
+
+	if !isIdentifierStart(s.peekFirstNonWhitespace()) {
+		return false
+	}
+
+	// Skip to first non-whitespace
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+	}
+
+	start := s.cur
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if !isIdentifierContinue(r) {
+			break
+		}
+		s.cur += size
+	}
+
+	identifier := string(s.src[start:s.cur])
+	result := IsStatementKeyword(identifier)
+
+	s.cur = savedCur
+	return result
+}
+
+// looksLikeHTMLText determines whether the current line looks like HTML text
+// content rather than a Python statement. Used inside multiline HTML elements
+// to distinguish prose (e.g. "Hello world") from code (e.g. "i = start").
+//
+// Heuristic: if the line starts with a statement keyword, it's Python.
+// If the first identifier is followed by an operator character (=, (, ., [, etc.),
+// it's Python. Otherwise, it's HTML text.
+func (s *Scanner) looksLikeHTMLText() bool {
+	firstChar := s.peekFirstNonWhitespace()
+
+	// Non-identifier start characters: likely not text
+	// (could be numbers, operators, etc. — treat as Python)
+	if !isIdentifierStart(firstChar) {
+		// Special case: { starts an interpolation in HTML content
+		if firstChar == '{' {
+			return true
+		}
+		return false
+	}
+
+	// Statement keywords are always Python
+	if s.isStatementKeywordAtPosition() {
+		return false
+	}
+
+	// Look ahead past the first identifier to see what follows
+	savedCur := s.cur
+
+	// Skip to first non-whitespace
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+	}
+
+	// Read the first identifier
+	identStart := s.cur
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if !isIdentifierContinue(r) {
+			break
+		}
+		s.cur += size
+	}
+	identifier := string(s.src[identStart:s.cur])
+
+	// Skip whitespace after the identifier
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' {
+			break
+		}
+		s.cur += size
+	}
+
+	// Check what follows the first identifier (after whitespace)
+	var nextChar rune = -1
+	if s.cur < len(s.src) {
+		nextChar, _ = utf8.DecodeRune(s.src[s.cur:])
+	}
+
+	s.cur = savedCur
+
+	// If followed by operator/assignment characters, it's Python code
+	switch nextChar {
+	case '=', '(', '.', '[', ':', '+', '-', '*', '/', '%', '@', '!', '~', '^', '&', '|':
+		return false
+	// String prefix followed by quote (f"...", r"...", b"...", etc.) is Python code
+	case '"', '\'':
+		if isStringPrefix(identifier) {
+			return false
+		}
+	}
+
+	// If followed by another identifier (word), it's text
+	// If followed by newline, <, {, or EOF, it's also text
+	return true
 }
 
 // detectViewFunction checks if we're entering a view function
@@ -1647,6 +1785,7 @@ func (s *Scanner) scanHTMLTag() {
 		if s.peek() == '/' {
 			s.advance()               // consume '/'
 			s.addToken(TagCloseStart) // Emit '</' token
+			s.ctx.isClosingTag = true // Track that we're in a closing tag
 			// Stay in tag mode to handle tag name
 			return
 		}
@@ -1673,6 +1812,15 @@ func (s *Scanner) scanHTMLTag() {
 		case '>':
 			// End of tag
 			s.addToken(TagClose)
+			if s.ctx.isClosingTag {
+				// After a closing tag like </p>, go back to content mode
+				// for the parent element (there may be more content or siblings).
+				// Clear any pending HTML content from the stack since the element is closed.
+				s.ctx.isClosingTag = false
+				if len(s.ctx.modeStack) > 0 && s.ctx.modeStack[len(s.ctx.modeStack)-1] == HTMLContentMode {
+					s.ctx.modeStack = s.ctx.modeStack[:len(s.ctx.modeStack)-1]
+				}
+			}
 			s.ctx.mode = HTMLContentMode
 			return
 		case '/':
@@ -1746,9 +1894,12 @@ func (s *Scanner) scanHTMLContent() {
 			}
 
 			// Let the main scanner handle the newline properly
-			// by returning to Python mode temporarily
+			// by returning to Python mode temporarily.
+			// Push HTMLContentMode onto the stack so handleLineStart
+			// (called after handleNewline processes the newline) can
+			// restore it for multiline text content.
+			s.ctx.modeStack = append(s.ctx.modeStack, HTMLContentMode)
 			s.ctx.mode = PythonMode
-			s.ctx.atLineStart = true
 			return
 
 		default:
@@ -1849,3 +2000,14 @@ func (s *Scanner) addHTMLText(textStart int, startLine int, startCol int) {
 // ── small utility ───────────────────────────────────────────────────
 
 func isDigit(r rune) bool { return unicode.IsDigit(r) }
+
+// isStringPrefix checks if s is a valid Python string prefix (f, r, b, rf, fr, etc.)
+func isStringPrefix(s string) bool {
+	switch s {
+	case "f", "r", "b", "u", "F", "R", "B", "U",
+		"rf", "fr", "rb", "br", "Rf", "fR", "FR",
+		"rF", "Fr", "RF", "Rb", "bR", "BR", "rB", "Br", "RB":
+		return true
+	}
+	return false
+}
