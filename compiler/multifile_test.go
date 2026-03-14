@@ -571,3 +571,424 @@ func TestCollectAllFiles_NonexistentPath(t *testing.T) {
 		t.Fatalf("Expected error for nonexistent path, got %d files", len(files))
 	}
 }
+
+// === Cross-File View Import Tests ===
+
+func TestMultiFileCompiler_CrossFileViewImport(t *testing.T) {
+	// R1: from components import StatusBadge should resolve view definitions
+	files := map[string]string{
+		"components.psx": `
+view StatusBadge(dirty: bool):
+    if dirty:
+        <span class="text-yellow-400">dirty</span>
+    else:
+        <span class="text-green-400">clean</span>
+`,
+		"dashboard.psx": `
+from components import StatusBadge
+
+view RepoCard(repo: dict):
+    <div>
+        <h3>{repo["name"]}</h3>
+        <StatusBadge dirty={repo["dirty"]} />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "components.psx"),
+			filepath.Join(tmpDir, "dashboard.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	if len(output.CompiledFiles) != 2 {
+		t.Errorf("Expected 2 compiled files, got %d", len(output.CompiledFiles))
+	}
+
+	// Check dashboard was compiled with proper view composition
+	dashboardPath := filepath.Join(tmpDir, "dashboard.psx")
+	dashboardCode, exists := output.CompiledFiles[dashboardPath]
+	if !exists {
+		t.Fatalf("dashboard.psx not compiled")
+	}
+
+	codeStr := string(dashboardCode)
+
+	// Should have the import statement preserved
+	if !strings.Contains(codeStr, "from components import StatusBadge") {
+		t.Errorf("Expected 'from components import StatusBadge' in output, got:\n%s", codeStr)
+	}
+
+	// Should have StatusBadge instantiation (view composition)
+	if !strings.Contains(codeStr, "StatusBadge(") {
+		t.Errorf("Expected StatusBadge() instantiation in output, got:\n%s", codeStr)
+	}
+
+	// Should NOT have "undefined view component" error
+	if strings.Contains(codeStr, "undefined view component") {
+		t.Errorf("Output should not contain 'undefined view component' error")
+	}
+
+	// Check components was compiled with BaseView
+	componentsPath := filepath.Join(tmpDir, "components.psx")
+	componentsCode, exists := output.CompiledFiles[componentsPath]
+	if !exists {
+		t.Fatalf("components.psx not compiled")
+	}
+
+	componentsStr := string(componentsCode)
+	if !strings.Contains(componentsStr, "class StatusBadge(BaseView)") {
+		t.Errorf("Expected StatusBadge class in components output, got:\n%s", componentsStr)
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_MultipleViews(t *testing.T) {
+	// R2: Multiple view imports from the same file
+	files := map[string]string{
+		"components.psx": `
+view StatusBadge(dirty: bool):
+    if dirty:
+        <span>dirty</span>
+    else:
+        <span>clean</span>
+
+view EmptyState(message: str):
+    <div class="empty">{message}</div>
+`,
+		"page.psx": `
+from components import StatusBadge, EmptyState
+
+view DashboardPage(repos: list):
+    <div>
+        if len(repos) == 0:
+            <EmptyState message="No repositories" />
+        else:
+            for repo in repos:
+                <StatusBadge dirty={repo["dirty"]} />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "components.psx"),
+			filepath.Join(tmpDir, "page.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	pagePath := filepath.Join(tmpDir, "page.psx")
+	pageCode, exists := output.CompiledFiles[pagePath]
+	if !exists {
+		t.Fatalf("page.psx not compiled")
+	}
+
+	codeStr := string(pageCode)
+
+	// Both view compositions should work
+	if !strings.Contains(codeStr, "StatusBadge(") {
+		t.Errorf("Expected StatusBadge() instantiation in output")
+	}
+	if !strings.Contains(codeStr, "EmptyState(") {
+		t.Errorf("Expected EmptyState() instantiation in output")
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_Subdirectory(t *testing.T) {
+	// R3: Subdirectory imports (from ui.buttons import PrimaryButton)
+	files := map[string]string{
+		"ui/buttons.psx": `
+view PrimaryButton(label: str):
+    <button class="primary">{label}</button>
+`,
+		"page.psx": `
+from ui.buttons import PrimaryButton
+
+view LoginPage():
+    <div>
+        <PrimaryButton label="Sign In" />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "ui/buttons.psx"),
+			filepath.Join(tmpDir, "page.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	pagePath := filepath.Join(tmpDir, "page.psx")
+	pageCode, exists := output.CompiledFiles[pagePath]
+	if !exists {
+		t.Fatalf("page.psx not compiled")
+	}
+
+	codeStr := string(pageCode)
+	if !strings.Contains(codeStr, "PrimaryButton(") {
+		t.Errorf("Expected PrimaryButton() instantiation in output, got:\n%s", codeStr)
+	}
+	if !strings.Contains(codeStr, "from ui.buttons import PrimaryButton") {
+		t.Errorf("Expected import statement preserved in output, got:\n%s", codeStr)
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_RelativeImport(t *testing.T) {
+	// R3: Relative imports (from .components import StatusBadge)
+	files := map[string]string{
+		"views/components.psx": `
+view StatusBadge(dirty: bool):
+    if dirty:
+        <span>dirty</span>
+    else:
+        <span>clean</span>
+`,
+		"views/dashboard.psx": `
+from .components import StatusBadge
+
+view RepoCard(name: str):
+    <div>
+        <StatusBadge dirty={True} />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "views/components.psx"),
+			filepath.Join(tmpDir, "views/dashboard.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	dashboardPath := filepath.Join(tmpDir, "views/dashboard.psx")
+	dashboardCode, exists := output.CompiledFiles[dashboardPath]
+	if !exists {
+		t.Fatalf("views/dashboard.psx not compiled")
+	}
+
+	codeStr := string(dashboardCode)
+	if !strings.Contains(codeStr, "StatusBadge(") {
+		t.Errorf("Expected StatusBadge() instantiation in output, got:\n%s", codeStr)
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_WithPythonImports(t *testing.T) {
+	// Non-PSX imports should pass through without errors
+	files := map[string]string{
+		"components.psx": `
+view Badge(text: str):
+    <span>{text}</span>
+`,
+		"app.psx": `
+from os import path
+from components import Badge
+
+view App(name: str):
+    <div>
+        <Badge text={name} />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "components.psx"),
+			filepath.Join(tmpDir, "app.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	appPath := filepath.Join(tmpDir, "app.psx")
+	appCode, exists := output.CompiledFiles[appPath]
+	if !exists {
+		t.Fatalf("app.psx not compiled")
+	}
+
+	codeStr := string(appCode)
+
+	// Python import should be preserved
+	if !strings.Contains(codeStr, "from os import path") {
+		t.Errorf("Expected 'from os import path' preserved in output, got:\n%s", codeStr)
+	}
+
+	// PSX view import should work
+	if !strings.Contains(codeStr, "Badge(") {
+		t.Errorf("Expected Badge() instantiation in output, got:\n%s", codeStr)
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_DependencyOrdering(t *testing.T) {
+	// R5: Compilation order should respect dependencies
+	// base.psx (no deps) -> components.psx (imports base) -> page.psx (imports components)
+	files := map[string]string{
+		"base.psx": `
+view BaseLayout(title: str):
+    <div class="layout">
+        <h1>{title}</h1>
+    </div>
+`,
+		"components.psx": `
+from base import BaseLayout
+
+view Page(title: str, content: str):
+    <div>
+        <BaseLayout title={title} />
+        <p>{content}</p>
+    </div>
+`,
+		"app.psx": `
+from components import Page
+
+view App():
+    <div>
+        <Page title="Home" content="Welcome" />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "app.psx"),
+			filepath.Join(tmpDir, "components.psx"),
+			filepath.Join(tmpDir, "base.psx"),
+		},
+	}
+
+	output, err := compiler.CompileProject(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("CompileProject failed: %v", err)
+	}
+
+	if len(output.CompiledFiles) != 3 {
+		t.Errorf("Expected 3 compiled files, got %d", len(output.CompiledFiles))
+	}
+
+	// Verify compilation order: base before components before app
+	order, err := output.Graph.GetCompilationOrder()
+	if err != nil {
+		t.Fatalf("Failed to get compilation order: %v", err)
+	}
+
+	baseIdx, compIdx, appIdx := -1, -1, -1
+	for i, file := range order {
+		if strings.HasSuffix(file, "base.psx") {
+			baseIdx = i
+		} else if strings.HasSuffix(file, "components.psx") {
+			compIdx = i
+		} else if strings.HasSuffix(file, "app.psx") {
+			appIdx = i
+		}
+	}
+
+	if baseIdx >= compIdx {
+		t.Errorf("base.psx should be compiled before components.psx (got base=%d, comp=%d)", baseIdx, compIdx)
+	}
+	if compIdx >= appIdx {
+		t.Errorf("components.psx should be compiled before app.psx (got comp=%d, app=%d)", compIdx, appIdx)
+	}
+
+	// Verify app.psx output has proper view composition
+	appPath := filepath.Join(tmpDir, "app.psx")
+	appCode := string(output.CompiledFiles[appPath])
+	if !strings.Contains(appCode, "Page(") {
+		t.Errorf("Expected Page() instantiation in app output, got:\n%s", appCode)
+	}
+}
+
+func TestMultiFileCompiler_CrossFileViewImport_CircularViewImport(t *testing.T) {
+	// R5: Circular view imports should produce clear error
+	files := map[string]string{
+		"a.psx": `
+from b import ViewB
+
+view ViewA():
+    <div>
+        <ViewB />
+    </div>
+`,
+		"b.psx": `
+from a import ViewA
+
+view ViewB():
+    <div>
+        <ViewA />
+    </div>
+`,
+	}
+
+	tmpDir := setupTestFiles(t, files)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+	compiler := NewMultiFileCompiler(logger)
+
+	opts := MultiFileOptions{
+		RootDir: tmpDir,
+		Files: []string{
+			filepath.Join(tmpDir, "a.psx"),
+			filepath.Join(tmpDir, "b.psx"),
+		},
+	}
+
+	_, err := compiler.CompileProject(context.Background(), opts)
+
+	if err == nil {
+		t.Fatalf("Expected circular dependency error")
+	}
+
+	if !strings.Contains(err.Error(), "circular") {
+		t.Errorf("Error should mention circular dependency, got: %v", err)
+	}
+}
