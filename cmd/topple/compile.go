@@ -69,7 +69,8 @@ type CompileCmd struct {
 	Output string `arg:"" optional:"" help:"Output directory for compiled Python files (default: same as input)"`
 
 	// Flags
-	Emit string `help:"Emit intermediate artifacts (comma-separated: tokens,ast,resolution,transformed-ast,all)" short:"e" default:""`
+	Emit       string `help:"Emit intermediate artifacts (comma-separated: tokens,ast,resolution,transformed-ast,all)" short:"e" default:""`
+	SourceRoot string `help:"Project root for resolving absolute imports (default: input directory)" short:"s" default:""`
 }
 
 func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger) error {
@@ -139,7 +140,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 			}
 		} else {
 			// Fast path: use multi-file compiler for proper dependency resolution
-			if err := compileMultiFile(files, c.Input, c.Output, log, *ctx); err != nil {
+			if err := compileMultiFile(files, c.Input, c.Output, c.SourceRoot, log, *ctx); err != nil {
 				return err
 			}
 		}
@@ -170,7 +171,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 				}
 			} else {
 				// Multiple PSX files in directory - use multi-file compiler
-				if err := compileSingleWithContext(c.Input, siblingFiles, inputDir, c.Output, log, *ctx); err != nil {
+				if err := compileSingleWithContext(c.Input, siblingFiles, inputDir, c.Output, c.SourceRoot, log, *ctx); err != nil {
 					return err
 				}
 			}
@@ -184,15 +185,21 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 }
 
 // compileMultiFile compiles multiple PSX files with import resolution
-func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
+func compileMultiFile(files []string, rootDir, outputDir, sourceRoot string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Using multi-file compilation", slog.Int("fileCount", len(files)))
 
 	// Create multi-file compiler
 	multiCompiler := compiler.NewMultiFileCompiler(log)
 
+	// Use --source-root if provided, otherwise fall back to rootDir
+	resolveRoot := rootDir
+	if sourceRoot != "" {
+		resolveRoot = sourceRoot
+	}
+
 	// Prepare options
 	opts := compiler.MultiFileOptions{
-		RootDir: rootDir,
+		RootDir: resolveRoot,
 		Files:   files,
 	}
 
@@ -249,15 +256,21 @@ func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logge
 // compileSingleWithContext compiles a single PSX file using multi-file compilation
 // to resolve cross-file view imports. It compiles all sibling files for context
 // but only writes the output for the target file.
-func compileSingleWithContext(targetFile string, allFiles []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
+func compileSingleWithContext(targetFile string, allFiles []string, rootDir, outputDir, sourceRoot string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Using multi-file compilation for single file",
 		slog.String("target", targetFile),
 		slog.Int("contextFiles", len(allFiles)))
 
 	multiCompiler := compiler.NewMultiFileCompiler(log)
 
+	// Use --source-root if provided, otherwise fall back to rootDir
+	resolveRoot := rootDir
+	if sourceRoot != "" {
+		resolveRoot = sourceRoot
+	}
+
 	opts := compiler.MultiFileOptions{
-		RootDir: rootDir,
+		RootDir: resolveRoot,
 		Files:   allFiles,
 	}
 

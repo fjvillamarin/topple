@@ -563,6 +563,65 @@ func TestImportFromStmt_RelativeImport(t *testing.T) {
 	}
 }
 
+func TestImportFromStmt_DottedAbsoluteImport(t *testing.T) {
+	// Test that "from pm.web.views.utils import MyView" resolves correctly
+	// when the search paths include the proper root directory.
+	// This simulates: --source-root /root where /root/pm/web/views/utils.psx exists
+	mockFS := newMockFS(map[string]bool{
+		"/root/pm/web/views/utils.psx": true,
+	})
+
+	moduleResolver := module.NewResolver(module.Config{
+		RootDir:    "/root",
+		FileSystem: mockFS,
+	})
+
+	symbolRegistry := symbol.NewRegistry()
+	utilsSymbols := symbol.NewModuleSymbols("/root/pm/web/views/utils.psx")
+	utilsSymbols.AddSymbol(&symbol.Symbol{
+		Name:       "MyView",
+		Type:       symbol.SymbolView,
+		Visibility: symbol.Public,
+	})
+	symbolRegistry.RegisterModule("/root/pm/web/views/utils.psx", utilsSymbols)
+
+	importStmt := &ast.ImportFromStmt{
+		DottedName: createDottedName("pm", "web", "views", "utils"),
+		Names: []*ast.ImportName{
+			{
+				DottedName: createDottedName("MyView"),
+				Span:       lexer.Span{},
+			},
+		},
+		Span: lexer.Span{},
+	}
+
+	mod := &ast.Module{
+		Body: []ast.Stmt{importStmt},
+		Span: lexer.Span{},
+	}
+
+	resolver := NewResolverWithDeps(moduleResolver, symbolRegistry, "/root/pm/web/views/dashboard.psx")
+	table, err := resolver.Resolve(mod)
+
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+
+	if len(table.Errors) > 0 {
+		t.Fatalf("Expected no errors, got: %v", table.Errors)
+	}
+
+	variable, exists := resolver.ModuleGlobals["MyView"]
+	if !exists {
+		t.Fatal("Expected 'MyView' to be defined via dotted absolute import")
+	}
+
+	if !variable.IsImported {
+		t.Error("Expected variable to be marked as imported")
+	}
+}
+
 func TestImportFromStmt_SymbolNotFound(t *testing.T) {
 	moduleResolver, symbolRegistry := setupTestEnvironment()
 

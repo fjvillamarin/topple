@@ -22,7 +22,8 @@ type WatchCmd struct {
 	Clear bool `help:"Clear terminal on each compilation" default:"false"`
 
 	// Options for output
-	Output string `help:"Output directory for compiled Python files (default: same as input)" default:""`
+	Output     string `help:"Output directory for compiled Python files (default: same as input)" default:""`
+	SourceRoot string `help:"Project root for resolving absolute imports (default: input directory)" short:"s" default:""`
 }
 
 func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger) error {
@@ -62,7 +63,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 	// Initial compilation
 	log.InfoContext(*ctx, "Performing initial compilation")
-	if err := compileDirectory(fs, cmp, w.Directory, w.Output, globals.Recursive, log, *ctx); err != nil {
+	if err := compileDirectory(fs, cmp, w.Directory, w.Output, w.SourceRoot, globals.Recursive, log, *ctx); err != nil {
 		return fmt.Errorf("initial compilation failed: %w", err)
 	}
 
@@ -129,7 +130,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 				// Recompile
 				log.InfoContext(*ctx, "Recompiling after file changes")
-				if err := compileDirectory(fs, cmp, w.Directory, w.Output, globals.Recursive, log, *ctx); err != nil {
+				if err := compileDirectory(fs, cmp, w.Directory, w.Output, w.SourceRoot, globals.Recursive, log, *ctx); err != nil {
 					log.ErrorContext(*ctx, "Compilation failed", slog.String("error", err.Error()))
 					fmt.Printf("Compilation error: %v\n", err)
 				} else {
@@ -145,7 +146,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 // compileDirectory compiles all PSX files in a directory using multi-file
 // compilation for proper cross-file view import resolution.
-func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, outputDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
+func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, outputDir, sourceRoot string, recursive bool, log *slog.Logger, ctx context.Context) error {
 	// List all PSX files
 	files, err := fs.ListPSXFiles(inputDir, recursive)
 	if err != nil {
@@ -155,7 +156,7 @@ func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, o
 	log.InfoContext(ctx, "Found PSX files to compile", slog.Int("count", len(files)))
 
 	// Use multi-file compilation for proper dependency resolution
-	return compileMultiFile(files, inputDir, outputDir, log, ctx)
+	return compileMultiFile(files, inputDir, outputDir, sourceRoot, log, ctx)
 }
 
 // clearTerminal clears the terminal screen
