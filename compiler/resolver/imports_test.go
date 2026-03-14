@@ -563,6 +563,93 @@ func TestImportFromStmt_RelativeImport(t *testing.T) {
 	}
 }
 
+func TestImportFromStmt_DottedPathSiblingFallback(t *testing.T) {
+	// Test that "from pm.web.views.utils import MyView" resolves to sibling utils.psx
+	// when ResolveAbsolute fails (no pm/web/views/utils.psx in search paths)
+	// but the last segment "utils" matches a sibling file.
+	moduleResolver, symbolRegistry := setupTestEnvironment()
+
+	// from pm.web.views.utils import MyView
+	// ResolveAbsolute("pm.web.views.utils") will fail since there's no pm/web/views/utils.psx
+	// but the fallback should resolve "utils" as a sibling of /project/main.psx -> /project/utils.psx
+	importStmt := &ast.ImportFromStmt{
+		DottedName: createDottedName("pm", "web", "views", "utils"),
+		Names: []*ast.ImportName{
+			{
+				DottedName: createDottedName("MyView"),
+				Span:       lexer.Span{},
+			},
+		},
+		Span: lexer.Span{},
+	}
+
+	module := &ast.Module{
+		Body: []ast.Stmt{importStmt},
+		Span: lexer.Span{},
+	}
+
+	resolver := NewResolverWithDeps(moduleResolver, symbolRegistry, "/project/main.psx")
+	table, err := resolver.Resolve(module)
+
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+
+	if len(table.Errors) > 0 {
+		t.Fatalf("Expected no errors, got: %v", table.Errors)
+	}
+
+	// Check that "MyView" is defined via sibling fallback
+	variable, exists := resolver.ModuleGlobals["MyView"]
+	if !exists {
+		t.Fatal("Expected 'MyView' to be defined via dotted path sibling fallback")
+	}
+
+	if !variable.IsImported {
+		t.Error("Expected variable to be marked as imported")
+	}
+}
+
+func TestImportFromStmt_DottedPathNoSiblingFallback(t *testing.T) {
+	// Test that dotted paths with no matching sibling are silently passed through
+	moduleResolver, symbolRegistry := setupTestEnvironment()
+
+	// from some.other.package import SomeClass
+	// Neither absolute nor sibling resolution should find this
+	importStmt := &ast.ImportFromStmt{
+		DottedName: createDottedName("some", "other", "package"),
+		Names: []*ast.ImportName{
+			{
+				DottedName: createDottedName("SomeClass"),
+				Span:       lexer.Span{},
+			},
+		},
+		Span: lexer.Span{},
+	}
+
+	module := &ast.Module{
+		Body: []ast.Stmt{importStmt},
+		Span: lexer.Span{},
+	}
+
+	resolver := NewResolverWithDeps(moduleResolver, symbolRegistry, "/project/main.psx")
+	table, err := resolver.Resolve(module)
+
+	// Should be silently passed through (not a PSX module)
+	if err != nil {
+		t.Fatalf("Expected no error for non-PSX dotted import, got: %v", err)
+	}
+
+	if table != nil && len(table.Errors) > 0 {
+		t.Fatalf("Expected no errors, got: %v", table.Errors)
+	}
+
+	// SomeClass should NOT be in module globals
+	if _, exists := resolver.ModuleGlobals["SomeClass"]; exists {
+		t.Error("Expected 'SomeClass' not to be imported (no matching PSX module)")
+	}
+}
+
 func TestImportFromStmt_SymbolNotFound(t *testing.T) {
 	moduleResolver, symbolRegistry := setupTestEnvironment()
 

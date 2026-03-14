@@ -689,8 +689,24 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 			modulePath,
 		)
 		if err != nil {
-			// Not a PSX module - treat as a regular Python import (pass-through)
-			return r
+			// Fallback: for dotted paths like "pm.web.views.components", try resolving
+			// just the last segment as a sibling .psx file. This allows users to write
+			// fully-qualified import paths that differ from the filesystem-relative path
+			// while still getting view signature extraction from the sibling file.
+			// The codegen emits the original dotted path as-is for correct runtime resolution.
+			if i.DottedName != nil && len(i.DottedName.Names) > 1 {
+				lastSegment := i.DottedName.Names[len(i.DottedName.Names)-1].Token.Lexeme
+				filePath, err = r.ModuleResolver.ResolveRelative(
+					context.Background(),
+					1, // current directory
+					lastSegment,
+					r.SourceFilePath,
+				)
+			}
+			if err != nil {
+				// Not a PSX module - treat as a regular Python import (pass-through)
+				return r
+			}
 		}
 	}
 
