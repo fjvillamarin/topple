@@ -521,3 +521,31 @@ func (s *StandardFileSystem) StopWatching() error {
 	s.logger.Debug("File watcher stopped")
 	return nil
 }
+
+// ProjectRootMarkers lists filenames that indicate a Python project root directory.
+var ProjectRootMarkers = []string{"pyproject.toml"}
+
+// FindProjectRoot walks up from startDir looking for a project root marker file
+// (e.g. pyproject.toml). It returns the directory containing the marker, or ""
+// if none is found before reaching the filesystem root.
+func FindProjectRoot(startDir string) (string, error) {
+	absDir, err := filepath.Abs(startDir)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve start directory: %w", err)
+	}
+
+	dir := absDir
+	for {
+		for _, marker := range ProjectRootMarkers {
+			markerPath := filepath.Join(dir, marker)
+			if _, err := os.Stat(markerPath); err == nil {
+				return dir, nil
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", nil
+		}
+		dir = parent
+	}
+}

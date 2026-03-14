@@ -119,6 +119,15 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 	startTime := time.Now()
 	log.InfoContext(*ctx, "Starting compilation")
 
+	// Determine input directory and resolve the effective source root
+	var inputDir string
+	if isDir {
+		inputDir = c.Input
+	} else {
+		inputDir = filepath.Dir(c.Input)
+	}
+	resolvedRoot := resolveSourceRoot(c.SourceRoot, inputDir, log)
+
 	if isDir {
 		// Process directory
 		log.DebugContext(*ctx, "Input is a directory", slog.String("path", c.Input))
@@ -140,7 +149,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 			}
 		} else {
 			// Fast path: use multi-file compiler for proper dependency resolution
-			if err := compileMultiFile(files, c.Input, c.Output, c.SourceRoot, log, *ctx); err != nil {
+			if err := compileMultiFile(files, resolvedRoot, c.Output, log, *ctx); err != nil {
 				return err
 			}
 		}
@@ -162,7 +171,6 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 			// Use multi-file compilation for cross-file view import resolution.
 			// Discover all sibling PSX files in the same directory to build
 			// the dependency graph and symbol registry.
-			inputDir := filepath.Dir(c.Input)
 			siblingFiles, err := fs.ListPSXFiles(inputDir, false)
 			if err != nil || len(siblingFiles) <= 1 {
 				// No sibling files or error - fall back to single-file compilation
@@ -171,7 +179,7 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 				}
 			} else {
 				// Multiple PSX files in directory - use multi-file compiler
-				if err := compileSingleWithContext(c.Input, siblingFiles, inputDir, c.Output, c.SourceRoot, log, *ctx); err != nil {
+				if err := compileSingleWithContext(c.Input, siblingFiles, resolvedRoot, c.Output, log, *ctx); err != nil {
 					return err
 				}
 			}
@@ -184,22 +192,39 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 	return nil
 }
 
+// resolveSourceRoot determines the effective source root directory.
+// Priority: explicit --source-root flag > auto-detected pyproject.toml > inputDir fallback.
+func resolveSourceRoot(explicitRoot, inputDir string, log *slog.Logger) string {
+	if explicitRoot != "" {
+		log.Debug("Using explicit --source-root", slog.String("root", explicitRoot))
+		return explicitRoot
+	}
+
+	detected, err := filesystem.FindProjectRoot(inputDir)
+	if err != nil {
+		log.Warn("Error during project root detection, falling back to input directory",
+			slog.String("error", err.Error()), slog.String("fallback", inputDir))
+		return inputDir
+	}
+	if detected != "" {
+		log.Info("Auto-detected project root from pyproject.toml", slog.String("root", detected))
+		return detected
+	}
+
+	log.Debug("No project root marker found, using input directory", slog.String("root", inputDir))
+	return inputDir
+}
+
 // compileMultiFile compiles multiple PSX files with import resolution
-func compileMultiFile(files []string, rootDir, outputDir, sourceRoot string, log *slog.Logger, ctx context.Context) error {
+func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Using multi-file compilation", slog.Int("fileCount", len(files)))
 
 	// Create multi-file compiler
 	multiCompiler := compiler.NewMultiFileCompiler(log)
 
-	// Use --source-root if provided, otherwise fall back to rootDir
-	resolveRoot := rootDir
-	if sourceRoot != "" {
-		resolveRoot = sourceRoot
-	}
-
 	// Prepare options
 	opts := compiler.MultiFileOptions{
-		RootDir: resolveRoot,
+		RootDir: rootDir,
 		Files:   files,
 	}
 
@@ -256,21 +281,15 @@ func compileMultiFile(files []string, rootDir, outputDir, sourceRoot string, log
 // compileSingleWithContext compiles a single PSX file using multi-file compilation
 // to resolve cross-file view imports. It compiles all sibling files for context
 // but only writes the output for the target file.
-func compileSingleWithContext(targetFile string, allFiles []string, rootDir, outputDir, sourceRoot string, log *slog.Logger, ctx context.Context) error {
+func compileSingleWithContext(targetFile string, allFiles []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
 	log.DebugContext(ctx, "Using multi-file compilation for single file",
 		slog.String("target", targetFile),
 		slog.Int("contextFiles", len(allFiles)))
 
 	multiCompiler := compiler.NewMultiFileCompiler(log)
 
-	// Use --source-root if provided, otherwise fall back to rootDir
-	resolveRoot := rootDir
-	if sourceRoot != "" {
-		resolveRoot = sourceRoot
-	}
-
 	opts := compiler.MultiFileOptions{
-		RootDir: resolveRoot,
+		RootDir: rootDir,
 		Files:   allFiles,
 	}
 

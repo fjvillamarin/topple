@@ -61,9 +61,12 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 		return fmt.Errorf("path is not a directory: %s", w.Directory)
 	}
 
+	// Resolve the effective source root
+	resolvedRoot := resolveSourceRoot(w.SourceRoot, w.Directory, log)
+
 	// Initial compilation
 	log.InfoContext(*ctx, "Performing initial compilation")
-	if err := compileDirectory(fs, cmp, w.Directory, w.Output, w.SourceRoot, globals.Recursive, log, *ctx); err != nil {
+	if err := compileDirectory(fs, cmp, w.Directory, w.Output, resolvedRoot, globals.Recursive, log, *ctx); err != nil {
 		return fmt.Errorf("initial compilation failed: %w", err)
 	}
 
@@ -130,7 +133,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 				// Recompile
 				log.InfoContext(*ctx, "Recompiling after file changes")
-				if err := compileDirectory(fs, cmp, w.Directory, w.Output, w.SourceRoot, globals.Recursive, log, *ctx); err != nil {
+				if err := compileDirectory(fs, cmp, w.Directory, w.Output, resolvedRoot, globals.Recursive, log, *ctx); err != nil {
 					log.ErrorContext(*ctx, "Compilation failed", slog.String("error", err.Error()))
 					fmt.Printf("Compilation error: %v\n", err)
 				} else {
@@ -146,7 +149,7 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 
 // compileDirectory compiles all PSX files in a directory using multi-file
 // compilation for proper cross-file view import resolution.
-func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, outputDir, sourceRoot string, recursive bool, log *slog.Logger, ctx context.Context) error {
+func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, outputDir, rootDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
 	// List all PSX files
 	files, err := fs.ListPSXFiles(inputDir, recursive)
 	if err != nil {
@@ -156,7 +159,7 @@ func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, o
 	log.InfoContext(ctx, "Found PSX files to compile", slog.Int("count", len(files)))
 
 	// Use multi-file compilation for proper dependency resolution
-	return compileMultiFile(files, inputDir, outputDir, sourceRoot, log, ctx)
+	return compileMultiFile(files, rootDir, outputDir, log, ctx)
 }
 
 // clearTerminal clears the terminal screen
