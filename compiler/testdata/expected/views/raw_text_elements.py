@@ -35,7 +35,7 @@ class TextareaView(BaseView):
         self.value = value
 
     def _render(self) -> Element:
-        return el("textarea", raw(self.value))
+        return el("textarea", escape(self.value))
 
 class MixedView(BaseView):
     def __init__(self, name: str):

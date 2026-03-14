@@ -526,10 +526,13 @@ func (vm *ViewTransformer) createElCall(tag string, content ast.Expr, attrs ast.
 	}
 }
 
-// isRawTextElement returns true if the tag is a raw text element per HTML spec.
+// isRawTextElement returns true if the tag is a raw text element per the HTML spec.
+// Only script and style are true raw text elements whose content is never HTML-parsed.
 // Content inside these elements should use raw() instead of escape().
+// Note: textarea is intentionally excluded — it is an RCDATA element that processes
+// HTML entities, so its content must be escaped to prevent injection attacks.
 func isRawTextElement(tag string) bool {
-	return tag == "script" || tag == "style" || tag == "textarea"
+	return tag == "script" || tag == "style"
 }
 
 // isPascalCase checks if a string starts with an uppercase letter (PascalCase convention for components)

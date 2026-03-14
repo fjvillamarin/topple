@@ -91,6 +91,7 @@ func (vm *ViewTransformer) TransformViewToClass(viewStmt *ast.ViewStmt) (*ast.Cl
 	// Reset slots for each view transformation
 	vm.slots = make(map[string]*SlotInfo)
 	vm.slotOrder = []string{}
+	vm.rawTextParent = false
 
 	// Analyze slots in the view body
 	vm.analyzeSlots(viewStmt.Body)
