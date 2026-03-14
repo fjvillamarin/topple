@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/fjvillamarin/topple/compare/v0.3.0...v0.3.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* **resolver:** resolve dotted import paths via sibling fallback ([56456cd](https://github.com/fjvillamarin/topple/commit/56456cd2b81d54b4f96df0c4d8d530bbb2a33835))
+* **resolver:** support absolute imports via --source-root flag ([40c90ef](https://github.com/fjvillamarin/topple/commit/40c90ef2ca05e440af58bf0c6958a6a21f763f2e))
+
 ## [0.3.0](https://github.com/fjvillamarin/topple/compare/v0.2.0...v0.3.0) (2026-03-14)
 
 
