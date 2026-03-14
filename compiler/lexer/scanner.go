@@ -287,12 +287,23 @@ func (s *Scanner) handleLineStart() {
 		s.skipToFirstNonWhitespace()
 
 	case isIdentifierStart(firstChar):
-		// Check if it's a keyword that indicates Python mode
-		if s.isKeywordAtPosition() {
-			s.ctx.mode = PythonMode
+		if s.ctx.htmlTagDepth > 0 {
+			// Inside an HTML element: only statement-starting keywords trigger Python mode
+			if s.isStatementKeywordAtPosition() {
+				s.ctx.mode = PythonMode
+			} else if s.isPythonStatementAtPosition() {
+				s.ctx.mode = PythonMode
+			} else {
+				// Non-keyword, non-statement text is HTML content
+				s.ctx.mode = HTMLContentMode
+			}
 		} else {
-			// Identifier at line start → Python mode (assignment, etc.)
-			s.ctx.mode = PythonMode
+			// Outside HTML elements: any keyword or identifier is Python mode
+			if s.isKeywordAtPosition() {
+				s.ctx.mode = PythonMode
+			} else {
+				s.ctx.mode = PythonMode
+			}
 		}
 
 	case s.parenDepth > 0:
@@ -300,8 +311,15 @@ func (s *Scanner) handleLineStart() {
 		// (don't change mode)
 
 	default:
-		// Default to Python mode for other cases
-		s.ctx.mode = PythonMode
+		if s.ctx.htmlTagDepth > 0 && firstChar != '\n' && firstChar != '\r' && firstChar != 0 &&
+			firstChar != '"' && firstChar != '\'' && firstChar != '#' {
+			// Inside an HTML element, treat as text content
+			// Exclude newlines, EOF, string delimiters (Python expressions), and # (Python comments)
+			s.ctx.mode = HTMLContentMode
+		} else {
+			// Default to Python mode for other cases
+			s.ctx.mode = PythonMode
+		}
 	}
 
 	s.ctx.atLineStart = false
@@ -367,6 +385,134 @@ func (s *Scanner) isKeywordAtPosition() bool {
 	s.cur = savedCur
 
 	return isKeyword
+}
+
+// isStatementKeywordAtPosition checks if the identifier at the current position
+// is a keyword that starts a Python statement. This is a subset of all keywords,
+// excluding expression keywords like 'and', 'or', 'not', 'in', 'is', 'from',
+// 'True', 'False', 'None' which can appear in natural language text.
+func (s *Scanner) isStatementKeywordAtPosition() bool {
+	savedCur := s.cur
+
+	// Skip whitespace
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+	}
+
+	start := s.cur
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if !isIdentifierContinue(r) {
+			break
+		}
+		s.cur += size
+	}
+
+	identifier := string(s.src[start:s.cur])
+	s.cur = savedCur
+
+	// Only keywords that commonly start statements inside HTML elements.
+	// Excludes: and, or, not, in, is, True, False, None (expression keywords)
+	// Excludes: from, with, import (ambiguous with natural language text;
+	//   imports don't belong inside HTML, and 'with' statements can be
+	//   restructured outside elements)
+	switch identifier {
+	case "for", "if", "elif", "else", "while", "try", "except", "finally",
+		"match", "case", "def", "class", "return", "pass", "raise",
+		"break", "continue", "assert", "del", "global", "nonlocal",
+		"yield", "async", "await":
+		return true
+	}
+	return false
+}
+
+// isPythonStatementAtPosition checks if the current line looks like a Python
+// statement (assignment, function call, method call, subscript access).
+// Used inside HTML elements to distinguish Python code from text content.
+func (s *Scanner) isPythonStatementAtPosition() bool {
+	savedCur := s.cur
+
+	// Skip to first non-whitespace
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if r != ' ' && r != '\t' && r != '\r' {
+			break
+		}
+		s.cur += size
+	}
+
+	// Scan identifier
+	if s.cur >= len(s.src) || !isIdentifierStart(rune(s.src[s.cur])) {
+		s.cur = savedCur
+		return false
+	}
+	for s.cur < len(s.src) {
+		r, size := utf8.DecodeRune(s.src[s.cur:])
+		if !isIdentifierContinue(r) {
+			break
+		}
+		s.cur += size
+	}
+
+	// Check if identifier is a string prefix immediately followed by a quote
+	// (e.g., f"...", b'...', rb"...", etc.)
+	identEnd := s.cur
+	identStr := string(s.src[savedCur:identEnd])
+	// Trim leading whitespace from identStr to get the actual identifier
+	identStr = strings.TrimLeft(identStr, " \t\r")
+	if isStringPrefix(identStr) && identEnd < len(s.src) && (s.src[identEnd] == '"' || s.src[identEnd] == '\'') {
+		s.cur = savedCur
+		return true
+	}
+
+	// Skip whitespace after identifier
+	for s.cur < len(s.src) && (s.src[s.cur] == ' ' || s.src[s.cur] == '\t') {
+		s.cur++
+	}
+
+	result := false
+	if s.cur < len(s.src) {
+		r := s.src[s.cur]
+		switch r {
+		case '=':
+			// Assignment: x = ... (but not ==)
+			if s.cur+1 < len(s.src) && s.src[s.cur+1] != '=' {
+				result = true
+			}
+		case '(':
+			result = true // Function call: func()
+		case '.':
+			result = true // Attribute access: obj.attr
+		case '[':
+			result = true // Subscript: obj[key]
+		case '+', '-', '*', '/', '%', '&', '|', '^':
+			// Augmented assignment: +=, -=, etc.
+			if s.cur+1 < len(s.src) && s.src[s.cur+1] == '=' {
+				result = true
+			}
+		case ':':
+			// Walrus operator :=
+			if s.cur+1 < len(s.src) && s.src[s.cur+1] == '=' {
+				result = true
+			}
+		}
+	}
+
+	s.cur = savedCur
+	return result
+}
+
+// isStringPrefix checks if an identifier is a Python string prefix
+func isStringPrefix(s string) bool {
+	switch strings.ToLower(s) {
+	case "f", "b", "r", "u", "fr", "rf", "br", "rb":
+		return true
+	}
+	return false
 }
 
 // detectViewFunction checks if we're entering a view function
@@ -1647,11 +1793,13 @@ func (s *Scanner) scanHTMLTag() {
 		if s.peek() == '/' {
 			s.advance()               // consume '/'
 			s.addToken(TagCloseStart) // Emit '</' token
+			s.ctx.isClosingTag = true // Mark as closing tag
 			// Stay in tag mode to handle tag name
 			return
 		}
 
 		// Emit '<' token for opening tag
+		s.ctx.isClosingTag = false // Clear for opening tags
 		s.addToken(TagOpen)
 		// Stay in tag mode to handle tag name and attributes
 		return
@@ -1673,6 +1821,12 @@ func (s *Scanner) scanHTMLTag() {
 		case '>':
 			// End of tag
 			s.addToken(TagClose)
+			if s.ctx.isClosingTag {
+				s.ctx.htmlTagDepth--
+				s.ctx.isClosingTag = false
+			} else {
+				s.ctx.htmlTagDepth++
+			}
 			s.ctx.mode = HTMLContentMode
 			return
 		case '/':

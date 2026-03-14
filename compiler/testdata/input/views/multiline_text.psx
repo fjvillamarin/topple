@@ -1,0 +1,18 @@
+view Article():
+    <article>
+        <p>
+            This is a longer paragraph
+            that spans multiple lines.
+        </p>
+        <div class="content">
+            Some introductory text here
+            followed by more content
+            on separate lines.
+        </div>
+    </article>
+
+view SimpleMultiline():
+    <p>
+        Hello world
+        from PSX!
+    </p>
