@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/fjvillamarin/topple/compare/v0.3.1...v0.4.0) (2026-03-14)
+
+
+### Features
+
+* add Claude Code review ([#103](https://github.com/fjvillamarin/topple/issues/103)) ([f95c52d](https://github.com/fjvillamarin/topple/commit/f95c52d6bebdc92a9861cc363c4f2e590c0bc7e9))
+* add Claude Code review ([#105](https://github.com/fjvillamarin/topple/issues/105)) ([4b7e8bf](https://github.com/fjvillamarin/topple/commit/4b7e8bf5f5abc210cf0de7183b40dfa801138cf9))
+
 ## [0.3.1](https://github.com/fjvillamarin/topple/compare/v0.3.0...v0.3.1) (2026-03-14)
 
 
