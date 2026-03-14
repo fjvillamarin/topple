@@ -143,8 +143,9 @@ func (w *WatchCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logger)
 	}
 }
 
-// compileDirectory compiles all PSX files in a directory
-func compileDirectory(fs filesystem.FileSystem, cmp compiler.Compiler, inputDir, outputDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
+// compileDirectory compiles all PSX files in a directory using multi-file
+// compilation for proper cross-file view import resolution.
+func compileDirectory(fs filesystem.FileSystem, _ compiler.Compiler, inputDir, outputDir string, recursive bool, log *slog.Logger, ctx context.Context) error {
 	// List all PSX files
 	files, err := fs.ListPSXFiles(inputDir, recursive)
 	if err != nil {
@@ -153,23 +154,8 @@ func compileDirectory(fs filesystem.FileSystem, cmp compiler.Compiler, inputDir,
 
 	log.InfoContext(ctx, "Found PSX files to compile", slog.Int("count", len(files)))
 
-	// Track compilation time
-	startTime := time.Now()
-
-	// Compile each file
-	for _, file := range files {
-		log.DebugContext(ctx, "Compiling file", slog.String("file", file))
-		if err := compileFile(fs, cmp, file, outputDir, emitSet{}, log, ctx); err != nil {
-			return fmt.Errorf("error compiling %s: %w", file, err)
-		}
-	}
-
-	elapsed := time.Since(startTime)
-	log.InfoContext(ctx, "Directory compilation completed",
-		slog.Duration("elapsed", elapsed),
-		slog.Int("fileCount", len(files)))
-
-	return nil
+	// Use multi-file compilation for proper dependency resolution
+	return compileMultiFile(files, inputDir, outputDir, log, ctx)
 }
 
 // clearTerminal clears the terminal screen

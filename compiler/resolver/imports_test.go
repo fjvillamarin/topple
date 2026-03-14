@@ -326,14 +326,13 @@ func TestImportStmt_ModuleNotFound(t *testing.T) {
 	resolver := NewResolverWithDeps(moduleResolver, nil, "/project/main.psx")
 	table, err := resolver.Resolve(module)
 
-	// Resolve() returns an error when there are errors in the table
-	if err == nil {
-		t.Fatal("Expected Resolve to return error for nonexistent module")
+	// Non-PSX imports should be silently passed through (no error)
+	if err != nil {
+		t.Fatalf("Expected no error for non-PSX import, got: %v", err)
 	}
 
-	// Should have error about module not found
-	if table == nil || len(table.Errors) == 0 {
-		t.Fatal("Expected error for nonexistent module in table")
+	if table != nil && len(table.Errors) > 0 {
+		t.Fatalf("Expected no errors for non-PSX import, got: %v", table.Errors)
 	}
 }
 
@@ -586,14 +585,14 @@ func TestImportFromStmt_SymbolNotFound(t *testing.T) {
 	resolver := NewResolverWithDeps(moduleResolver, symbolRegistry, "/project/main.psx")
 	table, err := resolver.Resolve(module)
 
-	// Resolve() returns an error when there are errors in the table
-	if err == nil {
-		t.Fatal("Expected Resolve to return error for nonexistent symbol")
+	// Unknown symbols from PSX modules should be silently skipped
+	// (they may be non-view symbols that exist at runtime)
+	if err != nil {
+		t.Fatalf("Expected no error for unknown symbol, got: %v", err)
 	}
 
-	// Should have error about symbol not found
-	if table == nil || len(table.Errors) == 0 {
-		t.Fatal("Expected error for nonexistent symbol in table")
+	if table != nil && len(table.Errors) > 0 {
+		t.Fatalf("Expected no errors for unknown symbol, got: %v", table.Errors)
 	}
 }
 

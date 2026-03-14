@@ -612,7 +612,8 @@ func (r *Resolver) VisitImportStmt(i *ast.ImportStmt) ast.Visitor {
 		// 2. Resolve to file path using ModuleResolver
 		filePath, err := r.ModuleResolver.ResolveAbsolute(context.Background(), modulePath)
 		if err != nil {
-			r.ReportError(fmt.Errorf("cannot import '%s': %w", modulePath, err))
+			// Not a PSX module - treat as a regular Python import (pass-through)
+			// Don't report an error; the import will be emitted as-is in codegen
 			continue
 		}
 
@@ -677,7 +678,7 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 			r.SourceFilePath,
 		)
 		if err != nil {
-			r.ReportError(fmt.Errorf("cannot resolve relative import: %w", err))
+			// Not a PSX module - treat as a regular Python relative import (pass-through)
 			return r
 		}
 	} else {
@@ -688,7 +689,7 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 			modulePath,
 		)
 		if err != nil {
-			r.ReportError(fmt.Errorf("cannot import from '%s': %w", modulePath, err))
+			// Not a PSX module - treat as a regular Python import (pass-through)
 			return r
 		}
 	}
@@ -698,7 +699,7 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 		// from module import *
 		symbols, err := r.SymbolRegistry.GetPublicSymbols(filePath)
 		if err != nil {
-			r.ReportError(fmt.Errorf("cannot get symbols from '%s': %w", modulePath, err))
+			// Module not yet registered - skip silently
 			return r
 		}
 
@@ -714,8 +715,8 @@ func (r *Resolver) VisitImportFromStmt(i *ast.ImportFromStmt) ast.Visitor {
 			// Lookup symbol in registry
 			sym, err := r.SymbolRegistry.LookupSymbol(filePath, symbolName)
 			if err != nil {
-				r.ReportError(fmt.Errorf("cannot import '%s' from '%s': %w",
-					symbolName, modulePath, err))
+				// Symbol not found in PSX module - skip silently
+				// It may be a non-view symbol that exists at runtime
 				continue
 			}
 

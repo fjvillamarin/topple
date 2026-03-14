@@ -152,8 +152,28 @@ func (c *CompileCmd) Run(globals *Globals, ctx *context.Context, log *slog.Logge
 			return fmt.Errorf("input file is not a .psx file: %s", c.Input)
 		}
 
-		if err := compileFile(fs, cmp, c.Input, c.Output, emit, log, *ctx); err != nil {
-			return err
+		if emit.any() {
+			// Emit path: compile single file with intermediate artifacts
+			if err := compileFile(fs, cmp, c.Input, c.Output, emit, log, *ctx); err != nil {
+				return err
+			}
+		} else {
+			// Use multi-file compilation for cross-file view import resolution.
+			// Discover all sibling PSX files in the same directory to build
+			// the dependency graph and symbol registry.
+			inputDir := filepath.Dir(c.Input)
+			siblingFiles, err := fs.ListPSXFiles(inputDir, false)
+			if err != nil || len(siblingFiles) <= 1 {
+				// No sibling files or error - fall back to single-file compilation
+				if err := compileFile(fs, cmp, c.Input, c.Output, emit, log, *ctx); err != nil {
+					return err
+				}
+			} else {
+				// Multiple PSX files in directory - use multi-file compiler
+				if err := compileSingleWithContext(c.Input, siblingFiles, inputDir, c.Output, log, *ctx); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -223,6 +243,76 @@ func compileMultiFile(files []string, rootDir, outputDir string, log *slog.Logge
 	}
 
 	log.InfoContext(ctx, "Multi-file compilation successful", slog.Int("filesCompiled", len(output.CompiledFiles)))
+	return nil
+}
+
+// compileSingleWithContext compiles a single PSX file using multi-file compilation
+// to resolve cross-file view imports. It compiles all sibling files for context
+// but only writes the output for the target file.
+func compileSingleWithContext(targetFile string, allFiles []string, rootDir, outputDir string, log *slog.Logger, ctx context.Context) error {
+	log.DebugContext(ctx, "Using multi-file compilation for single file",
+		slog.String("target", targetFile),
+		slog.Int("contextFiles", len(allFiles)))
+
+	multiCompiler := compiler.NewMultiFileCompiler(log)
+
+	opts := compiler.MultiFileOptions{
+		RootDir: rootDir,
+		Files:   allFiles,
+	}
+
+	output, err := multiCompiler.CompileProject(ctx, opts)
+	if err != nil {
+		if output != nil && len(output.Errors) > 0 {
+			for _, compErr := range output.Errors {
+				detailsMsg := ""
+				if compErr.Details != nil {
+					detailsMsg = compErr.Details.Error()
+				}
+				log.ErrorContext(ctx, "Compilation error",
+					slog.String("file", compErr.File),
+					slog.String("stage", compErr.Stage),
+					slog.String("message", compErr.Message),
+					slog.String("details", detailsMsg))
+			}
+		}
+		return fmt.Errorf("multi-file compilation failed: %w", err)
+	}
+
+	// Resolve target file to absolute path for lookup
+	absTarget, err := filepath.Abs(targetFile)
+	if err != nil {
+		return fmt.Errorf("error resolving target path: %w", err)
+	}
+
+	// Write output only for the target file
+	fs := filesystem.NewFileSystem(log)
+	for inputPath, code := range output.CompiledFiles {
+		absInput, _ := filepath.Abs(inputPath)
+		if absInput != absTarget {
+			continue
+		}
+
+		outputPath, err := fs.GetOutputPath(inputPath, outputDir)
+		if err != nil {
+			return fmt.Errorf("error determining output path for %s: %w", inputPath, err)
+		}
+
+		outputDirPath := filepath.Dir(outputPath)
+		if err := fs.MkdirAll(outputDirPath, 0755); err != nil {
+			return fmt.Errorf("error creating output directory %s: %w", outputDirPath, err)
+		}
+
+		if err := fs.WriteFile(outputPath, code, 0644); err != nil {
+			return fmt.Errorf("error writing output file %s: %w", outputPath, err)
+		}
+
+		log.InfoContext(ctx, "Compiled file",
+			slog.String("input", inputPath),
+			slog.String("output", outputPath),
+			slog.Int("outputSize", len(code)))
+	}
+
 	return nil
 }
 
