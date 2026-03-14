@@ -137,7 +137,7 @@ func (vm *ViewTransformer) transformSlotElementToExpression(slotElement *ast.HTM
 	var fallbackExpr ast.Expr
 	if len(slotElement.Content) > 0 {
 		// Transform fallback content
-		fallbackContentExpr, err := vm.transformHTMLContent(slotElement.Content)
+		fallbackContentExpr, err := vm.transformHTMLContent(slotElement.Content, "escape")
 		if err != nil {
 			return nil, err
 		}
@@ -554,7 +554,7 @@ func (vm *ViewTransformer) processSlotElement(slotElement *ast.HTMLElement) ([]a
 	var fallbackExpr ast.Expr
 	if len(slotElement.Content) > 0 {
 		// Transform fallback content
-		fallbackContentExpr, err := vm.transformHTMLContent(slotElement.Content)
+		fallbackContentExpr, err := vm.transformHTMLContent(slotElement.Content, "escape")
 		if err != nil {
 			return nil, err
 		}
