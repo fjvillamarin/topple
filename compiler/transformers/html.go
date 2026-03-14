@@ -143,8 +143,12 @@ func (vm *ViewTransformer) transformHTMLElement(element *ast.HTMLElement) (ast.E
 		attrsExpr = transformedAttrs
 	}
 
-	// Transform the content
-	contentExpr, err := vm.transformHTMLContent(element.Content)
+	// Transform the content - use raw() for raw text elements (script/style/textarea)
+	wrapFunc := "escape"
+	if isRawTextElement(tagName) {
+		wrapFunc = "raw"
+	}
+	contentExpr, err := vm.transformHTMLContent(element.Content, wrapFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -192,19 +196,25 @@ func (vm *ViewTransformer) transformHTMLElementWithStatements(
 
 	statements := []ast.Stmt{createArray}
 
+	// Track whether we're inside a raw text element (script/style/textarea)
+	prevRawText := vm.rawTextParent
+	vm.rawTextParent = isRawTextElement(tagName)
+
 	// Process each content statement in this context.
 	// HTML elements will be appended to the children array.
 	// Compound statements (for/if/while/etc) will contain append statements in their bodies.
 	for _, stmt := range element.Content {
 		processedStmts, err := vm.processViewStatement(stmt)
 		if err != nil {
+			vm.rawTextParent = prevRawText
 			vm.popContext()
 			return nil, err
 		}
 		statements = append(statements, processedStmts...)
 	}
 
-	// Pop the context to restore the previous one
+	// Restore raw text parent state and pop context
+	vm.rawTextParent = prevRawText
 	vm.popContext()
 
 	// Create the el() call with the children array as content
@@ -291,8 +301,9 @@ func (vm *ViewTransformer) transformHTMLAttributes(attributes []ast.HTMLAttribut
 	}, nil
 }
 
-// transformHTMLContent transforms HTML content (nested elements, text, etc.) into appropriate expressions
-func (vm *ViewTransformer) transformHTMLContent(content []ast.Stmt) (ast.Expr, error) {
+// transformHTMLContent transforms HTML content (nested elements, text, etc.) into appropriate expressions.
+// wrapFunc specifies the wrapper function for dynamic content ("escape" or "raw").
+func (vm *ViewTransformer) transformHTMLContent(content []ast.Stmt, wrapFunc string) (ast.Expr, error) {
 	if len(content) == 0 {
 		// Empty content
 		return &ast.Literal{
@@ -304,13 +315,13 @@ func (vm *ViewTransformer) transformHTMLContent(content []ast.Stmt) (ast.Expr, e
 
 	if len(content) == 1 {
 		// Single content item
-		return vm.transformHTMLContentItem(content[0])
+		return vm.transformHTMLContentItem(content[0], wrapFunc)
 	}
 
 	// Multiple content items - create a list
 	var contentExprs []ast.Expr
 	for _, item := range content {
-		expr, err := vm.transformHTMLContentItem(item)
+		expr, err := vm.transformHTMLContentItem(item, wrapFunc)
 		if err != nil {
 			return nil, err
 		}
@@ -323,8 +334,9 @@ func (vm *ViewTransformer) transformHTMLContent(content []ast.Stmt) (ast.Expr, e
 	}, nil
 }
 
-// transformHTMLContentItem transforms a single HTML content item
-func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, error) {
+// transformHTMLContentItem transforms a single HTML content item.
+// wrapFunc specifies the wrapper function for dynamic content ("escape" or "raw").
+func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt, wrapFunc string) (ast.Expr, error) {
 	switch content := item.(type) {
 	case *ast.HTMLElement:
 		// Check if this is a slot element
@@ -336,14 +348,14 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 
 	case *ast.HTMLContent:
 		// HTML content with text and interpolations
-		return vm.transformHTMLContentParts(content.Parts)
+		return vm.transformHTMLContentParts(content.Parts, wrapFunc)
 
 	case *ast.ExprStmt:
-		// Expression statement - escape all expressions used as HTML content
+		// Expression statement - wrap with appropriate function (escape or raw)
 		transformedExpr := vm.transformExpression(content.Expr)
 		return &ast.Call{
 			Callee: &ast.Name{
-				Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+				Token: lexer.Token{Lexeme: wrapFunc, Type: lexer.Identifier},
 				Span:  content.Span,
 			},
 			Arguments: []*ast.Argument{{
@@ -365,8 +377,9 @@ func (vm *ViewTransformer) transformHTMLContentItem(item ast.Stmt) (ast.Expr, er
 	}
 }
 
-// transformHTMLContentParts transforms HTML content parts (text + interpolations)
-func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart) (ast.Expr, error) {
+// transformHTMLContentParts transforms HTML content parts (text + interpolations).
+// wrapFunc specifies the wrapper function for dynamic content ("escape" or "raw").
+func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart, wrapFunc string) (ast.Expr, error) {
 	if len(parts) == 0 {
 		return &ast.Literal{
 			Type:  ast.LiteralTypeString,
@@ -389,15 +402,15 @@ func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart
 		case *ast.HTMLInterpolation:
 			// Expression interpolation - transform the expression for view parameters
 			transformedExpr := vm.transformExpression(part.Expression)
-			escapeCall := &ast.Call{
+			wrapCall := &ast.Call{
 				Callee: &ast.Name{
-					Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+					Token: lexer.Token{Lexeme: wrapFunc, Type: lexer.Identifier},
 					Span:  part.Span,
 				},
 				Arguments: []*ast.Argument{{Value: transformedExpr, Span: part.Span}},
 				Span:      part.Span,
 			}
-			return escapeCall, nil
+			return wrapCall, nil
 		}
 	}
 
@@ -416,9 +429,9 @@ func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart
 		case *ast.HTMLInterpolation:
 			// Transform the expression for view parameters and add as replacement field
 			transformedExpr := vm.transformExpression(p.Expression)
-			escapeCall := &ast.Call{
+			wrapCall := &ast.Call{
 				Callee: &ast.Name{
-					Token: lexer.Token{Lexeme: "escape", Type: lexer.Identifier},
+					Token: lexer.Token{Lexeme: wrapFunc, Type: lexer.Identifier},
 					Span:  p.Span,
 				},
 				Arguments: []*ast.Argument{{Value: transformedExpr, Span: p.Span}},
@@ -426,7 +439,7 @@ func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart
 			}
 
 			replacementField := &ast.FStringReplacementField{
-				Expression: escapeCall,
+				Expression: wrapCall,
 				Equal:      false,
 				Conversion: nil,
 				FormatSpec: nil,
@@ -445,8 +458,13 @@ func (vm *ViewTransformer) transformHTMLContentParts(parts []ast.HTMLContentPart
 
 // processHTMLContent processes HTMLContent and returns the transformed statements
 func (vm *ViewTransformer) processHTMLContent(content *ast.HTMLContent) ([]ast.Stmt, error) {
+	// Use raw() for content inside raw text elements (script/style/textarea)
+	wrapFunc := "escape"
+	if vm.rawTextParent {
+		wrapFunc = "raw"
+	}
 	// Transform HTML content parts (text + interpolations)
-	contentExpr, err := vm.transformHTMLContentParts(content.Parts)
+	contentExpr, err := vm.transformHTMLContentParts(content.Parts, wrapFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -506,6 +524,12 @@ func (vm *ViewTransformer) createElCall(tag string, content ast.Expr, attrs ast.
 		Arguments: args,
 		Span:      content.GetSpan(),
 	}
+}
+
+// isRawTextElement returns true if the tag is a raw text element per HTML spec.
+// Content inside these elements should use raw() instead of escape().
+func isRawTextElement(tag string) bool {
+	return tag == "script" || tag == "style" || tag == "textarea"
 }
 
 // isPascalCase checks if a string starts with an uppercase letter (PascalCase convention for components)

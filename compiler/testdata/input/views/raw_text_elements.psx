@@ -1,0 +1,18 @@
+view ScriptString():
+    <script>"alert('hello')"</script>
+
+view ScriptInterpolation(config: str):
+    <script>{config}</script>
+
+view StyleString():
+    <style>"div > p, span + a"</style>
+
+view StyleInterpolation(color: str):
+    <style>{color}</style>
+
+view TextareaView(value: str):
+    <textarea>{value}</textarea>
+
+view MixedView(name: str):
+    <div>Hello, {name}!</div>
+    <script>"console.log('hello')"</script>

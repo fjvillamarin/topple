@@ -20,6 +20,9 @@ type ViewTransformer struct {
 	currentContext string   // Current children array name
 	nextContextId  int      // Counter for generating unique context names
 
+	// Raw text element tracking for hierarchical processing
+	rawTextParent bool // true when processing children of script/style/textarea
+
 	// Slot information
 	slots     map[string]*SlotInfo // Map of slot name to slot info (empty string for default slot)
 	slotOrder []string             // Order of slot names as they appear in view definition
